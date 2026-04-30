@@ -7,5 +7,5 @@ export default function Banner() {
         <h1>Banner</h1>
       </div>
     </section>
-  )
+  );
 }
