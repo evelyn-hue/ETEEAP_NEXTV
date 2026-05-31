@@ -1,3 +1,12 @@
 {
-    "logo": "/ETEEAP_LOGO.png"
+    "lccblogo": "/LCCB_LOGO.png",
+    "eteeapLogo": "/ETEEAP_LOGO.png",
+    "background": "/lccbBG.png",
+    "heroImage": "/groupic.jpg",
+    "art": "/arts.png",
+    "hrm": "/hrm.png",
+    "mm": "/mm.png",   
+    "hm": "/hm.png",
+    "bruma": "/bruma.jpg",
+    "ellen": "/ellen.jpg"
 }
