@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+// import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Toast from "../Toast";
 import imgSrc from "@/config/img_src.json";
 import Image from "next/image";
 
@@ -21,21 +20,29 @@ const programs = [
     name: "Bachelor of Arts in English Language Studies",
     description:
       "The Bachelor of Arts in English Language Studies is a comprehensive program designed to develop advanced proficiency in the English language while fostering critical thinking, effective communication, and cultural awareness. Students will explore the intricacies of linguistics, literature, and language pedagogy, gaining a deep understanding of how language shapes thought, culture, and society.",
+    link: "/courses/BAELS",
+    apply: "/form"
   },
   {
     name: "Bachelor of Science in Business Administration - Human Resource Management",
     description:
       "The Bachelor of Science in Business Administration with a specialization in Human Resource Management prepares students to become strategic leaders in workforce development and organizational success. This program delves into the core principles of human capital management, covering essential areas such as recruitment, employee relations, performance management, and workplace diversity.",
+    link: "courses/BSBA-HRM",
+    apply: "/form"
   },
   {
     name: "Bachelor of Science in Business Administration - Marketing Management",
     description:
       "The Bachelor of Science in Business Administration with a focus on Marketing Management equips students with the strategic acumen and creative skills needed to thrive in the fast-paced world of marketing and brand management. This program covers fundamental marketing principles, including market research, consumer behavior, branding, and digital marketing strategies.",
+    link: "courses/BSBA-HRM",
+    apply: "/form"
   },
   {
     name: "Bachelor of Science in Hospitality Management",
     description:
       "The Bachelor of Science in Hospitality Management offers a dynamic education tailored for those passionate about creating exceptional guest experiences in the tourism and hospitality industry. This program provides a comprehensive understanding of hotel operations, restaurant management, event planning, and tourism development.",
+    link: "courses/BSBA-HRM",
+    apply: "/form"
   },
 ];
 
@@ -52,82 +59,7 @@ const staff = [
 
 export default function Program() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  useEffect(() => {
-    try {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    } catch (e) {
-      // ignore
-    }
-  }, []);
-
-  useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
-  const handleLearnMore = (program: (typeof programs)[0]) => {
-    // Store program data in localStorage for the next page
-    localStorage.setItem(
-      "selectedProgram",
-      JSON.stringify({
-        name: program.name,
-        description: program.description,
-        image: programImages[program.name as keyof typeof programImages] || programImages["Bachelor of Arts in English Language Studies"],
-      })
-    );
-    router.push("courses/details");
-  };
-
-  const handleApply = async (programName: string) => {
-    if (!user) {
-      sessionStorage.setItem("programName", programName);
-      router.push("/auth/signup");
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/profile/applications", {
-        method: "GET",
-        headers: { "x-user-id": String(user.id) },
-      });
-
-      if (res.status === 401) {
-        setToast({
-          message: "Unable to verify application status — proceeding to apply.",
-          type: "error",
-        });
-        setTimeout(() => setToast(null), 3000);
-        localStorage.setItem("programName", programName);
-        router.push("courses/details");
-        return;
-      }
-
-      const data = await res.json().catch(() => []);
-      if (Array.isArray(data) && data.length > 0) {
-        setToast({
-          message: "Only one application is allowed per account.",
-          type: "error",
-        });
-        setTimeout(() => setToast(null), 4000);
-        return;
-      }
-
-      localStorage.setItem("programName", programName);
-      router.push("courses/details");
-    } catch (err) {
-      console.error("Error checking existing application:", err);
-      setToast({
-        message: "Unable to check application status. Try again.",
-        type: "error",
-      });
-      setTimeout(() => setToast(null), 3000);
-    }
-  };
+  
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-20 mt-12">
@@ -139,8 +71,7 @@ export default function Program() {
         {programs.map((program, index) => (
           <div
             key={index}
-            className="group relative rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 cursor-pointer h-96 flex flex-col"
-            onClick={() => handleLearnMore(program)}
+            className="group relative rounded-xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 h-96 flex flex-col"
           >
             {/* Program Image */}
             <div className="relative w-full h-48 overflow-hidden bg-gray-200">
@@ -182,20 +113,14 @@ export default function Program() {
               {/* Buttons */}
               <div className="relative z-10 flex gap-2">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleLearnMore(program);
-                  }}
-                  className="mt-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-blue-500/50 hover:scale-105"
+                  className="mt-8 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-blue-500/50 hover:scale-105 cursor-pointer"
+                  onClick={() => {router.push(`${program.link}`);}}
                 >
                   Learn More
                 </button>
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleApply(program.name);
-                  }}
-                  className="mt-8 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-green-500/50 hover:scale-105"
+                  className="mt-8 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-green-500/50 hover:scale-105 cursor-pointer"
+                  onClick={() => {router.push(`${program.apply}`);}}
                 >
                   Apply
                 </button>
@@ -229,14 +154,6 @@ export default function Program() {
           </div>
         ))}
       </div>
-
-      {toast && (
-        <Toast
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast(null)}
-        />
-      )}
     </main>
   );
 }

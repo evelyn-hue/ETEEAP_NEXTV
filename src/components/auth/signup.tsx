@@ -2,8 +2,8 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import imgSrc from "@/config/img_src.json";
-import Image from "next/image";
+// import imgSrc from "@/config/img_src.json";
+// import Image from "next/image";
 import Link from "next/link";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
@@ -15,6 +15,7 @@ type FormState = {
   phone: string;
   civilStatus: string;
   password: string;
+  c_password: string;
 };
 
 type InputProps = {
@@ -49,6 +50,7 @@ export default function SignUp() {
     phone: "",
     civilStatus: "Single",
     password: "",
+    c_password: ""
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -71,6 +73,10 @@ export default function SignUp() {
 
     if (!form.lastName.trim()) {
       validationErrors.lastName = "Last name is required";
+    }
+
+    if (form.password !== form.c_password) {
+      validationErrors.password = "Password not match";
     }
 
     if (!form.email.trim()) {
@@ -107,10 +113,9 @@ export default function SignUp() {
         phone: "",
         civilStatus: "Single",
         password: "",
+        c_password: ""
       });
-    } 
-    
-    else {
+    } else {
       alert(`Error: ${response.message}`);
     }
 
@@ -184,6 +189,28 @@ export default function SignUp() {
             placeholder="Password"
             value={form.password}
             onChange={(e) => handleChange("password", e.target.value)}
+            className="w-full pl-10 pr-10 py-2 border rounded"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute top-3 right-3"
+          >
+            {showPassword ? <FaEyeSlash /> : <FaEye />}
+          </button>
+          {errors.password && (
+            <p className="text-red-500 text-xs">{errors.password}</p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div className="relative mb-4">
+          <FaLock className="absolute top-3 left-3 text-gray-400" />
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="Confirm Password"
+            value={form.c_password}
+            onChange={(e) => handleChange("c_password", e.target.value)}
             className="w-full pl-10 pr-10 py-2 border rounded"
           />
           <button

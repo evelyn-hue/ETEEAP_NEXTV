@@ -1,0 +1,31 @@
+name: Deploy Next.js and Python to Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checking ESLint with Next.js
+        run: pnpm run lint
+        working-directory: ./
+
+      - name: Build with Next.js
+        run: pnpm run build
+        working-directory: ./

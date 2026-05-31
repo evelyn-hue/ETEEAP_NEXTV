@@ -4,7 +4,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import Toast from "../Toast";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
 
@@ -16,7 +15,7 @@ export default function SignIn() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: "success" | "error" }>({ message: "", type: "success" });
+  const [errorMessage, setErrorMessage] = useState("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,14 +27,12 @@ export default function SignIn() {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setErrorMessage("");
     setLoading(true);
 
     // Validate inputs
     if (!formData.email || !formData.password) {
-      setToast({
-        message: "Please fill in all fields",
-        type: "error",
-      });
+      setErrorMessage("Please enter your email and password.");
       setLoading(false);
       return;
     }
@@ -43,10 +40,7 @@ export default function SignIn() {
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setToast({
-        message: "Please enter a valid email",
-        type: "error",
-      });
+      setErrorMessage("Please enter a valid email address.");
       setLoading(false);
       return;
     }
@@ -58,13 +52,10 @@ export default function SignIn() {
 
     if (response.success) {
       alert("Sign in successful!");
-      router.push("/landpage");
-      setFormData({
-        email: "",
-        password: "",
-      });
+      await Fetch_to(apiLink.jwt.auth, { email: formData.email });
+      router.push("/");
     } else {
-      alert(`Error: ${response.message}`);
+      setErrorMessage(response.message || "Sign in failed. Please try again.");
     }
 
     setLoading(false);
@@ -144,6 +135,12 @@ export default function SignIn() {
             </Link>
           </div>
 
+          {errorMessage && (
+            <p className="text-sm font-medium text-red-600" role="alert">
+              {errorMessage}
+            </p>
+          )}
+
           {/* Sign In Button */}
           <button
             type="submit"
@@ -166,19 +163,13 @@ export default function SignIn() {
 
         {/* Sign Up Link */}
         <p className="text-center text-gray-700">
-          Don't have an account?{" "}
+          Don{"'"}t have an account?{" "}
           <Link href="/auth/signup" className="text-blue-600 hover:text-blue-800 font-semibold">
             Sign Up
           </Link>
         </p>
       </div>
 
-      {/* Toast */}
-      <Toast
-        message={toast.message}
-        type={toast.type as "success" | "error" | undefined}
-        onClose={() => setToast({ message: "", type: "success" })}
-      />
     </section>
   );
 } 

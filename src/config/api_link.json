@@ -1,6 +1,11 @@
 {
-    "auth": {
+    "auth" : {
         "signup": "/services/supabase/auth/signup",
         "signin": "/services/supabase/auth/signin"
+    },
+    "jwt" : {
+        "auth" : "/services/jwt/auth",
+        "deauth" : "/services/jwt/deauth",
+        "verify" : "/services/jwt/verify"
     }
 }

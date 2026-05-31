@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import imgSrc from "@/config/img_src.json";
 

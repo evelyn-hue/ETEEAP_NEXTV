@@ -3,19 +3,37 @@ import { supabaseServer } from "@/lib/supabase-server";
 import bcrypt from "bcryptjs";
 
 export async function POST(req: NextRequest) {
+  try {
     const { email, password } = await req.json();
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const { error } = await supabaseServer 
-            .from("auth")
-            .insert([{ email, password: hashedPassword }]);
 
-        if (error) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-        }
+    const { data, error } = await supabaseServer
+      .from("auth")
+      .select("email,password")
+      .eq("email", email)
+      .single();
 
-        return NextResponse.json({ success: true}, { status: 200 });
-    } catch (error) {
-        return NextResponse.json({ success: false, error: "An unexpected error occurred" }, { status: 500 });
+    if (error || !data) {
+      return NextResponse.json(
+        { success: false, error: "User not exist please signup" },
+        { status: 401 }
+      );
     }
+
+    const isPasswordValid = await bcrypt.compare(password, data.password);
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { success: false, message: "Invalid email or password" },
+        { status: 401 }
+      );
+    }
+
+    return NextResponse.json({ success: true }, { status: 200 });
+  } catch (error) {
+    console.log("Something Went Wrong: ", error);
+    return NextResponse.json(
+      { success: false, message: "An unexpected error occurred" },
+      { status: 500 }
+    );
+  }
 }
