@@ -1,6 +1,6 @@
-name: Deploy Next.js and Python to Pages
+name: Deploy Next.js
 
-on:
+"on":
   push:
     branches: ["main"]
   workflow_dispatch:
@@ -21,6 +21,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.33.4 --activate
+
+      - name: Install dependencies
+        run: pnpm install 
+        working-directory: ./
 
       - name: Checking ESLint with Next.js
         run: pnpm run lint
