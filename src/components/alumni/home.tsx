@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function AlumniFeedPage() {
   return (
-    <main className="min-h-screen bg-gray-100 p-6 mt-12">
+    <main className="min-h-screen bg-gray-100 p-6 mt-18">
       <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow mb-6">
         <h1 className="text-3xl font-bold text-blue-800">Alumni Feed</h1>
         <p className="text-gray-500">Full slambook profiles from graduates</p>
@@ -15,56 +15,38 @@ export default function AlumniFeedPage() {
         </Link>
       </div>
 
-      <div className="max-w-5xl mx-auto mb-6">
-        <input
-          className="w-full border p-3 rounded"
-          placeholder="Search alumni..."
-        />
-      </div>
-
       <div className="max-w-5xl mx-auto mb-6 bg-white p-6 rounded-xl shadow">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div>
-            <h3 className="font-semibold text-gray-700 mb-3">
-              Filter by Program
-            </h3>
-            <select
-              multiple
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
-              size={5}
-            >
-              <option>
-                Bachelor of Science in Business Administration - Human Resource
-                Management
-              </option>
-              <option>Bachelor of Arts in English Language Studies</option>
-              <option>
-                Bachelor of Science in Business Administration - Marketing
-                Management
-              </option>
-              <option>Bachelor of Science in Hospitality Management</option>
-            </select>
-          </div>
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,240px)_minmax(160px,200px)]">
+          <input
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-700"
+            placeholder="Search alumni..."
+          />
 
-          <div>
-            <h3 className="font-semibold text-gray-700 mb-3">
-              Filter by Academic Year
-            </h3>
-            <select
-              multiple
-              className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-green-700"
-              size={5}
-            >
-              <option>2024-2025</option>
-              <option>2025-2026</option>
-              <option>2026-2027</option>
-              <option>2027-2028</option>
-              <option>2028-2029</option>
-            </select>
-          </div>
+          <select className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700">
+            <option value="">All programs</option>
+            <option>
+              Bachelor of Science in Business Administration - Human Resource
+              Management
+            </option>
+            <option>Bachelor of Arts in English Language Studies</option>
+            <option>
+              Bachelor of Science in Business Administration - Marketing
+              Management
+            </option>
+            <option>Bachelor of Science in Hospitality Management</option>
+          </select>
+
+          <select className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700">
+            <option value="">All academic years</option>
+            <option>2024-2025</option>
+            <option>2025-2026</option>
+            <option>2026-2027</option>
+            <option>2027-2028</option>
+            <option>2028-2029</option>
+          </select>
         </div>
 
-        <div className="border-t pt-4">
+        <div className="border-t pt-4 mt-6">
           <p className="text-sm font-semibold text-gray-700 mb-2">
             Selected Filters:
           </p>

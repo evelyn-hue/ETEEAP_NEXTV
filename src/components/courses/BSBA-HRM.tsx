@@ -7,8 +7,8 @@ export default function DetailedPrograms() {
     <main className="min-h-screen bg-linear-to-b from-blue-50 to-white mt-12">
       <section className="relative w-full h-75 flex items-center justify-center overflow-hidden">
         <Image
-          src={imgSrc.art}
-          alt="Bachelor of Arts in English Language Studies"
+          src={imgSrc.hrm}
+          alt="Bachelor of Science in Business Administration - Human Resource Management"
           fill
           priority
           className="object-cover"
@@ -18,7 +18,7 @@ export default function DetailedPrograms() {
 
         <div className="relative z-10 text-center px-6">
           <h1 className="text-4xl font-bold text-white">
-            Bachelor of Arts in English Language Studies
+            Bachelor of Science in Business Administration - Human Resource Management
           </h1>
         </div>
       </section>
@@ -28,10 +28,7 @@ export default function DetailedPrograms() {
           <h2 className="text-4xl font-bold text-blue-800 mb-6">Overview</h2>
           <div className="bg-white rounded-xl shadow-lg p-8 border-l-4 border-blue-600">
             <p className="text-gray-700 text-lg leading-relaxed">
-              Bachelor of Arts in English Language Studies develops strong
-              communication, research, language analysis, and professional
-              writing skills for careers in education, communication, business,
-              media, and related fields.
+              The Bachelor of Science in Business Administration - Human Resource Management program provides comprehensive knowledge and skills in managing organizational human capital. Students will learn about recruitment, training, performance management, and employee relations.
             </p>
           </div>
         </div>

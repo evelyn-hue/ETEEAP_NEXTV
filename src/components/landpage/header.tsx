@@ -6,8 +6,10 @@ import { useState } from "react";
 import { Fetch_to } from "@/utilities";
 import imgSrc from "@/config/img_src.json";
 import api_link from "@/config/api_link.json";
+import { Myprofile } from "@/components/myprofile";
 
 import { FaEnvelope, FaFolder, FaUserCircle } from "react-icons/fa";
+import { LiaJenkins } from "react-icons/lia";
 
 type Jwt_props = {
   showProfile: boolean;
@@ -18,6 +20,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const router = useRouter();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
 
 
   const handleProfileClick = () => {
@@ -141,6 +144,10 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 </p>
                 <button
                   type="button"
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setProfileModalOpen(true);
+                  }}
                   className="mb-2 w-full rounded-md bg-blue-600 px-3 py-2 text-left text-white hover:bg-blue-700"
                 >
                   My Profile
@@ -180,6 +187,15 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
         </div>
 
       </div>
+
+      {profileModalOpen ? (
+        <Myprofile
+          modal
+          onClose={() => {
+            setProfileModalOpen(false);
+          }}
+        />
+      ) : null}
     </header>
   );
 }

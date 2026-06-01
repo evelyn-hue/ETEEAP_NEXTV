@@ -84,7 +84,12 @@ export default function About() {
 
       {/* CTA */}
       <section className="text-center">
-        <Link href="/">Apply now</Link>
+        <Link
+          href="/courses"
+          className="inline-flex items-center justify-center rounded-lg bg-blue-700 px-6 py-3 font-semibold text-white shadow-md transition-colors hover:bg-blue-800"
+        >
+          Apply now
+        </Link>
       </section>
     </main>
   );
