@@ -115,7 +115,7 @@ function StatusPill({ status }: { status: DocumentStatus | ApplicationRecord["st
 }
 
 function ApplicationActions({
-  item,
+  // item,
   onView,
   onAccept,
   onReject,

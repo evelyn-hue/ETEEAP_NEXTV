@@ -2,14 +2,14 @@
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Fetch_to } from "@/utilities";
 import imgSrc from "@/config/img_src.json";
 import api_link from "@/config/api_link.json";
 import { Myprofile } from "@/components/myprofile";
 
-import { FaEnvelope, FaFolder, FaUserCircle } from "react-icons/fa";
-import { LiaJenkins } from "react-icons/lia";
+import { FaBars, FaEnvelope, FaFolder, FaTimes, FaUserCircle } from "react-icons/fa";
+// import { LiaJenkins } from "react-icons/lia";
 
 type Jwt_props = {
   showProfile: boolean;
@@ -21,7 +21,25 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [isCompactWidth, setIsCompactWidth] = useState(false);
 
+  useEffect(() => {
+    const updateWidth = () => {
+      setIsCompactWidth(window.innerWidth < 800);
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
+  useEffect(() => {
+    if (!isCompactWidth) {
+      setIsMobileNavOpen(false);
+    }
+  }, [isCompactWidth]);
 
   const handleProfileClick = () => {
     setProfileOpen((prev) => !prev);
@@ -41,6 +59,16 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
 
         {/* LEFT LOGOS */}
         <div className="flex items-center gap-4">
+          {isCompactWidth ? (
+            <button
+              type="button"
+              aria-label={isMobileNavOpen ? "Close navigation menu" : "Open navigation menu"}
+              onClick={() => setIsMobileNavOpen((prev) => !prev)}
+              className="rounded-md p-2 text-gray-700 hover:bg-gray-100"
+            >
+              {isMobileNavOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
+            </button>
+          ) : null}
           <Image
             src={imgSrc.lccblogo}
             alt="LCCB Logo"
@@ -59,7 +87,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
         </div>
 
         {/* CENTER NAVIGATION */}
-        <nav className="hidden md:block text-sm font-medium text-gray-700">
+        <nav className={`${isCompactWidth ? "hidden" : "block"} text-sm font-medium text-gray-700`}>
           <ul className="flex gap-8">
             <li onClick={() => { router.push("/"); }} className="cursor-pointer hover:text-blue-600">Home</li>
             <li onClick={() => { router.push("/overview"); }} className="cursor-pointer hover:text-blue-600">About</li>
@@ -68,6 +96,8 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
             <li onClick={() => { router.push("/question"); }} className="cursor-pointer hover:text-blue-600">FAQ{"'"}s</li>
           </ul>
         </nav>
+
+        
 
         {/* RIGHT SIDE */}
         <div className="relative flex items-center gap-4">
@@ -187,6 +217,71 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
         </div>
 
       </div>
+
+      {isCompactWidth && isMobileNavOpen ? (
+        <>
+          <button
+            type="button"
+            aria-label="Close navigation overlay"
+            className="fixed inset-0 z-40 bg-black/30"
+            onClick={() => setIsMobileNavOpen(false)}
+          />
+          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[30dvw] min-w-[220px] bg-white shadow-2xl">
+            <div className="flex h-full flex-col p-6 pt-24 text-sm font-medium text-gray-700">
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/");
+                  setIsMobileNavOpen(false);
+                }}
+                className="py-3 text-left hover:text-blue-600"
+              >
+                Home
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/overview");
+                  setIsMobileNavOpen(false);
+                }}
+                className="py-3 text-left hover:text-blue-600"
+              >
+                About
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/courses");
+                  setIsMobileNavOpen(false);
+                }}
+                className="py-3 text-left hover:text-blue-600"
+              >
+                Programs
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/alumni");
+                  setIsMobileNavOpen(false);
+                }}
+                className="py-3 text-left hover:text-blue-600"
+              >
+                Alumni
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/question");
+                  setIsMobileNavOpen(false);
+                }}
+                className="py-3 text-left hover:text-blue-600"
+              >
+                FAQ{"'"}s
+              </button>
+            </div>
+          </aside>
+        </>
+      ) : null}
 
       {profileModalOpen ? (
         <Myprofile
