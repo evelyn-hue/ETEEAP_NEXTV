@@ -20,6 +20,7 @@ type DraftApplication = {
   businessName: string;
   files: Record<string, StoredFile[]>;
   form_status?: string;
+  programName?: string;
 };
 
 type SelectedApplication = {
@@ -81,9 +82,17 @@ function getStatusBadgeClass(status?: string) {
       return "bg-blue-100 text-blue-800";
     case "success":
       return "bg-green-100 text-green-800";
+    case "reject":
+      return "bg-red-100 text-red-800";
     default:
       return "bg-gray-100 text-gray-700";
   }
+}
+
+function shortenLinkLabel(value: string) {
+  if (!value) return "-";
+  if (value.length <= 20) return value;
+  return `${value.slice(0, 50)}..`;
 }
 
 function getDraft() {
@@ -124,6 +133,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
   const currentStatus = (selectedApplication?.form_status || draft?.form_status || "").toLowerCase().trim();
   const isUnderReview = currentStatus === "under review";
   const isDraft = currentStatus === "draft";
+  const isReject = currentStatus === "reject";
 
   useEffect(() => {
     setDraft(getDraft());
@@ -140,6 +150,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
   }, []);
 
   const handleSubmit = async (nextStatus: string) => {
+    if (isDraft || isReject) return router.push("/courses");
     const currentDraft = draft ?? getDraft();
     if (!currentDraft) {
       setSubmitError("No Data found in local storage.");
@@ -181,6 +192,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             applicantName: currentDraft.applicantName || fullname || "",
             businessName: currentDraft.businessName || "",
             isBusinessOwner: currentDraft.isBusinessOwner || "No",
+            programName: currentDraft.programName || "",
             form_status: nextStatus,
           },
         },
@@ -279,9 +291,14 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
                           ))}
                         </ul>
                       ) : submittedValue ? (
-                        <span className="ml-2 text-blue-700 underline">
-                          {String(submittedValue)}
-                        </span>
+                        <a
+                          href={String(submittedValue)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-blue-700 underline"
+                        >
+                          {shortenLinkLabel(String(submittedValue))}
+                        </a>
                       ) : (
                         <span className="ml-2 text-gray-500">-</span>
                       )}
@@ -321,7 +338,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             onClick={() => {
               void handleSubmit("draft");
             }}
-            style={{ display: submitting || isDraft ? "none" : "block" }}
+            style={{ display: submitting || isUnderReview ? "none" : "block" }}
             className="px-6 py-2 rounded-md bg-blue-700 text-white cursor-pointer"
             disabled={submitting || isUnderReview}
           >
@@ -337,7 +354,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             disabled={submitting}
             className="px-6 py-2 rounded-md bg-blue-800 text-white disabled:opacity-60 cursor-pointer"
           >
-            {isDraft ? "Submit Again" : "Submit"}
+            {isDraft ? "Apply Again" : "Submit"}
           </button>
         </div>
 

@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
     const businessName = String(formData.get("businessName") ?? "");
     const isBusinessOwner = String(formData.get("isBusinessOwner") ?? "No");
     const form_status = String(formData.get("form_status") ?? "draft");
+    const programName = String(formData.get("programName") ?? "draft");
 
     if (!email) {
       return NextResponse.json(
@@ -73,6 +74,7 @@ export async function POST(req: NextRequest) {
       isBusinessOwner,
       businessName,
       form_status,
+      program: programName
     };
 
     for (const { file, documentType } of uploadItems) {
@@ -99,7 +101,11 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      rowData[documentType] = filePath;
+      const { data: publicUrlData } = supabaseServer.storage
+        .from(bucketName)
+        .getPublicUrl(filePath);
+
+      rowData[documentType] = publicUrlData.publicUrl;
     }
 
     const { error: insertError } = await supabaseServer

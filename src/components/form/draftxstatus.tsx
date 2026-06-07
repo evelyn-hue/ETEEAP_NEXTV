@@ -53,6 +53,8 @@ function getStatusBadgeClass(status?: string) {
       return "bg-blue-100 text-blue-800";
     case "success":
       return "bg-green-100 text-green-800";
+    case "reject":
+      return "bg-red-100 text-red-800";
     default:
       return "bg-gray-100 text-gray-700";
   }

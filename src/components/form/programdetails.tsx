@@ -29,6 +29,7 @@ type DraftApplication = {
   email: string;
   isBusinessOwner: string;
   businessName: string;
+  programName: string;
   files: Record<string, StoredFile[]>;
 };
 
@@ -116,6 +117,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
       const draft: DraftApplication = {
         applicantName,
         email,
+        programName,
         isBusinessOwner:
           (
             formElement.elements.namedItem(
