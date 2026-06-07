@@ -1,6 +1,5 @@
 "use client";
-
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
@@ -20,6 +19,32 @@ type DraftApplication = {
   isBusinessOwner: string;
   businessName: string;
   files: Record<string, StoredFile[]>;
+  form_status?: string;
+};
+
+type SelectedApplication = {
+  id?: number;
+  created_at?: string;
+  isBusinessOwner?: string;
+  letterOfIntent?: string | null;
+  resume?: string | null;
+  picture?: string | null;
+  applicationForm?: string | null;
+  recommendationLetter?: string | null;
+  schoolCredentials?: string | null;
+  highSchoolDiploma?: string | null;
+  transcript?: string | null;
+  birthCertificate?: string | null;
+  marriageCertificate?: string | null;
+  employmentCertificate?: string | null;
+  nbiClearance?: string | null;
+  businessRegistration?: string | null;
+  certificates?: string | null;
+  email?: string;
+  applicantName?: string;
+  businessName?: string | null;
+  program?: string | null;
+  form_status?: string;
 };
 
 type JWTProps = {
@@ -45,6 +70,21 @@ const fileLabels: Record<string, string> = {
   businessRegistration: "Business Registration",
   certificates: "Certificates",
 };
+
+function getStatusBadgeClass(status?: string) {
+  const normalizedStatus = status?.toLowerCase().trim();
+
+  switch (normalizedStatus) {
+    case "draft":
+      return "bg-gray-100 text-gray-700";
+    case "under review":
+      return "bg-blue-100 text-blue-800";
+    case "success":
+      return "bg-green-100 text-green-800";
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
 
 function getDraft() {
   if (typeof window === "undefined") return null;
@@ -73,19 +113,36 @@ function dataUrlToFile(dataUrl: string, name: string, type: string) {
 }
 
 export default function ReviewApplication({ fullname, email, phone, status }: JWTProps) {
+  const router = useRouter();
   const [draft, setDraft] = useState<DraftApplication | null>(null);
+  const [selectedApplication, setSelectedApplication] = useState<SelectedApplication | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [progressLabel, setProgressLabel] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const currentStatus = (selectedApplication?.form_status || draft?.form_status || "").toLowerCase().trim();
+  const isUnderReview = currentStatus === "under review";
+  const isDraft = currentStatus === "draft";
 
   useEffect(() => {
     setDraft(getDraft());
+    if (typeof window === "undefined") return;
+
+    const raw = window.localStorage.getItem("selected-application");
+    if (!raw) return;
+
+    try {
+      setSelectedApplication(JSON.parse(raw) as SelectedApplication);
+    } catch {
+      setSelectedApplication(null);
+    }
   }, []);
 
-  const handleSubmitDraft = async () => {
+  const handleSubmit = async (nextStatus: string) => {
     const currentDraft = draft ?? getDraft();
     if (!currentDraft) {
-      setSubmitError("No draft found in local storage.");
+      setSubmitError("No Data found in local storage.");
       return;
     }
 
@@ -96,88 +153,53 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
     }
 
     setSubmitting(true);
+    setProgress(0);
+    setProgressLabel("Preparing files...");
     setSubmitError("");
     setSubmitSuccess("");
 
     try {
-      const fileEntries = Object.entries(currentDraft.files);
-
-      for (const [documentType, files] of fileEntries) {
+      const uploads: Array<{ file: File; documentType: string }> = [];
+      for (const [documentType, files] of Object.entries(currentDraft.files)) {
         for (const file of files) {
-          const uploadFile = dataUrlToFile(file.dataUrl, file.name, file.type);
-
-          const response = await Fetch_toFile(
-            api_link.form.drafts,
-            uploadFile,
-            {
-              email: submitEmail,
-              applicantName: currentDraft.applicantName || fullname || "",
-              documentType,
-              businessName: currentDraft.businessName || "",
-              isBusinessOwner: currentDraft.isBusinessOwner || "No",
-            },
-          );
-
-          if (!response.success) {
-            throw new Error(response.message || `Failed to upload ${file.name}`);
-          }
+          uploads.push({
+            file: dataUrlToFile(file.dataUrl, file.name, file.type),
+            documentType,
+          });
         }
       }
 
-      window.localStorage.clear();
-      setSubmitSuccess("Application submitted successfully.");
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Submission failed.";
-      setSubmitError(message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+      setProgressLabel(`Submitting ${uploads.length} file${uploads.length === 1 ? "" : "s"}...`);
 
-  const handleSubmit = async () => {
-    const currentDraft = draft ?? getDraft();
-    if (!currentDraft) {
-      setSubmitError("No draft found in local storage.");
-      return;
-    }
+      const response = await Fetch_toFile(
+        api_link.form.submit,
+        {
+          files: uploads.map(({ file }) => file),
+          documentTypes: uploads.map(({ documentType }) => documentType),
+          fields: {
+            email: submitEmail,
+            applicantName: currentDraft.applicantName || fullname || "",
+            businessName: currentDraft.businessName || "",
+            isBusinessOwner: currentDraft.isBusinessOwner || "No",
+            form_status: nextStatus,
+          },
+        },
+        {
+          onProgress: (value, message) => {
+            setProgress(value);
+            setProgressLabel(message);
+          },
+        },
+      );
 
-    const submitEmail = currentDraft.email || email;
-    if (!submitEmail) {
-      setSubmitError("Email is required before submission.");
-      return;
-    }
-
-    setSubmitting(true);
-    setSubmitError("");
-    setSubmitSuccess("");
-
-    try {
-      const fileEntries = Object.entries(currentDraft.files);
-
-      for (const [documentType, files] of fileEntries) {
-        for (const file of files) {
-          const uploadFile = dataUrlToFile(file.dataUrl, file.name, file.type);
-
-          const response = await Fetch_toFile(
-            api_link.form.submit,
-            uploadFile,
-            {
-              email: submitEmail,
-              applicantName: currentDraft.applicantName || fullname || "",
-              documentType,
-              businessName: currentDraft.businessName || "",
-              isBusinessOwner: currentDraft.isBusinessOwner || "No",
-            },
-          );
-
-          if (!response.success) {
-            throw new Error(response.message || `Failed to upload ${file.name}`);
-          }
-        }
+      if (!response.success) {
+        throw new Error(response.message || "Submission failed.");
       }
 
+      setProgress(100);
+      setProgressLabel("Finalizing...");
       window.localStorage.clear();
-      setSubmitSuccess("Application submitted successfully.");
+      setSubmitSuccess(response.message);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Submission failed.";
       setSubmitError(message);
@@ -189,7 +211,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
   return (
     <main className="max-w-5xl mx-auto px-6 py-20 mt-10">
       <h1 className="text-3xl font-bold text-blue-800 mb-6">
-        Review Your Application
+        {selectedApplication ? "Application Review" : "Review Your Application"}
       </h1>
 
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -199,10 +221,10 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
           </h2>
 
           <p>
-            <strong>Name:</strong> {fullname || draft?.applicantName || "-"}
+            <strong>Name:</strong> {selectedApplication?.applicantName || fullname || draft?.applicantName || "-"}
           </p>
           <p>
-            <strong>Email:</strong> {email || draft?.email || "-"}
+            <strong>Email:</strong> {selectedApplication?.email || email || draft?.email || "-"}
           </p>
           <p>
             <strong>Phone #:</strong> {phone}
@@ -211,10 +233,20 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             <strong>Marital Status:</strong> {status}
           </p>
           <p>
-            <strong>Business Owner:</strong> {draft?.isBusinessOwner ?? "No"}
+            <strong>Business Owner:</strong> {selectedApplication?.isBusinessOwner || draft?.isBusinessOwner || "No"}
           </p>
           <p>
-            <strong>Business Name:</strong> {draft?.businessName || "-"}
+            <strong>Business Name:</strong> {selectedApplication?.businessName || draft?.businessName || "-"}
+          </p>
+          <p>
+            <strong>Status:</strong>{" "}
+            <span
+              className={`px-3 py-1 rounded-full text-sm ${getStatusBadgeClass(
+                selectedApplication?.form_status || draft?.form_status,
+              )}`}
+            >
+              {selectedApplication?.form_status || "-"}
+            </span>
           </p>
         </div>
 
@@ -225,6 +257,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             <tbody>
               {Object.entries(fileLabels).map(([key, label]) => {
                 const files = draft?.files?.[key] ?? [];
+                const submittedValue = selectedApplication?.[key as keyof SelectedApplication];
 
                 return (
                   <tr key={key}>
@@ -245,6 +278,10 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
                             </li>
                           ))}
                         </ul>
+                      ) : submittedValue ? (
+                        <span className="ml-2 text-blue-700 underline">
+                          {String(submittedValue)}
+                        </span>
                       ) : (
                         <span className="ml-2 text-gray-500">-</span>
                       )}
@@ -256,6 +293,21 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
           </table>
         </div>
 
+        {submitting ? (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+              <span>{progressLabel || "Working..."}</span>
+              <span>{progress}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+              <div
+                className="h-full bg-blue-700 transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        ) : null}
+
         {submitError ? (
           <p className="mt-4 text-sm text-red-600">{submitError}</p>
         ) : null}
@@ -266,20 +318,26 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
         <div className="mt-6 flex justify-end gap-4">
           <button
             type="button"
-            onClick={handleSubmitDraft}
-            className="px-6 py-2 rounded-md bg-blue-700 text-white"
-            disabled={submitting}
+            onClick={() => {
+              void handleSubmit("draft");
+            }}
+            style={{ display: submitting || isDraft ? "none" : "block" }}
+            className="px-6 py-2 rounded-md bg-blue-700 text-white cursor-pointer"
+            disabled={submitting || isUnderReview}
           >
-            Save Draft
+            Draft
           </button>
 
           <button
             type="button"
-            onClick={handleSubmit}
+            onClick={() => {
+              void handleSubmit("Under Review");
+            }}
+            style={{ display: isUnderReview || submitting ? "none" : "block" }}
             disabled={submitting}
-            className="px-6 py-2 rounded-md bg-blue-800 text-white disabled:opacity-60"
+            className="px-6 py-2 rounded-md bg-blue-800 text-white disabled:opacity-60 cursor-pointer"
           >
-            {submitting ? "Submitting..." : "Submit"}
+            {isDraft ? "Submit Again" : "Submit"}
           </button>
         </div>
 
@@ -288,9 +346,9 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
           step.
         </p>
         <div className="mt-4">
-          <Link href="/form" className="text-blue-700 underline text-sm">
-            Back to form
-          </Link>
+          <p onClick={() => {router.back(); window.localStorage.clear();}} className="text-blue-700 underline text-sm cursor-pointer">
+            Back
+          </p>
         </div>
       </div>
     </main>

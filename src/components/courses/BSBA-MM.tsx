@@ -159,7 +159,7 @@ export default function DetailedPrograms() {
             English Language Studies
           </p>
           <Link
-            href="/form"
+            href="/form?program=Bachelor of Science in Business Administration - Marketing Management"
             className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform bg-white text-blue-600 hover:bg-blue-50"
           >
             Apply Now

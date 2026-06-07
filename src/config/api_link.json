@@ -9,7 +9,7 @@
         "verify" : "/services/jwt/verify"
     },
     "form" : {
-        "submit" : "/services/supabase/form/submit",
-        "drafts" : "/services/supabase/form/drafts"
-    }
+        "submit" : "/services/supabase/form/submit"
+    },
+    "retrieve_data" : "/services/supabase/retrieve_data"
 }
