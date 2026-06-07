@@ -3,12 +3,17 @@
 import ProgramDetails from "@/components/form/programdetails";
 import {Footer, Header} from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
 import api_link from "@/config/api_link.json";
 
-export default function LandPage() {
+function LandContent() {
   const [showProfile, setShowProfile] = useState(false);
   const [email, setEmail] = useState("");
+  const [fullName, setFullName] = useState("");
+  const searchParams = useSearchParams();
+  const params = searchParams.get('program');
+  const [status, setStatus] = useState(true);
 
   useEffect(() => {
     const Verify = async() => {
@@ -18,6 +23,10 @@ export default function LandPage() {
         const response_data = response.data.message.final_data.data[0];
         setShowProfile(true);
         setEmail(response_data.email);
+        setFullName(response_data.fullName ?? "");
+        if (response_data.status === "Single") {
+          setStatus(false);
+        }
         return;
       }
       setShowProfile(false);
@@ -28,8 +37,22 @@ export default function LandPage() {
   return (
     <main> 
       <Header showProfile={showProfile} email={email} />
-      <ProgramDetails programName="Your Program Name" />
+      <ProgramDetails
+        programName={`${params}`}
+        applicantName={fullName}
+        email={email}
+        statusMarital={status}
+      />
       <Footer />
     </main>
   );
+
+}
+
+export default function LandPage() {
+    return (
+        <Suspense fallback={null}>
+            <LandContent />
+        </Suspense>
+    );
 }

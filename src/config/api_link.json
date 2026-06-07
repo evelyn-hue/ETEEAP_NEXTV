@@ -7,5 +7,9 @@
         "auth" : "/services/jwt/auth",
         "deauth" : "/services/jwt/deauth",
         "verify" : "/services/jwt/verify"
+    },
+    "form" : {
+        "submit" : "/services/supabase/form/submit",
+        "drafts" : "/services/supabase/form/drafts"
     }
 }

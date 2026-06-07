@@ -21,28 +21,28 @@ const programs = [
     description:
       "The Bachelor of Arts in English Language Studies is a comprehensive program designed to develop advanced proficiency in the English language while fostering critical thinking, effective communication, and cultural awareness. Students will explore the intricacies of linguistics, literature, and language pedagogy, gaining a deep understanding of how language shapes thought, culture, and society.",
     link: "/courses/BAELS",
-    apply: "/form"
+    apply: "/form?program=Bachelor of Arts in English Language Studies"
   },
   {
     name: "Bachelor of Science in Business Administration - Human Resource Management",
     description:
       "The Bachelor of Science in Business Administration with a specialization in Human Resource Management prepares students to become strategic leaders in workforce development and organizational success. This program delves into the core principles of human capital management, covering essential areas such as recruitment, employee relations, performance management, and workplace diversity.",
     link: "courses/BSBA-HRM",
-    apply: "/form"
+    apply: "/form?program=Bachelor of Science in Business Administration - Human Resource Management"
   },
   {
     name: "Bachelor of Science in Business Administration - Marketing Management",
     description:
       "The Bachelor of Science in Business Administration with a focus on Marketing Management equips students with the strategic acumen and creative skills needed to thrive in the fast-paced world of marketing and brand management. This program covers fundamental marketing principles, including market research, consumer behavior, branding, and digital marketing strategies.",
     link: "courses/BSBA-HRM",
-    apply: "/form"
+    apply: "/form?program=Bachelor of Science in Business Administration - Marketing Management"
   },
   {
     name: "Bachelor of Science in Hospitality Management",
     description:
       "The Bachelor of Science in Hospitality Management offers a dynamic education tailored for those passionate about creating exceptional guest experiences in the tourism and hospitality industry. This program provides a comprehensive understanding of hotel operations, restaurant management, event planning, and tourism development.",
     link: "courses/BSBA-HRM",
-    apply: "/form"
+    apply: "/form?program=Bachelor of Science in Hospitality Management"
   },
 ];
 
