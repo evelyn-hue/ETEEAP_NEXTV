@@ -69,7 +69,7 @@ function SidebarShell({ onNavigate }: { onNavigate?: () => void }) {
 
       <div className="border-t border-blue-700 p-3">
         <button
-          onClick={() => {Fetch_to(api_link.jwt.deauth); }}
+          onClick={() => {Fetch_to(api_link.jwt.deauth); window.location.reload(); }}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer"
         >
           <FiLogOut size={20} />
