@@ -240,10 +240,14 @@ function DocumentCard({
   document,
   onStatusChange,
   onRemarkChange,
+  onRemarkSave,
+  isSaving,
 }: {
   document: DocumentItem;
   onStatusChange: (status: DocumentStatus, remark: string) => void;
   onRemarkChange: (remark: string) => void;
+  onRemarkSave: (remark: string) => void;
+  isSaving?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -312,6 +316,21 @@ function DocumentCard({
           placeholder="Add a remark for this document..."
           className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-700/20"
         />
+        <button
+          type="button"
+          onClick={() => onRemarkSave(document.remark)}
+          disabled={isSaving}
+          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+        >
+          {isSaving ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Send"
+          )}
+        </button>
       </label>
     </div>
   );
@@ -328,6 +347,7 @@ export default function Application() {
   const [adminEmail, setAdminEmail] = useState("");
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRecord | null>(null);
+  const [savingRemark, setSavingRemark] = useState<string | null>(null);
 
   const syncApplication = (updated: ApplicationRecord) => {
     setApplications((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
@@ -547,6 +567,61 @@ export default function Application() {
           }
         : prev
     );
+  };
+
+  const saveDocumentRemark = (
+    applicationId: number,
+    documentId: string,
+    remark: string
+  ) => {
+    const patchRemark = async () => {
+      const remarkKey = `${applicationId}-${documentId}`;
+      setSavingRemark(remarkKey);
+
+      try {
+        console.log("Saving remark:", { applicationId, documentId, remark, adminEmail });
+
+        const response = await fetch(apiLinks.retrieve_data, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            id: applicationId,
+            documentId,
+            remark,
+            reviewedBy: adminEmail,
+          }),
+        });
+
+        console.log("Response status:", response.status, response.ok);
+        
+        const payload = (await response.json().catch(() => null)) as
+          | { success?: boolean; message?: FormRow; error?: string }
+          | null;
+
+        console.log("Response payload:", payload);
+
+        if (!response.ok || !payload?.success || !payload.message) {
+          const errorMsg = payload?.error || "Failed to save remark.";
+          console.error("Remark save error:", errorMsg);
+          alert(errorMsg);
+          setSavingRemark(null);
+          return;
+        }
+
+        syncApplication(mapRowToApplication(payload.message));
+        alert("Remark saved successfully!");
+        setSavingRemark(null);
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : "Unknown error";
+        console.error("Remark save exception:", errorMsg);
+        alert(`Error saving remark: ${errorMsg}`);
+        setSavingRemark(null);
+      }
+    };
+
+    void patchRemark();
   };
 
   const deleteApplication = (id: number) => {
@@ -824,6 +899,14 @@ export default function Application() {
                             remark
                           )
                         }
+                        onRemarkSave={(remark) =>
+                          saveDocumentRemark(
+                            selectedApplication.id,
+                            document.id,
+                            remark
+                          )
+                        }
+                        isSaving={savingRemark === `${selectedApplication.id}-${document.id}`}
                       />
                     ))}
                   </div>
