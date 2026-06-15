@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseServer
     .from("auth")
-    .select("id, email, phone, status, fullName")
+    .select("id, email, phone, civil_status, fullName")
     .eq("email", email)
     .limit(1);
 

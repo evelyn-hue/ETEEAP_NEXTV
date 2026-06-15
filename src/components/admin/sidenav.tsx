@@ -4,6 +4,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { FiFileText, FiHome, FiLogOut, FiMenu, FiSettings, FiUsers, FiX } from "react-icons/fi";
+import { Fetch_to } from "@/utilities";
+import api_link from "@/config/api_link.json";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: FiHome },
@@ -66,14 +68,13 @@ function SidebarShell({ onNavigate }: { onNavigate?: () => void }) {
       <NavLinks onNavigate={onNavigate} />
 
       <div className="border-t border-blue-700 p-3">
-        <Link
-          href="/"
-          onClick={onNavigate}
-          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700"
+        <button
+          onClick={() => {Fetch_to(api_link.jwt.deauth); }}
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer"
         >
           <FiLogOut size={20} />
           <span>Logout</span>
-        </Link>
+        </button>
       </div>
     </aside>
   );

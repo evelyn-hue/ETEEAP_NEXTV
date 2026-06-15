@@ -11,5 +11,6 @@
     "form" : {
         "submit" : "/services/supabase/form/submit"
     },
-    "retrieve_data" : "/services/supabase/retrieve_data"
+    "retrieve_data" : "/services/supabase/retrieve_data",
+    "activity_logs" : "/services/supabase/activity_logs"
 }

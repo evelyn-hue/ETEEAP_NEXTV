@@ -53,6 +53,9 @@ export default function SignIn() {
     if (response.success) {
       alert("Sign in successful!");
       await Fetch_to(apiLink.jwt.auth, { email: formData.email });
+      if (formData.email === "admin@admin.com") {
+        return router.push("/admin");
+      }
       router.push("/");
     } else {
       setErrorMessage(response.message || "Sign in failed. Please try again.");

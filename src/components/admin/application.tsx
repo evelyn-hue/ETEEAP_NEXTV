@@ -1,23 +1,36 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   Eye,
+  ExternalLink,
+  Loader2,
+  RotateCcw,
   Search,
   Trash2,
   XCircle,
   X,
 } from "lucide-react";
+import apiLinks from "@/config/api_link.json";
+import { Fetch_to } from "@/utilities";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
+type FormStatus = "Under Review" | "Approve" | "Reject" | "Draft" | "Delete";
+
+type DocumentDefinition = {
+  id: string;
+  label: string;
+  required?: boolean;
+  note?: string;
+};
 
 type DocumentItem = {
   id: string;
   label: string;
   required?: boolean;
   note?: string;
-  fileType?: string;
+  fileUrl?: string;
   status: DocumentStatus;
   remark: string;
 };
@@ -28,84 +41,127 @@ type ApplicationRecord = {
   email: string;
   program: string;
   date: string;
-  status: "Pending" | "Accepted" | "Rejected" | "Draft";
+  status: FormStatus;
   businessOwner: "Yes" | "No";
   businessName: string;
   documents: DocumentItem[];
 };
 
-const baseDocuments: DocumentItem[] = [
-  { id: "letterOfIntent", label: "A. Letter of Intent", required: true, status: "Pending", remark: "" },
-  { id: "resume", label: "B. Resume / CV", required: true, status: "Pending", remark: "" },
-  { id: "picture", label: "C. Formal Picture", required: true, status: "Pending", remark: "" },
-  { id: "applicationForm", label: "D. ETEEAP Application Form", required: true, note: "Screenshot of completed Google Form", status: "Pending", remark: "" },
-  { id: "recommendationLetter", label: "E. Recommendation Letter", required: true, status: "Pending", remark: "" },
-  { id: "schoolCredentials", label: "F. School Credentials", required: true, status: "Pending", remark: "" },
-  { id: "highSchoolDiploma", label: "G. High School Diploma / PEPT", required: true, status: "Pending", remark: "" },
-  { id: "transcript", label: "H. Transcript", required: true, status: "Pending", remark: "" },
-  { id: "birthCertificate", label: "I. Birth Certificate", required: true, status: "Pending", remark: "" },
-  { id: "marriageCertificate", label: "J. Marriage Certificate", status: "Pending", remark: "" },
-  { id: "employmentCertificate", label: "K. Certificate of Employment (4 max)", required: true, note: "Up to 4 files", status: "Pending", remark: "" },
-  { id: "nbiClearance", label: "L. NBI Clearance", required: true, status: "Pending", remark: "" },
-  { id: "businessRegistration", label: "M. Business Registration", status: "Pending", remark: "" },
-  { id: "certificates", label: "N. Certificates (10 max)", note: "Up to 10 files", status: "Pending", remark: "" },
+type ApprovalEntry = {
+  documentId?: string;
+  status?: DocumentStatus;
+  remark?: string;
+};
+
+type FormRow = {
+  id: number;
+  created_at?: string;
+  email?: string;
+  applicantName?: string;
+  program?: string;
+  form_status?: string;
+  isBusinessOwner?: string;
+  businessName?: string;
+  forms_approvals?: unknown;
+  letterOfIntent?: string | null;
+  resume?: string | null;
+  picture?: string | null;
+  applicationForm?: string | null;
+  recommendationLetter?: string | null;
+  schoolCredentials?: string | null;
+  highSchoolDiploma?: string | null;
+  transcript?: string | null;
+  birthCertificate?: string | null;
+  marriageCertificate?: string | null;
+  employmentCertificate?: string | null;
+  nbiClearance?: string | null;
+  businessRegistration?: string | null;
+  certificates?: string | null;
+};
+
+const baseDocuments: DocumentDefinition[] = [
+  { id: "letterOfIntent", label: "A. Letter of Intent", required: true },
+  { id: "resume", label: "B. Resume / CV", required: true },
+  { id: "picture", label: "C. Formal Picture", required: true },
+  { id: "applicationForm", label: "D. ETEEAP Application Form", required: true, note: "Screenshot of completed Google Form" },
+  { id: "recommendationLetter", label: "E. Recommendation Letter", required: true },
+  { id: "schoolCredentials", label: "F. School Credentials", required: true },
+  { id: "highSchoolDiploma", label: "G. High School Diploma / PEPT", required: true },
+  { id: "transcript", label: "H. Transcript", required: true },
+  { id: "birthCertificate", label: "I. Birth Certificate", required: true },
+  { id: "marriageCertificate", label: "J. Marriage Certificate" },
+  { id: "employmentCertificate", label: "K. Certificate of Employment (4 max)", required: true, note: "Up to 4 files" },
+  { id: "nbiClearance", label: "L. NBI Clearance", required: true },
+  { id: "businessRegistration", label: "M. Business Registration" },
+  { id: "certificates", label: "N. Certificates (10 max)", note: "Up to 10 files" },
 ];
 
-const initialApplications: ApplicationRecord[] = [
-  {
-    id: 1,
-    applicant: "Juan Dela Cruz",
-    email: "juan.delacruz@email.com",
-    program: "BSBA - Human Resource Management",
-    date: "2025-05-20",
-    status: "Pending",
-    businessOwner: "No",
-    businessName: "",
-    documents: baseDocuments.map((doc, index) => ({
-      ...doc,
-      status: index < 8 ? "Verified" : "Pending",
-      remark: index === 3 ? "Form screenshot is clear." : "",
-    })),
-  },
-  {
-    id: 2,
-    applicant: "Maria Santos",
-    email: "maria.santos@email.com",
-    program: "Bachelor of Arts in English Language Studies",
-    date: "2025-05-15",
-    status: "Accepted",
-    businessOwner: "Yes",
-    businessName: "MSS Tutorial Center",
-    documents: baseDocuments.map((doc, index) => ({
-      ...doc,
-      status: index === 9 || index === 12 ? "Pending" : "Verified",
-      remark: index === 12 ? "Business registration uploaded." : "",
-    })),
-  },
-  {
-    id: 3,
-    applicant: "Carlos Miguel",
-    email: "carlos.miguel@email.com",
-    program: "BS Business Administration - Marketing Management",
-    date: "2025-05-10",
-    status: "Rejected",
-    businessOwner: "No",
-    businessName: "",
-    documents: baseDocuments.map((doc, index) => ({
-      ...doc,
-      status: index < 5 ? "Rejected" : "Pending",
-      remark: index === 0 ? "Missing signature." : "",
-    })),
-  },
-];
+function normalizeFormStatus(status?: string): FormStatus {
+  const normalized = String(status ?? "").toLowerCase().trim();
+  if (normalized === "approve") return "Approve";
+  if (normalized === "reject") return "Reject";
+  if (normalized === "under review") return "Under Review";
+  if (normalized === "delete") return "Delete";
+  return "Draft";
+}
 
-function StatusPill({ status }: { status: DocumentStatus | ApplicationRecord["status"] }) {
+function parseApprovals(value: unknown): ApprovalEntry[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is ApprovalEntry => Boolean(entry && typeof entry === "object"));
+}
+
+function mapRowToApplication(row: FormRow): ApplicationRecord {
+  const approvals = parseApprovals(row.forms_approvals);
+  const approvalMap = new Map<string, ApprovalEntry>();
+  approvals.forEach((entry) => {
+    const key = String(entry.documentId ?? "").trim();
+    if (!key) return;
+    approvalMap.set(key, entry);
+  });
+
+  const documents = baseDocuments.map((doc) => {
+    const approval = approvalMap.get(doc.id);
+    const rawStatus = approval?.status;
+    const status: DocumentStatus =
+      rawStatus === "Verified" || rawStatus === "Rejected" || rawStatus === "Pending"
+        ? rawStatus
+        : "Pending";
+
+    return {
+      id: doc.id,
+      label: doc.label,
+      required: doc.required,
+      note: doc.note,
+      fileUrl: String(row[doc.id as keyof FormRow] ?? "") || undefined,
+      status,
+      remark: String(approval?.remark ?? ""),
+    };
+  });
+
+  return {
+    id: row.id,
+    applicant: String(row.applicantName ?? "Unknown Applicant"),
+    email: String(row.email ?? "-"),
+    program: String(row.program ?? "-") || "-",
+    date: String(row.created_at ?? "-").slice(0, 10) || "-",
+    status: normalizeFormStatus(row.form_status),
+    businessOwner: String(row.isBusinessOwner ?? "No") === "Yes" ? "Yes" : "No",
+    businessName: String(row.businessName ?? ""),
+    documents,
+  };
+}
+
+function StatusPill({ status }: { status: DocumentStatus | FormStatus }) {
   const styles =
-    status === "Verified" || status === "Accepted"
+    status === "Verified" || status === "Approve"
       ? "bg-green-100 text-green-800"
-      : status === "Rejected"
+      : status === "Rejected" || status === "Reject"
         ? "bg-red-100 text-red-800"
-        : "bg-yellow-100 text-yellow-800";
+        : status === "Delete"
+          ? "bg-slate-200 text-slate-700"
+        : status === "Under Review"
+          ? "bg-blue-100 text-blue-800"
+          : "bg-yellow-100 text-yellow-800";
 
   return (
     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>
@@ -115,17 +171,19 @@ function StatusPill({ status }: { status: DocumentStatus | ApplicationRecord["st
 }
 
 function ApplicationActions({
-  // item,
   onView,
   onAccept,
   onReject,
   onDelete,
+  onRestore,
+  isDeleted,
 }: {
-  item: ApplicationRecord;
   onView: () => void;
   onAccept: () => void;
   onReject: () => void;
   onDelete: () => void;
+  onRestore: () => void;
+  isDeleted: boolean;
 }) {
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -137,30 +195,43 @@ function ApplicationActions({
         <Eye size={16} />
         View
       </button>
-      <button
-        type="button"
-        onClick={onAccept}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:w-auto"
-      >
-        <Check size={16} />
-        Accept
-      </button>
-      <button
-        type="button"
-        onClick={onReject}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 sm:w-auto"
-      >
-        <XCircle size={16} />
-        Reject
-      </button>
-      <button
-        type="button"
-        onClick={onDelete}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
-      >
-        <Trash2 size={16} />
-        Delete
-      </button>
+      {isDeleted ? (
+        <button
+          type="button"
+          onClick={onRestore}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 sm:w-auto"
+        >
+          <RotateCcw size={16} />
+          Restore
+        </button>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={onAccept}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:w-auto"
+          >
+            <Check size={16} />
+            Accept
+          </button>
+          <button
+            type="button"
+            onClick={onReject}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 sm:w-auto"
+          >
+            <XCircle size={16} />
+            Reject
+          </button>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
+          >
+            <Trash2 size={16} />
+            Delete
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -171,7 +242,7 @@ function DocumentCard({
   onRemarkChange,
 }: {
   document: DocumentItem;
-  onStatusChange: (status: DocumentStatus) => void;
+  onStatusChange: (status: DocumentStatus, remark: string) => void;
   onRemarkChange: (remark: string) => void;
 }) {
   return (
@@ -195,10 +266,26 @@ function DocumentCard({
         <StatusPill status={document.status} />
       </div>
 
+      <div className="mt-3">
+        {document.fileUrl ? (
+          <a
+            href={document.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline"
+          >
+            <ExternalLink size={14} />
+            View uploaded file
+          </a>
+        ) : (
+          <p className="text-xs text-slate-500">No uploaded file for this document yet.</p>
+        )}
+      </div>
+
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => onStatusChange("Verified")}
+          onClick={() => onStatusChange("Verified", document.remark)}
           className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
         >
           <Check size={16} />
@@ -206,7 +293,7 @@ function DocumentCard({
         </button>
         <button
           type="button"
-          onClick={() => onStatusChange("Rejected")}
+          onClick={() => onStatusChange("Rejected", document.remark)}
           className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
         >
           <XCircle size={16} />
@@ -231,13 +318,58 @@ function DocumentCard({
 }
 
 export default function Application() {
-  const [applications, setApplications] = useState(initialApplications);
+  const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [query, setQuery] = useState("");
   const [programFilter, setProgramFilter] = useState("All Programs");
   const [statusFilter, setStatusFilter] = useState("All Status");
   const [dateFilter, setDateFilter] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [adminEmail, setAdminEmail] = useState("");
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRecord | null>(null);
+
+  const syncApplication = (updated: ApplicationRecord) => {
+    setApplications((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
+    setSelectedApplication((prev) => (prev && prev.id === updated.id ? updated : prev));
+  };
+
+  const fetchApplications = async (userEmail: string) => {
+    setLoading(true);
+    setError("");
+
+    const response = await Fetch_to(apiLinks.retrieve_data, {
+      email: userEmail,
+      page: 1,
+      limit: 200,
+    });
+
+    if (!response.success) {
+      setError(response.message || "Failed to retrieve applications.");
+      setLoading(false);
+      return;
+    }
+
+    const payload = Array.isArray(response.data?.message) ? response.data.message : [];
+    const mapped = payload.map((row: FormRow) => mapRowToApplication(row));
+
+    setApplications(mapped);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const verifyAndLoad = async () => {
+      const response = await Fetch_to(apiLinks.jwt.verify);
+      const resolvedEmail = String(
+        response.data?.message?.final_data?.data?.[0]?.email ?? "admin@admin.com",
+      );
+
+      setAdminEmail(resolvedEmail);
+      await fetchApplications(resolvedEmail);
+    };
+
+    void verifyAndLoad();
+  }, []);
 
   const filteredApplications = useMemo(() => {
     const q = query.toLowerCase();
@@ -321,45 +453,70 @@ export default function Application() {
 
   const updateApplicationStatus = (
     id: number,
-    status: ApplicationRecord["status"]
+    status: FormStatus
   ) => {
-    setApplications((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, status } : item))
-    );
+    const patchStatus = async () => {
+      const response = await fetch(apiLinks.retrieve_data, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          form_status: status,
+          reviewedBy: adminEmail,
+        }),
+      });
 
-    setSelectedApplication((prev) =>
-      prev && prev.id === id ? { ...prev, status } : prev
-    );
+      const payload = (await response.json().catch(() => null)) as
+        | { success?: boolean; message?: FormRow; error?: string }
+        | null;
+
+      if (!response.ok || !payload?.success || !payload.message) {
+        alert(payload?.error || "Failed to update form status.");
+        return;
+      }
+
+      syncApplication(mapRowToApplication(payload.message));
+    };
+
+    void patchStatus();
   };
 
   const updateDocumentStatus = (
     applicationId: number,
     documentId: string,
-    status: DocumentStatus
+    status: DocumentStatus,
+    remark: string
   ) => {
-    setApplications((prev) =>
-      prev.map((item) =>
-        item.id === applicationId
-          ? {
-              ...item,
-              documents: item.documents.map((doc) =>
-                doc.id === documentId ? { ...doc, status } : doc
-              ),
-            }
-          : item
-      )
-    );
+    const patchDocument = async () => {
+      const response = await fetch(apiLinks.retrieve_data, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: applicationId,
+          documentId,
+          documentStatus: status,
+          remark,
+          reviewedBy: adminEmail,
+        }),
+      });
 
-    setSelectedApplication((prev) =>
-      prev && prev.id === applicationId
-        ? {
-            ...prev,
-            documents: prev.documents.map((doc) =>
-              doc.id === documentId ? { ...doc, status } : doc
-            ),
-          }
-        : prev
-    );
+      const payload = (await response.json().catch(() => null)) as
+        | { success?: boolean; message?: FormRow; error?: string }
+        | null;
+
+      if (!response.ok || !payload?.success || !payload.message) {
+        alert(payload?.error || "Failed to update document status.");
+        return;
+      }
+
+      syncApplication(mapRowToApplication(payload.message));
+    };
+
+    void patchDocument();
   };
 
   const updateDocumentRemark = (
@@ -393,8 +550,7 @@ export default function Application() {
   };
 
   const deleteApplication = (id: number) => {
-    setApplications((prev) => prev.filter((item) => item.id !== id));
-    setSelectedApplication((prev) => (prev && prev.id === id ? null : prev));
+    updateApplicationStatus(id, "Delete");
   };
 
   return (
@@ -440,9 +596,11 @@ export default function Application() {
                 className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none sm:w-auto"
               >
                 <option value="All Status">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Accepted">Accepted</option>
-                <option value="Rejected">Rejected</option>
+                <option value="Under Review">Under Review</option>
+                <option value="Approve">Approve</option>
+                <option value="Reject">Reject</option>
+                <option value="Draft">Draft</option>
+                <option value="Delete">Delete</option>
               </select>
               <input
                 type="date"
@@ -462,6 +620,22 @@ export default function Application() {
         </section>
 
         <section className="space-y-4 md:hidden">
+          {loading ? (
+            <div className="flex items-center justify-center rounded-3xl bg-white p-8 text-slate-600 shadow-sm ring-1 ring-slate-200">
+              <Loader2 className="mr-2 animate-spin" size={18} />
+              Loading applications...
+            </div>
+          ) : null}
+          {!loading && error ? (
+            <div className="rounded-3xl bg-red-50 p-4 text-sm font-medium text-red-700 ring-1 ring-red-200">
+              {error}
+            </div>
+          ) : null}
+          {!loading && !error && filteredApplications.length === 0 ? (
+            <div className="rounded-3xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+              No applications found.
+            </div>
+          ) : null}
           {filteredApplications.map((item) => (
             <article
               key={item.id}
@@ -504,11 +678,12 @@ export default function Application() {
 
               <div className="mt-4">
                 <ApplicationActions
-                  item={item}
                   onView={() => setSelectedApplication(item)}
-                  onAccept={() => updateApplicationStatus(item.id, "Accepted")}
-                  onReject={() => updateApplicationStatus(item.id, "Rejected")}
+                  onAccept={() => updateApplicationStatus(item.id, "Approve")}
+                  onReject={() => updateApplicationStatus(item.id, "Reject")}
                   onDelete={() => deleteApplication(item.id)}
+                  onRestore={() => updateApplicationStatus(item.id, "Under Review")}
+                  isDeleted={item.status === "Delete"}
                 />
               </div>
             </article>
@@ -516,6 +691,15 @@ export default function Application() {
         </section>
 
         <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
+          {loading ? (
+            <div className="flex items-center justify-center p-8 text-slate-600">
+              <Loader2 className="mr-2 animate-spin" size={18} />
+              Loading applications...
+            </div>
+          ) : null}
+          {!loading && error ? (
+            <div className="p-4 text-sm font-medium text-red-700">{error}</div>
+          ) : null}
           <div className="overflow-x-auto">
             <table className="w-full min-w-[980px] text-left">
               <thead className="bg-slate-50 text-sm text-slate-600">
@@ -548,15 +732,16 @@ export default function Application() {
                       <StatusPill status={item.status} />
                     </td>
                     <td className="px-6 py-5 text-sm text-slate-700">
-                      {item.documents.length} documents
+                      {item.documents.filter((doc) => doc.fileUrl).length} documents
                     </td>
                     <td className="px-6 py-5">
                       <ApplicationActions
-                        item={item}
                         onView={() => setSelectedApplication(item)}
-                        onAccept={() => updateApplicationStatus(item.id, "Accepted")}
-                        onReject={() => updateApplicationStatus(item.id, "Rejected")}
+                        onAccept={() => updateApplicationStatus(item.id, "Approve")}
+                        onReject={() => updateApplicationStatus(item.id, "Reject")}
                         onDelete={() => deleteApplication(item.id)}
+                        onRestore={() => updateApplicationStatus(item.id, "Under Review")}
+                        isDeleted={item.status === "Delete"}
                       />
                     </td>
                   </tr>
@@ -624,11 +809,12 @@ export default function Application() {
                       <DocumentCard
                         key={document.id}
                         document={document}
-                        onStatusChange={(status) =>
+                        onStatusChange={(status, remark) =>
                           updateDocumentStatus(
                             selectedApplication.id,
                             document.id,
-                            status
+                            status,
+                            remark
                           )
                         }
                         onRemarkChange={(remark) =>

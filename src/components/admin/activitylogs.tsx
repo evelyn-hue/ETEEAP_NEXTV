@@ -1,4 +1,95 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import apiLink from "@/config/api_link.json";
+import { Fetch_to } from "@/utilities";
+
+type ActivityRow = {
+  id: number;
+  created_at: string;
+  user: string;
+  actions: string;
+  details: string;
+};
+
+function formatDate(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleString();
+}
+
+const actionOptions = [
+  "All Actions",
+  "Deleted Applicant",
+  "Restored Applicant",
+  "Accepted Applicant",
+  "Rejected Applicant",
+  "Under Review Applicant",
+  "Draft Applicant",
+  "Verify Document",
+  "Reject Document",
+  "Update Document",
+  "Login",
+  "Logout",
+  "Update Profile",
+  "Update Profile Picture",
+];
+
 export default function AdminActivityLog() {
+  const [logs, setLogs] = useState<ActivityRow[]>([]);
+  const [search, setSearch] = useState("");
+  const [actionFilter, setActionFilter] = useState("All Actions");
+  const [dateFilter, setDateFilter] = useState("");
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    setError("");
+
+    const response = await Fetch_to(apiLink.activity_logs, {
+      mode: "list",
+      search,
+      action: actionFilter,
+      date: dateFilter,
+      page,
+      limit: 20,
+    });
+
+    if (!response.success) {
+      setError(response.message || "Failed to fetch activity logs.");
+      setLogs([]);
+      setLoading(false);
+      return;
+    }
+
+    const payload = Array.isArray(response.data?.message) ? response.data.message : [];
+    setLogs(payload as ActivityRow[]);
+    setTotalPages(response.data?.pagination?.totalPages ?? 1);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void fetchLogs();
+  }, [page, actionFilter, dateFilter]);
+
+  const filteredLogs = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    if (!q) return logs;
+
+    return logs.filter((item) => {
+      const haystack = `${item.user} ${item.actions} ${item.details}`.toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [logs, search]);
+
+  const onSearchSubmit = () => {
+    setPage(1);
+    void fetchLogs();
+  };
+
   return (
     <div className="bg-white rounded-xl shadow p-4 sm:p-6">
       <h2 className="text-2xl font-bold text-blue-800 mb-5">
@@ -9,29 +100,54 @@ export default function AdminActivityLog() {
         <input
           type="text"
           placeholder="Search activity..."
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") onSearchSubmit();
+          }}
           className="border px-3 py-2 rounded-lg shadow-sm flex-1 min-w-[180px]"
         />
 
-        <select className="border px-3 py-2 rounded-lg shadow-sm min-w-[140px] w-full sm:w-auto">
-          <option>All Actions</option>
-          <option>Accepted Applicant</option>
-          <option>Rejected Applicant</option>
-          <option>Verify</option>
-          <option>Unverify</option>
-          <option>Deleted</option>
-          <option>Restored</option>
-          <option>Add Remark</option>
-          <option>Login</option>
-          <option>Logout</option>
-          <option>Update Profile</option>
-          <option>Update Profile Picture</option>
+        <button
+          type="button"
+          onClick={onSearchSubmit}
+          className="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800"
+        >
+          Search
+        </button>
+
+        <select
+          value={actionFilter}
+          onChange={(event) => {
+            setActionFilter(event.target.value);
+            setPage(1);
+          }}
+          className="border px-3 py-2 rounded-lg shadow-sm min-w-[140px] w-full sm:w-auto"
+        >
+          {actionOptions.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
         </select>
 
         <input
           type="date"
+          value={dateFilter}
+          onChange={(event) => {
+            setDateFilter(event.target.value);
+            setPage(1);
+          }}
           className="border px-3 py-2 rounded-lg shadow-sm min-w-[140px]"
         />
       </div>
+
+      {loading ? (
+        <div className="mb-4 rounded-lg bg-gray-50 p-4 text-sm text-gray-600">Loading logs...</div>
+      ) : null}
+      {!loading && error ? (
+        <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div>
+      ) : null}
 
       <div className="hidden md:block overflow-x-auto rounded-lg border">
         <table className="w-full min-w-[700px] text-left">
@@ -44,53 +160,86 @@ export default function AdminActivityLog() {
             </tr>
           </thead>
           <tbody className="bg-white">
-            <tr className="border-b hover:bg-gray-50 transition">
-              <td className="p-3">2026-05-31</td>
-              <td className="p-3">Admin User</td>
-              <td className="p-3 font-semibold text-blue-700">
-                Login
-              </td>
-              <td className="p-3">Admin signed in to the dashboard.</td>
-            </tr>
-            <tr className="border-b hover:bg-gray-50 transition">
-              <td className="p-3">2026-05-31</td>
-              <td className="p-3">Registrar</td>
-              <td className="p-3 font-semibold text-blue-700">
-                Accepted Applicant
-              </td>
-              <td className="p-3">Application status was updated.</td>
-            </tr>
-            <tr className="hover:bg-gray-50 transition">
-              <td className="p-3">2026-05-30</td>
-              <td className="p-3">Coordinator</td>
-              <td className="p-3 font-semibold text-blue-700">
-                Add Remark
-              </td>
-              <td className="p-3">Document remark was added.</td>
-            </tr>
+            {filteredLogs.map((log) => (
+              <tr key={log.id} className="border-b hover:bg-gray-50 transition">
+                <td className="p-3">{formatDate(log.created_at)}</td>
+                <td className="p-3">{log.user || "-"}</td>
+                <td className="p-3 font-semibold text-blue-700">{log.actions || "-"}</td>
+                <td className="p-3">{log.details || "-"}</td>
+              </tr>
+            ))}
+            {!loading && filteredLogs.length === 0 ? (
+              <tr>
+                <td className="p-4 text-center text-sm text-gray-500" colSpan={4}>
+                  No activity logs found.
+                </td>
+              </tr>
+            ) : null}
           </tbody>
         </table>
       </div>
 
       <div className="md:hidden space-y-3">
-        <div className="border rounded-lg p-4 shadow-sm bg-white">
-          <div className="flex justify-between mb-2">
-            <span className="font-semibold text-gray-600">Date:</span>
-            <span>2026-05-31</span>
+        {filteredLogs.map((log) => (
+          <div key={log.id} className="border rounded-lg p-4 shadow-sm bg-white">
+            <div className="flex justify-between mb-2 gap-3">
+              <span className="font-semibold text-gray-600">Date:</span>
+              <span className="text-right">{formatDate(log.created_at)}</span>
+            </div>
+            <div className="flex justify-between mb-2 gap-3">
+              <span className="font-semibold text-gray-600">User:</span>
+              <span className="text-right">{log.user || "-"}</span>
+            </div>
+            <div className="flex justify-between mb-2 gap-3">
+              <span className="font-semibold text-gray-600">Action:</span>
+              <span className="font-semibold text-blue-700 text-right">{log.actions || "-"}</span>
+            </div>
+            <div className="flex justify-between gap-3">
+              <span className="font-semibold text-gray-600">Details:</span>
+              <span className="text-right">{log.details || "-"}</span>
+            </div>
           </div>
-          <div className="flex justify-between mb-2">
-            <span className="font-semibold text-gray-600">User:</span>
-            <span>Admin User</span>
+        ))}
+        {!loading && filteredLogs.length === 0 ? (
+          <div className="border rounded-lg p-4 shadow-sm bg-white text-sm text-gray-500">
+            No activity logs found.
           </div>
-          <div className="flex justify-between mb-2">
-            <span className="font-semibold text-gray-600">Action:</span>
-            <span className="font-semibold text-blue-700">Login</span>
-          </div>
-          <div className="flex justify-between gap-3">
-            <span className="font-semibold text-gray-600">Details:</span>
-            <span className="text-right">Admin signed in.</span>
-          </div>
-        </div>
+        ) : null}
+      </div>
+
+      <div className="mt-5 flex items-center justify-center gap-2 flex-wrap">
+        <button
+          type="button"
+          onClick={() => setPage((current) => Math.max(current - 1, 1))}
+          disabled={page === 1}
+          className="px-4 py-2 rounded-md border bg-white text-gray-700 disabled:opacity-50"
+        >
+          &lt;
+        </button>
+
+        {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
+          <button
+            key={pageNumber}
+            type="button"
+            onClick={() => setPage(pageNumber)}
+            className={`px-4 py-2 rounded-md border ${
+              pageNumber === page
+                ? "bg-blue-700 text-white border-blue-700"
+                : "bg-white text-gray-700"
+            }`}
+          >
+            {pageNumber}
+          </button>
+        ))}
+
+        <button
+          type="button"
+          onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
+          disabled={page === totalPages}
+          className="px-4 py-2 rounded-md border bg-white text-gray-700 disabled:opacity-50"
+        >
+          &gt;
+        </button>
       </div>
     </div>
   );
