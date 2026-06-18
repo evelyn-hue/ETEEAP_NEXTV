@@ -1,7 +1,9 @@
 {
     "auth" : {
         "signup": "/services/supabase/auth/signup",
-        "signin": "/services/supabase/auth/signin"
+        "signin": "/services/supabase/auth/signin",
+        "updateProfile": "/services/supabase/auth/update-profile",
+        "uploadProfilePicture": "/services/supabase/auth/upload-profile-picture"
     },
     "jwt" : {
         "auth" : "/services/jwt/auth",
@@ -9,8 +11,26 @@
         "verify" : "/services/jwt/verify"
     },
     "form" : {
-        "submit" : "/services/supabase/form/submit"
+        "submit" : "/services/supabase/form/submit",
+        "delete" : "/services/supabase/form/delete",
+        "retrieveAll" : "/services/supabase/form/retrieve-all"
+    },
+    "alumni_profiles" : {
+        "submit" : "/services/supabase/alumni_profiles/submit",
+        "retrieve" : "/services/supabase/alumni_profiles/retrieve",
+        "retrieveAll" : "/services/supabase/alumni_profiles/retrieve-all",
+        "update" : "/services/supabase/alumni_profiles/update"
     },
     "retrieve_data" : "/services/supabase/retrieve_data",
-    "activity_logs" : "/services/supabase/activity_logs"
+    "activity_logs" : "/services/supabase/activity_logs",
+    "dashboard" : {
+        "statistics" : "/services/supabase/dashboard/statistics",
+        "courseComparison" : "/services/supabase/dashboard/course-comparison",
+        "enrollmentTrend" : "/services/supabase/dashboard/enrollment-trend"
+    },
+    "admin_settings" : {
+        "retrieve" : "/services/supabase/admin_settings/retrieve",
+        "update" : "/services/supabase/admin_settings/update",
+        "uploadAvatar" : "/services/supabase/admin_settings/upload-avatar"
+    }
 }

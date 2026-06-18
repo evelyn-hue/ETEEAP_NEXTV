@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-// import imgSrc from "@/config/img_src.json";
-// import Image from "next/image";
 import Link from "next/link";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
+import { useAuth } from "@/context/AuthContext";
 
 type FormState = {
   firstName: string;
@@ -43,6 +43,8 @@ function Input({ icon, placeholder, value, onChange, error }: InputProps) {
 }
 
 export default function SignUp() {
+  const router = useRouter();
+  const { refreshAuth } = useAuth();
   const [form, setForm] = useState<FormState>({
     firstName: "",
     lastName: "",
@@ -101,11 +103,11 @@ export default function SignUp() {
 
     const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`;
     const response = await Fetch_to(apiLink.auth.signup, {
-      fullName: fullName, password: form.password, status: form.civilStatus, phone: form.phone, email: form.email,
+      fullName: fullName, password: form.password, civil_status: form.civilStatus, phone: form.phone, email: form.email,
     });
 
     if (response.success) {
-      alert("Account created successfully! Please check your email for verification.");
+      // Reset form
       setForm({
         firstName: "",
         lastName: "",
@@ -115,6 +117,12 @@ export default function SignUp() {
         password: "",
         c_password: ""
       });
+      
+      // Refresh auth context with new user data
+      await refreshAuth();
+      
+      // Navigate to home/overview
+      router.push("/overview");
     } else {
       alert(`Error: ${response.message}`);
     }

@@ -1,4 +1,193 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Fetch_to from "@/utilities/Fetch_to";
+import { useAuth } from "@/context/AuthContext";
+
+type WorkExperience = {
+  companyName: string;
+  roleOrReason: string;
+  workYear: string;
+};
+
 export default function JoinAlumniPage() {
+  const router = useRouter();
+  const { email: authEmail, fullName: authFullName, loading: authLoading } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isAutoFilled, setIsAutoFilled] = useState(false);
+
+  // Personal Information
+  const [fullName, setFullName] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [graduationYear, setGraduationYear] = useState("");
+  const [birthday, setBirthday] = useState("");
+  const [email, setEmail] = useState("");
+
+  // Educational Attainments
+  const [educationalAttainments, setEducationalAttainments] = useState<string[]>([]);
+  const [selectedEducation, setSelectedEducation] = useState("");
+
+  // Program Information
+  const [programs, setPrograms] = useState<string[]>([]);
+  const [selectedProgram, setSelectedProgram] = useState("");
+
+  // Work Experience
+  const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
+  const [currentWork, setCurrentWork] = useState<WorkExperience>({
+    companyName: "",
+    roleOrReason: "",
+    workYear: "",
+  });
+
+  // Certificates & Licenses
+  const [certificates, setCertificates] = useState<string[]>([]);
+  const [selectedCertificate, setSelectedCertificate] = useState("");
+
+  // Reflection
+  const [experience, setExperience] = useState("");
+  const [transformation, setTransformation] = useState("");
+
+  // Profile Visibility
+  const [visibility, setVisibility] = useState("public");
+
+  // Auto-fill email and fullName from AuthContext on mount
+  useEffect(() => {
+    if (!authLoading && !isAutoFilled) {
+      if (authEmail) {
+        setEmail(authEmail);
+      }
+      if (authFullName) {
+        setFullName(authFullName);
+      }
+      if (authEmail || authFullName) {
+        setIsAutoFilled(true);
+      }
+    }
+  }, [authEmail, authFullName, authLoading, isAutoFilled]);
+
+  const addEducationalAttainment = () => {
+    if (selectedEducation && !educationalAttainments.includes(selectedEducation)) {
+      setEducationalAttainments([...educationalAttainments, selectedEducation]);
+      setSelectedEducation("");
+    }
+  };
+
+  const removeEducationalAttainment = (item: string) => {
+    setEducationalAttainments(educationalAttainments.filter((e) => e !== item));
+  };
+
+  const addProgram = () => {
+    if (selectedProgram && !programs.includes(selectedProgram)) {
+      setPrograms([...programs, selectedProgram]);
+      setSelectedProgram("");
+    }
+  };
+
+  const removeProgram = (item: string) => {
+    setPrograms(programs.filter((p) => p !== item));
+  };
+
+  const addWorkExperience = () => {
+    if (
+      currentWork.companyName &&
+      currentWork.roleOrReason &&
+      currentWork.workYear
+    ) {
+      setWorkExperiences([...workExperiences, currentWork]);
+      setCurrentWork({
+        companyName: "",
+        roleOrReason: "",
+        workYear: "",
+      });
+    }
+  };
+
+  const removeWorkExperience = (index: number) => {
+    setWorkExperiences(workExperiences.filter((_, i) => i !== index));
+  };
+
+  const addCertificate = () => {
+    if (selectedCertificate && !certificates.includes(selectedCertificate)) {
+      setCertificates([...certificates, selectedCertificate]);
+      setSelectedCertificate("");
+    }
+  };
+
+  const removeCertificate = (item: string) => {
+    setCertificates(certificates.filter((c) => c !== item));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!fullName || !email) {
+      setErrorMessage("Full name and email are required");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const payload = {
+        full_name: fullName,
+        nickname,
+        graduation_year: graduationYear,
+        birthday: birthday || null,
+        educational_attainments: educationalAttainments,
+        programs,
+        certificates,
+        work_experiences: workExperiences,
+        experience,
+        transformation,
+        visibility,
+        email,
+      };
+
+      const result = await Fetch_to(
+        "/services/supabase/alumni_profiles/submit",
+        payload
+      );
+
+      if (result.success) {
+        setSuccessMessage(
+          "Alumni profile submitted successfully for verification!"
+        );
+        // Reset form
+        setFullName("");
+        setNickname("");
+        setGraduationYear("");
+        setBirthday("");
+        setEmail("");
+        setEducationalAttainments([]);
+        setPrograms([]);
+        setCertificates([]);
+        setWorkExperiences([]);
+        setExperience("");
+        setTransformation("");
+        setVisibility("public");
+        
+        // Redirect after 2 seconds
+        setTimeout(() => {
+          router.push("/alumni");
+        }, 2000);
+      } else {
+        setErrorMessage(
+          result.message || "Failed to submit alumni profile. Please try again."
+        );
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      setErrorMessage(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
       <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8">
@@ -11,37 +200,74 @@ export default function JoinAlumniPage() {
           </p>
         </div>
 
-        <form className="space-y-10">
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-800 rounded-lg">
+            {successMessage}
+          </div>
+        )}
+
+        {errorMessage && (
+          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-800 rounded-lg">
+            {errorMessage}
+          </div>
+        )}
+
+        <form className="space-y-10" onSubmit={handleSubmit}>
+          {/* Personal Information */}
           <div>
             <h2 className="text-lg font-bold mb-4">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
                 name="fullName"
                 placeholder="Full Name"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className="border p-3 rounded w-full"
+                required
               />
               <input
                 name="nickname"
                 placeholder="Nickname"
+                value={nickname}
+                onChange={(e) => setNickname(e.target.value)}
                 className="border p-3 rounded w-full"
               />
               <input
                 name="graduationYear"
                 placeholder="Academic Year (ETEEAP 2024-2025)"
+                value={graduationYear}
+                onChange={(e) => setGraduationYear(e.target.value)}
                 className="border p-3 rounded w-full"
               />
               <input
                 type="date"
                 name="birthday"
+                value={birthday}
+                onChange={(e) => setBirthday(e.target.value)}
                 className="border p-3 rounded w-full"
+              />
+              <input
+                name="email"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="border p-3 rounded w-full"
+                required
               />
             </div>
           </div>
 
+          {/* Educational Attainment */}
           <div>
             <h2 className="text-lg font-bold mb-4">Educational Attainment</h2>
             <div className="flex gap-2 mb-4">
-              <select className="border p-2 rounded w-full">
+              <select
+                value={selectedEducation}
+                onChange={(e) => setSelectedEducation(e.target.value)}
+                className="border p-2 rounded w-full"
+              >
+                <option value="">Select Educational Attainment</option>
                 <option>Primary School</option>
                 <option>Junior High School</option>
                 <option>Senior High School</option>
@@ -52,22 +278,41 @@ export default function JoinAlumniPage() {
               </select>
               <button
                 type="button"
+                onClick={addEducationalAttainment}
                 className="bg-blue-700 text-white px-4 rounded"
               >
                 Add
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                Bachelor&apos;s Degree
-              </span>
+              {educationalAttainments.map((item) => (
+                <span
+                  key={item}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
+                >
+                  {item}
+                  <button
+                    type="button"
+                    onClick={() => removeEducationalAttainment(item)}
+                    className="text-blue-800 hover:text-blue-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
+          {/* Program Information */}
           <div>
             <h2 className="text-lg font-bold mb-4">Program Information</h2>
             <div className="flex gap-2 mb-4">
-              <select className="border p-2 rounded w-full">
+              <select
+                value={selectedProgram}
+                onChange={(e) => setSelectedProgram(e.target.value)}
+                className="border p-2 rounded w-full"
+              >
+                <option value="">Select Program</option>
                 <option>BS Information Technology</option>
                 <option>BS Education</option>
                 <option>BS Business Administration</option>
@@ -77,43 +322,106 @@ export default function JoinAlumniPage() {
               </select>
               <button
                 type="button"
+                onClick={addProgram}
                 className="bg-blue-700 text-white px-4 rounded"
               >
                 Add
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                ETEEAP Program
-              </span>
+              {programs.map((item) => (
+                <span
+                  key={item}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
+                >
+                  {item}
+                  <button
+                    type="button"
+                    onClick={() => removeProgram(item)}
+                    className="text-blue-800 hover:text-blue-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
+          {/* Work Experience */}
           <div>
             <h2 className="text-lg font-bold mb-4">Work Experience</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <input
                 name="companyName"
                 placeholder="Company Name"
+                value={currentWork.companyName}
+                onChange={(e) =>
+                  setCurrentWork({ ...currentWork, companyName: e.target.value })
+                }
                 className="border p-3 rounded w-full"
               />
               <input
                 name="roleOrReason"
                 placeholder="Role / Position"
+                value={currentWork.roleOrReason}
+                onChange={(e) =>
+                  setCurrentWork({
+                    ...currentWork,
+                    roleOrReason: e.target.value,
+                  })
+                }
                 className="border p-3 rounded w-full"
               />
               <input
                 name="workYear"
                 placeholder="Inclusive Years"
+                value={currentWork.workYear}
+                onChange={(e) =>
+                  setCurrentWork({ ...currentWork, workYear: e.target.value })
+                }
                 className="border p-3 rounded w-full"
               />
+              <button
+                type="button"
+                onClick={addWorkExperience}
+                className="bg-blue-700 text-white px-4 rounded"
+              >
+                Add Experience
+              </button>
+            </div>
+            <div className="space-y-2">
+              {workExperiences.map((work, index) => (
+                <div
+                  key={index}
+                  className="bg-blue-50 p-3 rounded border border-blue-200 flex justify-between items-start"
+                >
+                  <div>
+                    <p className="font-semibold">{work.companyName}</p>
+                    <p className="text-sm text-gray-600">{work.roleOrReason}</p>
+                    <p className="text-sm text-gray-500">{work.workYear}</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeWorkExperience(index)}
+                    className="text-red-600 hover:text-red-800"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
 
+          {/* Certificates & Licenses */}
           <div>
             <h2 className="text-lg font-bold mb-4">Certificates & Licenses</h2>
             <div className="flex gap-2 mb-4">
-              <select className="border p-2 rounded w-full">
+              <select
+                value={selectedCertificate}
+                onChange={(e) => setSelectedCertificate(e.target.value)}
+                className="border p-2 rounded w-full"
+              >
+                <option value="">Select Certificate</option>
                 <option>TESDA NC II</option>
                 <option>TESDA NC III</option>
                 <option>Professional License (PRC)</option>
@@ -122,47 +430,72 @@ export default function JoinAlumniPage() {
               </select>
               <button
                 type="button"
+                onClick={addCertificate}
                 className="bg-blue-700 text-white px-4 rounded"
               >
                 Add
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">
-                TESDA NC II
-              </span>
+              {certificates.map((item) => (
+                <span
+                  key={item}
+                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
+                >
+                  {item}
+                  <button
+                    type="button"
+                    onClick={() => removeCertificate(item)}
+                    className="text-blue-800 hover:text-blue-600"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
             </div>
           </div>
 
+          {/* Reflection */}
           <div>
             <h2 className="text-lg font-bold mb-4">Reflection</h2>
             <textarea
               name="experience"
               placeholder="How was your experience with LCCB ETEEAP?"
+              value={experience}
+              onChange={(e) => setExperience(e.target.value)}
               className="border p-3 rounded w-full mb-4"
               rows={4}
             />
             <textarea
               name="transformation"
               placeholder="How did the LCCB ETEEAP transform your career as a professional?"
+              value={transformation}
+              onChange={(e) => setTransformation(e.target.value)}
               className="border p-3 rounded w-full"
               rows={4}
             />
           </div>
 
+          {/* Profile Visibility */}
           <div>
             <h2 className="text-lg font-bold mb-4">Profile Visibility</h2>
-            <select name="visibility" className="border p-3 rounded w-full">
+            <select
+              name="visibility"
+              value={visibility}
+              onChange={(e) => setVisibility(e.target.value)}
+              className="border p-3 rounded w-full"
+            >
               <option value="public">Public</option>
               <option value="private">Private</option>
             </select>
           </div>
 
           <button
-            type="button"
-            className="w-full bg-blue-700 text-white py-3 rounded-xl font-semibold"
+            type="submit"
+            disabled={loading}
+            className="w-full bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 disabled:bg-gray-400"
           >
-            Submit for Verification
+            {loading ? "Submitting..." : "Submit for Verification"}
           </button>
         </form>
       </div>

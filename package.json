@@ -13,6 +13,7 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "framer-motion": "^12.40.0",
+    "jose": "^6.2.3",
     "jsonwebtoken": "^9.0.3",
     "lucide-react": "^1.18.0",
     "next": "16.2.4",

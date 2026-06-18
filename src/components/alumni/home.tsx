@@ -1,15 +1,120 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Fetch_to from "@/utilities/Fetch_to";
+
+type WorkExperience = {
+  companyName: string;
+  roleOrReason: string;
+  workYear: string;
+};
+
+type AlumniProfile = {
+  id: string;
+  full_name: string;
+  nickname: string | null;
+  graduation_year: string | null;
+  birthday: string | null;
+  educational_attainments: string[] | null;
+  programs: string[] | null;
+  certificates: string[] | null;
+  work_experiences: WorkExperience[] | null;
+  experience: string | null;
+  transformation: string | null;
+  visibility: "public" | "private";
+  verification_status: string;
+};
 
 export default function AlumniFeedPage() {
+  const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProgram, setSelectedProgram] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+
+  // All available programs
+  const allPrograms = [
+    "Bachelor of Arts in English Language Studies",
+    "Bachelor of Science in Business Administration - Human Resource Management",
+    "Bachelor of Science in Business Administration - Marketing Management",
+    "Bachelor of Science in Hospitality Management"
+  ];
+
+  // Generate all academic years from 1990 to current year
+  const allYears = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let year = currentYear; year >= 1990; year--) {
+      years.push(year.toString());
+    }
+    return years;
+  }, []);
+
+  // Fetch verified and public alumni profiles
+  useEffect(() => {
+    const fetchAlumni = async () => {
+      setLoading(true);
+      try {
+        const result = await Fetch_to("/services/supabase/alumni_profiles/retrieve-all", {});
+
+        // Handle the response nesting from Fetch_to
+        const alumniData = result.data?.data || result.data || [];
+
+        if (result.success && Array.isArray(alumniData)) {
+          // Filter for verified and public profiles only
+          const verifiedPublic = alumniData.filter(
+            (person: AlumniProfile) =>
+              person.verification_status === "verified" && person.visibility === "public"
+          );
+          setAlumni(verifiedPublic);
+        }
+      } catch (error) {
+        console.error("Error fetching alumni:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAlumni();
+  }, []);
+
+  // Filter alumni based on search and selections
+  const filteredAlumni = useMemo(() => {
+    return alumni.filter((person) => {
+      // Search only by name (full name and nickname)
+      const matchesSearch =
+        person.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        person.nickname?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      const matchesProgram =
+        !selectedProgram || person.programs?.includes(selectedProgram);
+
+      const matchesYear =
+        !selectedYear || person.graduation_year === selectedYear;
+
+      return matchesSearch && matchesProgram && matchesYear;
+    });
+  }, [alumni, searchQuery, selectedProgram, selectedYear]);
+
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
   return (
     <main className="min-h-screen bg-gray-100 p-6 mt-18">
       <div className="max-w-5xl mx-auto bg-white p-6 rounded-xl shadow mb-6">
         <h1 className="text-3xl font-bold text-blue-800">Alumni Feed</h1>
-        <p className="text-gray-500">Full slambook profiles from graduates</p>
+        <p className="text-gray-500">Verified alumni profiles from our community</p>
 
         <Link
           href="/alumni/alumniform"
-          className="inline-block mt-4 bg-blue-700 text-white px-4 py-2 rounded-lg"
+          className="inline-block mt-4 bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800"
         >
           Join Alumni
         </Link>
@@ -19,220 +124,201 @@ export default function AlumniFeedPage() {
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,240px)_minmax(160px,200px)]">
           <input
             className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-700"
-            placeholder="Search alumni..."
+            placeholder="Search alumni by name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
 
-          <select className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700">
+          <select
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
+            value={selectedProgram}
+            onChange={(e) => setSelectedProgram(e.target.value)}
+          >
             <option value="">All programs</option>
-            <option>
-              Bachelor of Science in Business Administration - Human Resource
-              Management
-            </option>
-            <option>Bachelor of Arts in English Language Studies</option>
-            <option>
-              Bachelor of Science in Business Administration - Marketing
-              Management
-            </option>
-            <option>Bachelor of Science in Hospitality Management</option>
+            {allPrograms.map((program) => (
+              <option key={program} value={program}>
+                {program}
+              </option>
+            ))}
           </select>
 
-          <select className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700">
+          <select
+            className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-700"
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+          >
             <option value="">All academic years</option>
-            <option>2024-2025</option>
-            <option>2025-2026</option>
-            <option>2026-2027</option>
-            <option>2027-2028</option>
-            <option>2028-2029</option>
+            {allYears.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
           </select>
         </div>
 
-        <div className="border-t pt-4 mt-6">
-          <p className="text-sm font-semibold text-gray-700 mb-2">
-            Selected Filters:
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-              Bachelor of Arts in English Language Studies
-            </span>
-            <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-              2025-2026
-            </span>
+        {(searchQuery || selectedProgram || selectedYear) && (
+          <div className="border-t pt-4 mt-6">
+            <p className="text-sm font-semibold text-gray-700 mb-2">
+              Active Filters:
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {searchQuery && (
+                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
+                  Search: {searchQuery}
+                </span>
+              )}
+              {selectedProgram && (
+                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
+                  {selectedProgram}
+                </span>
+              )}
+              {selectedYear && (
+                <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm">
+                  {selectedYear}
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="max-w-5xl mx-auto space-y-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold">
-              JD
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-blue-800">
-                Juan Dela Cruz
-              </h2>
-              <p className="text-sm text-gray-500">&quot;JD&quot;</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
-              Verified Alumni
-            </span>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">
-              Personal Info
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p>Birthday: 1998-05-10</p>
-              <p>Batch: 2024-2025</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Education</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                Bachelor&apos;s Degree
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Programs</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                Bachelor of Science in Business Administration - Human Resource
-                Management
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Certificates</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                TESDA NC II
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">
-              Work Experience
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p>Tech Corp</p>
-              <p>Software Developer</p>
-              <p>2025-Present</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Experience</h3>
-            <div className="text-sm text-gray-600">
-              <p>Great journey in ETEEAP program.</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">
-              Transformation
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p>It changed my career path completely.</p>
-            </div>
-          </div>
+      {loading ? (
+        <div className="max-w-5xl mx-auto text-center py-12">
+          <p className="text-gray-600">Loading alumni profiles...</p>
         </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold">
-              MS
-            </div>
-
-            <div>
-              <h2 className="text-xl font-bold text-blue-800">
-                Maria Santos
-              </h2>
-              <p className="text-sm text-gray-500">&quot;MS&quot;</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
-              Verified Alumni
-            </span>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">
-              Personal Info
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p>Birthday: 1999-08-15</p>
-              <p>Batch: 2025-2026</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Education</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                Bachelor&apos;s Degree
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Programs</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                Bachelor of Arts in English Language Studies
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Certificates</h3>
-            <div className="flex flex-wrap gap-2">
-              <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-                TESDA NC III
-              </span>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">
-              Work Experience
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p>Education Plus</p>
-              <p>English Teacher</p>
-              <p>2026-Present</p>
-            </div>
-          </div>
-
-          <div className="mb-4">
-            <h3 className="font-semibold text-gray-700 mb-1">Experience</h3>
-            <div className="text-sm text-gray-600">
-              <p>Excellent learning experience at the institution.</p>
-            </div>
-          </div>
-
-          <div>
-            <h3 className="font-semibold text-gray-700 mb-1">
-              Transformation
-            </h3>
-            <div className="text-sm text-gray-600">
-              <p>Improved my teaching skills significantly.</p>
-            </div>
-          </div>
+      ) : filteredAlumni.length === 0 ? (
+        <div className="max-w-5xl mx-auto text-center py-12">
+          <p className="text-gray-600">No alumni profiles found matching your criteria.</p>
         </div>
-      </div>
+      ) : (
+        <div className="max-w-5xl mx-auto space-y-6">
+          <div className="text-sm text-gray-600 mb-4">
+            Showing {filteredAlumni.length} of {alumni.length} verified alumni
+          </div>
+
+          {filteredAlumni.map((person) => (
+            <div key={person.id} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold">
+                  {getInitials(person.full_name)}
+                </div>
+
+                <div>
+                  <h2 className="text-xl font-bold text-blue-800">
+                    {person.full_name}
+                  </h2>
+                  {person.nickname && (
+                    <p className="text-sm text-gray-500">&quot;{person.nickname}&quot;</p>
+                  )}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                  Verified Alumni
+                </span>
+              </div>
+
+              {(person.birthday || person.graduation_year) && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">
+                    Personal Info
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    {person.birthday && <p>Birthday: {person.birthday}</p>}
+                    {person.graduation_year && <p>Batch: {person.graduation_year}</p>}
+                  </div>
+                </div>
+              )}
+
+              {person.educational_attainments && person.educational_attainments.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">Education</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {person.educational_attainments.map((edu) => (
+                      <span
+                        key={edu}
+                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs"
+                      >
+                        {edu}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {person.programs && person.programs.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">Programs</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {person.programs.map((program) => (
+                      <span
+                        key={program}
+                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs"
+                      >
+                        {program}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {person.certificates && person.certificates.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">Certificates</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {person.certificates.map((cert) => (
+                      <span
+                        key={cert}
+                        className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs"
+                      >
+                        {cert}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {person.work_experiences && person.work_experiences.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">
+                    Work Experience
+                  </h3>
+                  <div className="space-y-3">
+                    {person.work_experiences.map((work, idx) => (
+                      <div key={idx} className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                        <p className="font-medium">{work.companyName}</p>
+                        <p>{work.roleOrReason}</p>
+                        <p className="text-xs text-gray-500">{work.workYear}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {person.experience && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">Experience</h3>
+                  <div className="text-sm text-gray-600">
+                    <p>{person.experience}</p>
+                  </div>
+                </div>
+              )}
+
+              {person.transformation && (
+                <div className="mb-4">
+                  <h3 className="font-semibold text-gray-700 mb-1">
+                    Professional Transformation
+                  </h3>
+                  <div className="text-sm text-gray-600">
+                    <p>{person.transformation}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

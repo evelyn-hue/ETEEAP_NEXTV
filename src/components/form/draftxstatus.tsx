@@ -64,6 +64,7 @@ export default function DraftXStatus({ email, phone } : HeaderProps) {
   const [data, setData] = useState<ManagerUserProps[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [deleting, setDeleting] = useState<string | null>(null);
   const router = useRouter();
 
   const handleOpen = (form: ManagerUserProps) => {
@@ -72,6 +73,44 @@ export default function DraftXStatus({ email, phone } : HeaderProps) {
     }
 
     router.push("/form/reviewapplication");
+  };
+
+  const handleDelete = async (formId?: string) => {
+    if (!formId) {
+      console.error("Form ID is required for deletion");
+      return;
+    }
+
+    // Show confirmation dialog
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this application? This action cannot be undone."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(formId);
+
+    try {
+      const response = await Fetch_to(api_links.form.delete, {
+        id: formId,
+        email: email,
+      });
+
+      if (response.success) {
+        // Remove the deleted form from the data
+        setData((prevData) => prevData.filter((form) => form.id !== formId));
+      } else {
+        console.error(response.message || "Failed to delete application");
+        alert(response.message || "Failed to delete application");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("An error occurred while deleting the application");
+    } finally {
+      setDeleting(null);
+    }
   };
 
   useEffect(() => {
@@ -144,14 +183,16 @@ export default function DraftXStatus({ email, phone } : HeaderProps) {
                 onClick={() => handleOpen(form)}
                 className="px-5 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 cursor-pointer"
               >
-                Open
+                {form.form_status?.toLowerCase().trim() === "draft" ? "Open" : "View"}
               </button>
 
               <button
                 type="button"
-                className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer"
+                onClick={() => handleDelete(form.id)}
+                disabled={form.form_status?.toLowerCase().trim() !== "draft" || deleting === form.id}
+                className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Delete
+                {deleting === form.id ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>

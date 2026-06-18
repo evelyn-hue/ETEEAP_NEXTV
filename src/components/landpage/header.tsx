@@ -3,10 +3,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { Fetch_to } from "@/utilities";
 import imgSrc from "@/config/img_src.json";
-import api_link from "@/config/api_link.json";
 import { Myprofile } from "@/components/myprofile";
+import { useAuth } from "@/context/AuthContext";
 
 import { FaBars, FaEnvelope, FaFolder, FaTimes, FaUserCircle } from "react-icons/fa";
 // import { LiaJenkins } from "react-icons/lia";
@@ -18,6 +17,7 @@ type Jwt_props = {
 
 export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const router = useRouter();
+  const { profilePicture } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -44,13 +44,6 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const handleProfileClick = () => {
     setProfileOpen((prev) => !prev);
     setNotificationOpen(false);
-  };
-
-  const handleSignOut = async() => {
-    const response = await Fetch_to(api_link.jwt.deauth);
-    if (response.success) {
-      window.location.reload();
-    }
   };
 
   return (
@@ -162,10 +155,26 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 router.push("/form/draft");
               }}
             />
-            <FaUserCircle
-              onClick={handleProfileClick}
-              className="text-gray-600 text-2xl cursor-pointer hover:text-blue-600"
-            />
+            {profilePicture ? (
+              <div key={profilePicture} className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-600 transition"
+                onClick={handleProfileClick}
+              >
+                <Image
+                  key={`profile-${profilePicture}`}
+                  src={profilePicture}
+                  alt="Profile picture"
+                  width={32}
+                  height={32}
+                  className="w-full h-full object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <FaUserCircle
+                onClick={handleProfileClick}
+                className="text-gray-600 text-2xl cursor-pointer hover:text-blue-600"
+              />
+            )}
 
             {profileOpen && (
               <div className="absolute right-0 top-10 w-56 rounded-md border border-gray-200 bg-white p-4 text-sm shadow-lg">
@@ -181,13 +190,6 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                   className="mb-2 w-full rounded-md bg-blue-600 px-3 py-2 text-left text-white hover:bg-blue-700"
                 >
                   My Profile
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSignOut}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-left text-gray-700 hover:bg-gray-100"
-                >
-                  Sign Out
                 </button>
               </div>
             )}
@@ -226,7 +228,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
             className="fixed inset-0 z-40 bg-black/30"
             onClick={() => setIsMobileNavOpen(false)}
           />
-          <aside className="fixed left-0 top-0 z-50 h-[100dvh] w-[30dvw] min-w-[220px] bg-white shadow-2xl">
+          <aside className="fixed left-0 top-0 z-50 h-dvh w-[30dvw] min-w-55 bg-white shadow-2xl">
             <div className="flex h-full flex-col p-6 pt-24 text-sm font-medium text-gray-700">
               <button
                 type="button"

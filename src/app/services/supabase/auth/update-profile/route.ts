@@ -3,7 +3,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 
 export async function POST(req: NextRequest) {
     try {
-        const { email, fullName, phone, civil_status } = await req.json();
+        const { email, fullName, phone, civil_status, profile_pic } = await req.json();
 
         if (!email) {
             return NextResponse.json(
@@ -17,6 +17,7 @@ export async function POST(req: NextRequest) {
         if (fullName !== undefined) updateData.fullName = fullName;
         if (phone !== undefined) updateData.phone = phone;
         if (civil_status !== undefined) updateData.civil_status = civil_status;
+        if (profile_pic !== undefined) updateData.profilePicture = profile_pic;
 
         if (Object.keys(updateData).length === 0) {
             return NextResponse.json(
@@ -52,7 +53,7 @@ export async function POST(req: NextRequest) {
     } catch (error) {
         console.log("Something Went Wrong: ", error);
         return NextResponse.json(
-            { success: false, error: error || "An unexpected error occurred" },
+            { success: false, error: error instanceof Error ? error.message : "An unexpected error occurred" },
             { status: 500 }
         );
     }

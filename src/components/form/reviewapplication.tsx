@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
+import { CheckCircle, FileText, AlertCircle, Loader2 } from "lucide-react";
 
 const DRAFT_KEY = "eteeap-application-draft";
 
@@ -71,23 +72,6 @@ const fileLabels: Record<string, string> = {
   businessRegistration: "Business Registration",
   certificates: "Certificates",
 };
-
-function getStatusBadgeClass(status?: string) {
-  const normalizedStatus = status?.toLowerCase().trim();
-
-  switch (normalizedStatus) {
-    case "draft":
-      return "bg-gray-100 text-gray-700";
-    case "under review":
-      return "bg-blue-100 text-blue-800";
-    case "success":
-      return "bg-green-100 text-green-800";
-    case "reject":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-}
 
 function shortenLinkLabel(value: string) {
   if (!value) return "-";
@@ -212,6 +196,11 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
       setProgressLabel("Finalizing...");
       window.localStorage.clear();
       setSubmitSuccess(response.message);
+      
+      // Navigate to my applications page after successful submission
+      setTimeout(() => {
+        router.push("/form");
+      }, 2000);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Submission failed.";
       setSubmitError(message);
@@ -220,129 +209,179 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
     }
   };
 
+  const applicantName = selectedApplication?.applicantName || fullname || draft?.applicantName || "-";
+  const applicantEmail = selectedApplication?.email || email || draft?.email || "-";
+  const programName = selectedApplication?.program || draft?.programName || "ETEEAP Program";
+
   return (
-    <main className="max-w-5xl mx-auto px-6 py-20 mt-10">
-      <h1 className="text-3xl font-bold text-blue-800 mb-6">
-        {selectedApplication ? "Application Review" : "Review Your Application"}
-      </h1>
-
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="mb-6">
-          <h2 className="text-xl font-semibold text-blue-700">
-            Personal Info
-          </h2>
-
-          <p>
-            <strong>Name:</strong> {selectedApplication?.applicantName || fullname || draft?.applicantName || "-"}
-          </p>
-          <p>
-            <strong>Email:</strong> {selectedApplication?.email || email || draft?.email || "-"}
-          </p>
-          <p>
-            <strong>Phone #:</strong> {phone}
-          </p>
-          <p>
-            <strong>Marital Status:</strong> {status}
-          </p>
-          <p>
-            <strong>Business Owner:</strong> {selectedApplication?.isBusinessOwner || draft?.isBusinessOwner || "No"}
-          </p>
-          <p>
-            <strong>Business Name:</strong> {selectedApplication?.businessName || draft?.businessName || "-"}
-          </p>
-          <p>
-            <strong>Status:</strong>{" "}
-            <span
-              className={`px-3 py-1 rounded-full text-sm ${getStatusBadgeClass(
-                selectedApplication?.form_status || draft?.form_status,
-              )}`}
-            >
-              {selectedApplication?.form_status || "-"}
-            </span>
-          </p>
+    <main className="min-h-screen bg-slate-50 mt-16">
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-10 md:py-16">
+        {/* Application Summary Section */}
+        <div className="mb-8">
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="grid md:grid-cols-2 gap-4 md:gap-6 items-center">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-bold text-blue-900 mb-2">
+                  Application Review
+                </h1>
+                <p className="text-slate-600 text-lg">{programName}</p>
+              </div>
+              <div className="flex items-center justify-start md:justify-end">
+                <div className="flex items-center gap-3 bg-green-50 px-6 py-3 rounded-full border border-green-200">
+                  <CheckCircle className="w-6 h-6 text-green-600" />
+                  <span className="text-green-700 font-semibold">Ready for Submission</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <h2 className="text-xl font-semibold text-blue-700">Documents</h2>
+        {/* Personal Information Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">Personal Information</h2>
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="border-b md:border-b-0 pb-6 md:pb-0">
+                <p className="text-slate-500 text-sm font-medium mb-2">Full Name</p>
+                <p className="text-slate-900 font-semibold">{applicantName}</p>
+              </div>
+              <div className="border-b md:border-b-0 pb-6 md:pb-0">
+                <p className="text-slate-500 text-sm font-medium mb-2">Email Address</p>
+                <p className="text-slate-900 font-semibold">{applicantEmail}</p>
+              </div>
+              <div className="border-b md:border-b-0 pb-6 md:pb-0">
+                <p className="text-slate-500 text-sm font-medium mb-2">Phone Number</p>
+                <p className="text-slate-900 font-semibold">{phone || "-"}</p>
+              </div>
+              <div className="border-b md:border-b-0 pb-6 md:pb-0">
+                <p className="text-slate-500 text-sm font-medium mb-2">Marital Status</p>
+                <p className="text-slate-900 font-semibold">{status || "-"}</p>
+              </div>
+              <div className="border-b md:border-b-0 pb-6 md:pb-0">
+                <p className="text-slate-500 text-sm font-medium mb-2">Business Owner</p>
+                <p className="text-slate-900 font-semibold">{selectedApplication?.isBusinessOwner || draft?.isBusinessOwner || "No"}</p>
+              </div>
+              <div>
+                <p className="text-slate-500 text-sm font-medium mb-2">Business Name</p>
+                <p className="text-slate-900 font-semibold">{selectedApplication?.businessName || draft?.businessName || "-"}</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
-          <table className="w-full text-sm mt-2">
-            <tbody>
+        {/* Uploaded Documents Section */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">Uploaded Documents</h2>
+          <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="grid gap-6 md:gap-8">
               {Object.entries(fileLabels).map(([key, label]) => {
                 const files = draft?.files?.[key] ?? [];
                 const submittedValue = selectedApplication?.[key as keyof SelectedApplication];
 
+                if (files.length === 0 && !submittedValue) {
+                  return null;
+                }
+
                 return (
-                  <tr key={key}>
-                    <td className="py-2">
-                      <strong>{label}:</strong>
+                  <div key={key} className="border-b last:border-b-0 pb-6 last:pb-0">
+                    <p className="text-slate-500 text-sm font-medium mb-4">{label}</p>
+                    <div className="flex flex-wrap gap-3">
                       {files.length > 0 ? (
-                        <ul className="list-disc list-inside mt-1">
-                          {files.map((file) => (
-                            <li key={`${key}-${file.name}`}>
-                              <a
-                                href={file.dataUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-blue-700 underline"
-                              >
-                                {file.name}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
+                        files.map((file) => (
+                          <a
+                            key={`${key}-${file.name}`}
+                            href={file.dataUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-medium hover:bg-blue-100 transition-colors"
+                          >
+                            <FileText className="w-4 h-4" />
+                            <span className="truncate max-w-xs">{file.name}</span>
+                          </a>
+                        ))
                       ) : submittedValue ? (
                         <a
                           href={String(submittedValue)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="ml-2 text-blue-700 underline"
+                          className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-medium hover:bg-blue-100 transition-colors"
                         >
-                          {shortenLinkLabel(String(submittedValue))}
+                          <FileText className="w-4 h-4" />
+                          <span className="truncate max-w-xs">{shortenLinkLabel(String(submittedValue))}</span>
                         </a>
-                      ) : (
-                        <span className="ml-2 text-gray-500">-</span>
-                      )}
-                    </td>
-                  </tr>
+                      ) : null}
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </div>
 
-        {submitting ? (
-          <div className="mt-4">
-            <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
-              <span>{progressLabel || "Working..."}</span>
-              <span>{progress}%</span>
+        {/* Review Notice Section */}
+        <div className="mb-8">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 md:p-8 flex gap-4">
+            <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-1" />
+            <div>
+              <p className="text-amber-900 font-semibold mb-2">Review Your Application</p>
+              <p className="text-amber-800 text-sm">
+                Please review all information and uploaded documents carefully before submitting. Once submitted, your application will proceed to verification and evaluation.
+              </p>
             </div>
-            <div className="h-2 w-full rounded-full bg-gray-200 overflow-hidden">
+          </div>
+        </div>
+
+        {/* Progress Indicator */}
+        {submitting ? (
+          <div className="mb-8 bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="flex items-center gap-3 mb-4">
+              <Loader2 className="w-5 h-5 text-blue-700 animate-spin" />
+              <span className="text-blue-700 font-semibold">{progressLabel || "Processing..."}</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-slate-200 overflow-hidden">
               <div
-                className="h-full bg-blue-700 transition-all duration-300"
+                className="h-full bg-blue-700 transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
+            </div>
+            <p className="text-slate-500 text-xs mt-3">{progress}% Complete</p>
+          </div>
+        ) : null}
+
+        {/* Error Message */}
+        {submitError ? (
+          <div className="mb-8 bg-red-50 border border-red-200 rounded-xl p-6 md:p-8 flex gap-4">
+            <AlertCircle className="w-6 h-6 text-red-600 shrink-0 mt-1" />
+            <div>
+              <p className="text-red-900 font-semibold mb-2">Submission Error</p>
+              <p className="text-red-800 text-sm">{submitError}</p>
             </div>
           </div>
         ) : null}
 
-        {submitError ? (
-          <p className="mt-4 text-sm text-red-600">{submitError}</p>
-        ) : null}
+        {/* Success Message */}
         {submitSuccess ? (
-          <p className="mt-4 text-sm text-green-600">{submitSuccess}</p>
+          <div className="mb-8 bg-green-50 border border-green-200 rounded-xl p-6 md:p-8 flex gap-4">
+            <CheckCircle className="w-6 h-6 text-green-600 shrink-0 mt-1" />
+            <div>
+              <p className="text-green-900 font-semibold mb-2">Application Submitted</p>
+              <p className="text-green-800 text-sm">{submitSuccess}</p>
+            </div>
+          </div>
         ) : null}
 
-        <div className="mt-6 flex justify-end gap-4">
+        {/* Action Buttons */}
+        <div className="sticky bottom-0 md:sticky md:bottom-auto bg-white md:bg-transparent rounded-t-2xl md:rounded-none shadow-2xl md:shadow-none p-6 md:p-0 flex flex-col-reverse md:flex-row md:justify-end gap-3 md:gap-4">
           <button
             type="button"
             onClick={() => {
-              void handleSubmit("draft");
+              router.back();
+              window.localStorage.clear();
             }}
-            style={{ display: submitting || isUnderReview ? "none" : "block" }}
-            className="px-6 py-2 rounded-md bg-blue-700 text-white cursor-pointer"
-            disabled={submitting || isUnderReview}
+            disabled={submitting}
+            className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Draft
+            Back
           </button>
 
           <button
@@ -350,21 +389,18 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             onClick={() => {
               void handleSubmit("Under Review");
             }}
-            style={{ display: isUnderReview || submitting ? "none" : "block" }}
             disabled={submitting}
-            className="px-6 py-2 rounded-md bg-blue-800 text-white disabled:opacity-60 cursor-pointer"
+            style={{ display: isUnderReview || submitting ? "none" : "block" }}
+            className="px-6 py-3 rounded-lg bg-blue-700 text-white font-semibold hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isDraft ? "Apply Again" : "Submit"}
+            <span>{submitting ? "Submitting Application..." : "Submit"}</span>
           </button>
         </div>
 
-        <p className="mt-4 text-xs text-gray-500">
-          Files are stored temporarily in your browser until the final submit
-          step.
-        </p>
-        <div className="mt-4">
-          <p onClick={() => {router.back(); window.localStorage.clear();}} className="text-blue-700 underline text-sm cursor-pointer">
-            Back
+        {/* Footer Note */}
+        <div className="mt-8 md:mt-12 text-center">
+          <p className="text-slate-500 text-xs md:text-sm">
+            Files are stored temporarily in your browser until final submission
           </p>
         </div>
       </div>
