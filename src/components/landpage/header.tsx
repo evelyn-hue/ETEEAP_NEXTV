@@ -7,7 +7,7 @@ import imgSrc from "@/config/img_src.json";
 import { Myprofile } from "@/components/myprofile";
 import { useAuth } from "@/context/AuthContext";
 
-import { FaBars, FaEnvelope, FaFolder, FaTimes, FaUserCircle } from "react-icons/fa";
+import { FaBars, FaEnvelope, FaTimes, FaUserCircle } from "react-icons/fa";
 // import { LiaJenkins } from "react-icons/lia";
 
 type Jwt_props = {
@@ -149,12 +149,6 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 </div>
               )}
             </div>
-            <FaFolder
-              className="text-gray-600 text-xl cursor-pointer hover:text-blue-600"
-              onClick={() => {
-                router.push("/form/draft");
-              }}
-            />
             {profilePicture ? (
               <div key={profilePicture} className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 cursor-pointer hover:border-blue-600 transition"
                 onClick={handleProfileClick}
@@ -189,7 +183,27 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                   }}
                   className="mb-2 w-full rounded-md bg-blue-600 px-3 py-2 text-left text-white hover:bg-blue-700"
                 >
-                  My Profile
+                  Account Info
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push("/form/draft");
+                    setProfileOpen(false);
+                  }}
+                  className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-left text-gray-700 hover:bg-gray-100"
+                >
+                  Drafts
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push("/form/civilstatus");
+                    setProfileOpen(false);
+                  }}
+                  className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-left text-gray-700 hover:bg-gray-100"
+                >
+                  Application Status
                 </button>
               </div>
             )}

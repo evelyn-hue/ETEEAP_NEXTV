@@ -1,239 +1,89 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Fetch_to } from "@/utilities";
-import api_links from "@/config/api_link.json";
 
-type HeaderProps = {
-  email?: string;
-  phone?: string;
-}
+const DRAFT_KEY = "eteeap-application-draft";
 
-type ManagerUserProps = {
-  id?: string;
-  created_at?: string;
-  isBusinessOwner?: string;
-  letterOfIntent?: string | null;
-  resume?: string | null;
-  picture?: string | null;
-  applicationForm?: string | null;
-  recommendationLetter?: string | null;
-  schoolCredentials?: string | null;
-  highSchoolDiploma?: string | null;
-  transcript?: string | null;
-  birthCertificate?: string | null;
-  marriageCertificate?: string | null;
-  employmentCertificate?: string | null;
-  nbiClearance?: string | null;
-  businessRegistration?: string | null;
-  certificates?: string | null;
-  email?: string;
+type DraftType = {
   applicantName?: string;
-  businessName?: string | null;
-  program?: string | null;
-  form_status?: string;
+  programName?: string;
+  created_at?: string;
+  createdAt?: string;
+  [k: string]: unknown;
+};
+
+function formatCreatedAt(value?: string) {
+  if (!value) return "-";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return value;
+  return d.toLocaleString();
 }
 
-function formatCreatedAt(createdAt?: string) {
-  if (!createdAt) return "-";
-
-  const date = new Date(createdAt);
-  if (Number.isNaN(date.getTime())) return createdAt;
-
-  return date.toLocaleString();
-}
-
-function getStatusBadgeClass(status?: string) {
-  const normalizedStatus = status?.toLowerCase().trim();
-
-  switch (normalizedStatus) {
-    case "draft":
-      return "bg-gray-100 text-gray-700";
-    case "under review":
-      return "bg-blue-100 text-blue-800";
-    case "approve":
-      return "bg-green-100 text-green-800";
-    case "reject":
-      return "bg-red-100 text-red-800";
-    default:
-      return "bg-gray-100 text-gray-700";
-  }
-}
-
-export default function DraftXStatus({ email, phone } : HeaderProps) {
-  const [data, setData] = useState<ManagerUserProps[]>([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [deleting, setDeleting] = useState<string | null>(null);
+export default function Draft() {
   const router = useRouter();
-
-  const handleOpen = (form: ManagerUserProps) => {
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem("selected-application", JSON.stringify(form));
-    }
-
-    router.push("/form/reviewapplication");
-  };
-
-  const handleDelete = async (formId?: string) => {
-    if (!formId) {
-      console.error("Form ID is required for deletion");
-      return;
-    }
-
-    // Show confirmation dialog
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this application? This action cannot be undone."
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setDeleting(formId);
-
-    try {
-      const response = await Fetch_to(api_links.form.delete, {
-        id: formId,
-        email: email,
-      });
-
-      if (response.success) {
-        // Remove the deleted form from the data
-        setData((prevData) => prevData.filter((form) => form.id !== formId));
-      } else {
-        console.error(response.message || "Failed to delete application");
-        alert(response.message || "Failed to delete application");
-      }
-    } catch (error) {
-      console.error("Delete error:", error);
-      alert("An error occurred while deleting the application");
-    } finally {
-      setDeleting(null);
-    }
-  };
+  const [draft, setDraft] = useState<DraftType | null>(null);
 
   useEffect(() => {
-    const Fetch_data = async () => {
-      const response = await Fetch_to(api_links.retrieve_data, {
-        email: email,
-        page,
-        limit: 10,
-      });
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return setDraft(null);
+    try {
+      setDraft(JSON.parse(raw));
+    } catch {
+      setDraft(null);
+    }
+  }, []);
 
-      if (response.success) {
-        setData(response.data.message ?? []);
-        setTotalPages(response.data.pagination?.totalPages ?? 1);
-      } else {
-        console.log(response.message || "Something Went Wrong");
+  const handleContinue = () => {
+    if (!draft || typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem("selected-application", JSON.stringify(draft));
+    } catch {
+      // If localStorage fails, try sessionStorage
+      try {
+        window.sessionStorage.setItem("selected-application", JSON.stringify(draft));
+      } catch {
+        // If both fail, store in memory fallback
+        (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__ = draft;
       }
-      
-    };
-    Fetch_data();
-  }, [email, page]);
+    }
+    // Navigate to the civil status form with program name
+    router.push(`/form/civilstatus?program=${encodeURIComponent(draft.programName ?? "")}`);
+  };
 
-
+  const handleDelete = () => {
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(DRAFT_KEY);
+    setDraft(null);
+  };
 
   return (
-    <main className="max-w-6xl mx-auto px-6 py-20 mt-10">
-      <h1 className="text-3xl font-bold text-blue-800 mb-2">
-        My Applications
-      </h1>
+    <div className="p-6 mt-25 mb-20">
+      <h1 className="mb-4 text-2xl font-bold">My Drafts</h1>
 
-      <p className="text-gray-600 mb-8">
-        Drafts and application status overview
-      </p>
-
-      <div className="grid gap-6">
-        {data && data.length > 0 ? (
-          data.map((form, index) => (
-            <div key={index} className="bg-white shadow-lg rounded-xl p-6 border">
-            <div className="flex justify-between items-start gap-4">
-              <h2 className="text-xl font-semibold text-blue-700">
-                Bachelor of Arts in English Language Studies
-              </h2>
-
-              <span
-                className={`px-3 py-1 rounded-full text-sm ${getStatusBadgeClass(
-                  form.form_status,
-                )}`}
-              >
-                {form.form_status}
-              </span>
-            </div>
-
-            <div className="mt-3 text-gray-700">
-              <p>
-                <strong>Name:</strong> {form.applicantName}
-              </p>
-              <p>
-                <strong>Email:</strong> {form.email}
-              </p>
-              <p>
-                <strong>Phone:</strong> {phone}
-              </p>
-              <p className="text-sm text-gray-500 mt-2">
-                Saved: {formatCreatedAt(form.created_at)}
-              </p>
-            </div>
-
-            <div className="flex gap-3 mt-5">
-              <button
-                type="button"
-                onClick={() => handleOpen(form)}
-                className="px-5 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800 cursor-pointer"
-              >
-                {form.form_status?.toLowerCase().trim() === "draft" ? "Open" : "View"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDelete(form.id)}
-                disabled={form.form_status?.toLowerCase().trim() !== "draft" || deleting === form.id}
-                className="px-5 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {deleting === form.id ? "Deleting..." : "Delete"}
-              </button>
-            </div>
+      <div className="rounded-md bg-white shadow-sm">
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div>
+            <div className="text-md font-semibold text-slate-900">{draft?.programName ?? "Bachelor of Arts in English Language Studies"}</div>
+            <div className="mt-1 text-sm text-slate-600">{draft?.applicantName ?? "Joey Abundiente"} • {formatCreatedAt(draft?.created_at ?? draft?.createdAt ?? "6/23/2026, 4:06:58 PM")}</div>
           </div>
-          ))
-        ) : null}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleContinue}
+              disabled={!draft}
+              className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+            >
+              Continue
+            </button>
+            <button
+              onClick={handleDelete}
+              className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+            >
+              Delete
+            </button>
+          </div>
+        </div>
       </div>
-
-      <div className="flex items-center justify-center gap-2 mt-8 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setPage((current) => Math.max(current - 1, 1))}
-          disabled={page === 1}
-          className="px-4 py-2 rounded-md border bg-white text-gray-700 disabled:opacity-50"
-        >
-          &lt;
-        </button>
-
-        {Array.from({ length: totalPages }, (_, index) => index + 1).map((pageNumber) => (
-          <button
-            key={pageNumber}
-            type="button"
-            onClick={() => setPage(pageNumber)}
-            className={`px-4 py-2 rounded-md border ${
-              pageNumber === page
-                ? "bg-blue-700 text-white border-blue-700"
-                : "bg-white text-gray-700"
-            }`}
-          >
-            {pageNumber}
-          </button>
-        ))}
-
-        <button
-          type="button"
-          onClick={() => setPage((current) => Math.min(current + 1, totalPages))}
-          disabled={page === totalPages}
-          className="px-4 py-2 rounded-md border bg-white text-gray-700 disabled:opacity-50"
-        >
-          &gt;
-        </button>
-      </div>
-    </main>
+    </div>
   );
 }

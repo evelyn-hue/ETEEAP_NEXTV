@@ -30,7 +30,7 @@ export default function Banner() {
             </p>
             <div className="flex gap-4">
               <Link
-                href="/programs"
+                href="/courses"
                 className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-6 py-3 rounded-lg transition inline-block"
               >
                 Apply Now
@@ -143,31 +143,6 @@ export default function Banner() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-20 bg-blue-50">
-        <div className="max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-12">Success Stories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-              <p className="italic mb-4">
-                &quot;ETEEAP helped me complete my degree while working full-time.
-                Highly recommended!&quot;
-              </p>
-              <h3 className="font-semibold">– Jane D., BSBA Graduate</h3>
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-              <p className="italic mb-4">
-                &quot;The competency-based assessment really recognized my experience
-                and skills. It was a life-changing program.&quot;
-              </p>
-              <h3 className="font-semibold">
-                – Mark R., Hospitality Management Graduate
-              </h3>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Call-to-Action */}
       <section className="py-20 bg-blue-600 text-white text-center">
         <h2 className="text-3xl font-bold mb-6">
@@ -179,7 +154,7 @@ export default function Banner() {
         </p>
         <div className="flex justify-center gap-4">
           <Link
-            href="/programs"
+            href="/courses"
             className="bg-white text-blue-600 hover:bg-gray-100 font-semibold px-6 py-3 rounded-lg transition inline-block"
           >
             Apply Now

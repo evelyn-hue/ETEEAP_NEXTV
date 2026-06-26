@@ -39,12 +39,21 @@ type ApplicationRecord = {
   id: number;
   applicant: string;
   email: string;
+  civilStatus: string;
   program: string;
   date: string;
   status: FormStatus;
   businessOwner: "Yes" | "No";
   businessName: string;
   documents: DocumentItem[];
+};
+
+type PendingAction = {
+  title: string;
+  message: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  execute: () => void;
 };
 
 type ApprovalEntry = {
@@ -58,6 +67,7 @@ type FormRow = {
   created_at?: string;
   email?: string;
   applicantName?: string;
+  civil_status?: string;
   program?: string;
   form_status?: string;
   isBusinessOwner?: string;
@@ -142,6 +152,7 @@ function mapRowToApplication(row: FormRow): ApplicationRecord {
     id: row.id,
     applicant: String(row.applicantName ?? "Unknown Applicant"),
     email: String(row.email ?? "-"),
+    civilStatus: String(row.civil_status ?? "-"),
     program: String(row.program ?? "-") || "-",
     date: String(row.created_at ?? "-").slice(0, 10) || "-",
     status: normalizeFormStatus(row.form_status),
@@ -176,6 +187,7 @@ function ApplicationActions({
   onReject,
   onDelete,
   onRestore,
+  currentStatus,
   isDeleted,
 }: {
   onView: () => void;
@@ -183,6 +195,7 @@ function ApplicationActions({
   onReject: () => void;
   onDelete: () => void;
   onRestore: () => void;
+  currentStatus: FormStatus;
   isDeleted: boolean;
 }) {
   return (
@@ -209,7 +222,8 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onAccept}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:w-auto"
+            disabled={currentStatus !== "Under Review"}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <Check size={16} />
             Accept
@@ -217,7 +231,8 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onReject}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 sm:w-auto"
+            disabled={currentStatus !== "Under Review"}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <XCircle size={16} />
             Reject
@@ -348,10 +363,19 @@ export default function Application() {
   const [selectedApplication, setSelectedApplication] =
     useState<ApplicationRecord | null>(null);
   const [savingRemark, setSavingRemark] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
 
   const syncApplication = (updated: ApplicationRecord) => {
     setApplications((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
     setSelectedApplication((prev) => (prev && prev.id === updated.id ? updated : prev));
+  };
+
+  const openConfirmation = (action: PendingAction) => {
+    setPendingAction(action);
+  };
+
+  const closeConfirmation = () => {
+    setPendingAction(null);
   };
 
   const fetchApplications = async (userEmail: string) => {
@@ -628,6 +652,45 @@ export default function Application() {
     updateApplicationStatus(id, "Delete");
   };
 
+  const requestApplicationStatusChange = (
+    item: ApplicationRecord,
+    status: FormStatus,
+  ) => {
+    const actionLabel = status === "Approve" ? "accept" : status === "Reject" ? "reject" : status.toLowerCase();
+    openConfirmation({
+      title: `${status === "Approve" ? "Accept" : status === "Reject" ? "Reject" : "Update"} Application`,
+      message: `Are you sure you want to ${actionLabel} the application for ${item.applicant}?`,
+      confirmLabel: status === "Approve" ? "Accept" : status === "Reject" ? "Reject" : "Confirm",
+      cancelLabel: "Cancel",
+      execute: () => updateApplicationStatus(item.id, status),
+    });
+  };
+
+  const requestApplicationDelete = (item: ApplicationRecord) => {
+    openConfirmation({
+      title: "Delete Application",
+      message: `Are you sure you want to delete the application for ${item.applicant}?`,
+      confirmLabel: "Delete",
+      cancelLabel: "Cancel",
+      execute: () => deleteApplication(item.id),
+    });
+  };
+
+  const requestDocumentStatusChange = (
+    applicationId: number,
+    applicantName: string,
+    document: DocumentItem,
+    status: DocumentStatus,
+  ) => {
+    openConfirmation({
+      title: `${status === "Verified" ? "Verify" : "Reject"} Document`,
+      message: `Are you sure you want to ${status === "Verified" ? "verify" : "reject"} ${document.label} for ${applicantName}?`,
+      confirmLabel: status === "Verified" ? "Verify" : "Reject",
+      cancelLabel: "Cancel",
+      execute: () => updateDocumentStatus(applicationId, document.id, status, document.remark),
+    });
+  };
+
   return (
     <main className="min-h-screen bg-slate-100 p-6">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -754,10 +817,11 @@ export default function Application() {
               <div className="mt-4">
                 <ApplicationActions
                   onView={() => setSelectedApplication(item)}
-                  onAccept={() => updateApplicationStatus(item.id, "Approve")}
-                  onReject={() => updateApplicationStatus(item.id, "Reject")}
-                  onDelete={() => deleteApplication(item.id)}
-                  onRestore={() => updateApplicationStatus(item.id, "Under Review")}
+                  onAccept={() => requestApplicationStatusChange(item, "Approve")}
+                  onReject={() => requestApplicationStatusChange(item, "Reject")}
+                  onDelete={() => requestApplicationDelete(item)}
+                  onRestore={() => requestApplicationStatusChange(item, "Under Review")}
+                  currentStatus={item.status}
                   isDeleted={item.status === "Delete"}
                 />
               </div>
@@ -776,7 +840,7 @@ export default function Application() {
             <div className="p-4 text-sm font-medium text-red-700">{error}</div>
           ) : null}
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[980px] text-left">
+            <table className="w-full min-w-245 text-left">
               <thead className="bg-slate-50 text-sm text-slate-600">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Applicant</th>
@@ -812,10 +876,11 @@ export default function Application() {
                     <td className="px-6 py-5">
                       <ApplicationActions
                         onView={() => setSelectedApplication(item)}
-                        onAccept={() => updateApplicationStatus(item.id, "Approve")}
-                        onReject={() => updateApplicationStatus(item.id, "Reject")}
-                        onDelete={() => deleteApplication(item.id)}
-                        onRestore={() => updateApplicationStatus(item.id, "Under Review")}
+                        onAccept={() => requestApplicationStatusChange(item, "Approve")}
+                        onReject={() => requestApplicationStatusChange(item, "Reject")}
+                        onDelete={() => requestApplicationDelete(item)}
+                        onRestore={() => requestApplicationStatusChange(item, "Under Review")}
+                        currentStatus={item.status}
                         isDeleted={item.status === "Delete"}
                       />
                     </td>
@@ -835,7 +900,7 @@ export default function Application() {
               }
             }}
           >
-            <div className="w-full max-w-7xl overflow-y-auto rounded-none bg-white shadow-2xl h-[100dvh] sm:h-auto sm:max-h-[92vh] sm:rounded-3xl">
+            <div className="w-full max-w-7xl overflow-y-auto rounded-none bg-white shadow-2xl h-dvh sm:h-auto sm:max-h-[92vh] sm:rounded-3xl">
               <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4">
                 <button
                   type="button"
@@ -860,7 +925,7 @@ export default function Application() {
                       <DetailRow label="Date" value={selectedApplication.date} />
                       <DetailRow label="Business Owner" value={selectedApplication.businessOwner} />
                       <DetailRow label="Business Name" value={selectedApplication.businessName || "-"} />
-                      <DetailRow label="Application Status" value={selectedApplication.status} />
+                      <DetailRow label="Civil Status" value={selectedApplication.civilStatus} />
                     </div>
                   </section>
 
@@ -884,12 +949,12 @@ export default function Application() {
                       <DocumentCard
                         key={document.id}
                         document={document}
-                        onStatusChange={(status, remark) =>
-                          updateDocumentStatus(
+                        onStatusChange={(status) =>
+                          requestDocumentStatusChange(
                             selectedApplication.id,
-                            document.id,
+                            selectedApplication.applicant,
+                            document,
                             status,
-                            remark
                           )
                         }
                         onRemarkChange={(remark) =>
@@ -911,6 +976,42 @@ export default function Application() {
                     ))}
                   </div>
                 </section>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {pendingAction ? (
+          <div
+            className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4"
+            onClick={(event) => {
+              if (event.target === event.currentTarget) {
+                closeConfirmation();
+              }
+            }}
+          >
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+              <h3 className="text-lg font-semibold text-slate-900">{pendingAction.title}</h3>
+              <p className="mt-2 text-sm text-slate-600">{pendingAction.message}</p>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeConfirmation}
+                  className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  {pendingAction.cancelLabel}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    pendingAction.execute();
+                    closeConfirmation();
+                  }}
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  {pendingAction.confirmLabel}
+                </button>
               </div>
             </div>
           </div>

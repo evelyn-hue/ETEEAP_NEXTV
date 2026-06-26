@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
+    const email = searchParams.get("email");
     const status = searchParams.get("status");
     const limit = searchParams.get("limit") || "50";
     const offset = searchParams.get("offset") || "0";
@@ -11,6 +12,10 @@ export async function GET(req: NextRequest) {
     let query = supabaseServer
       .from("alumni_profiles")
       .select("*", { count: "exact" });
+
+    if (email) {
+      query = query.eq("email", email.trim().toLowerCase());
+    }
 
     if (status) {
       query = query.eq("verification_status", status);

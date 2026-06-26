@@ -83,6 +83,24 @@ function resolveNextStatus(inputStatus: unknown, fallback: string): FormStatus {
   return "Draft";
 }
 
+async function getApplicantCivilStatus(email?: string | null) {
+  const normalizedEmail = String(email ?? "").trim().toLowerCase();
+  if (!normalizedEmail) return "";
+
+  const { data, error } = await supabaseServer
+    .from("auth")
+    .select("civil_status")
+    .eq("email", normalizedEmail)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch civil status:", error.message);
+    return "";
+  }
+
+  return String(data?.civil_status ?? "");
+}
+
 export async function POST(params: NextRequest) {
     try {
 
@@ -115,10 +133,17 @@ export async function POST(params: NextRequest) {
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
 
+        const enrichedData = await Promise.all(
+          (data ?? []).map(async (row) => ({
+            ...row,
+            civil_status: await getApplicantCivilStatus(row.email),
+          })),
+        );
+
         return NextResponse.json(
           {
             success: true,
-            message: data,
+            message: enrichedData,
             pagination: {
               page: currentPage,
               limit: pageLimit,
@@ -254,10 +279,12 @@ export async function PATCH(params: NextRequest) {
       );
     }
 
+    const civilStatus = await getApplicantCivilStatus(currentRow.email);
+
     return NextResponse.json(
       {
         success: true,
-        message: updatedRow,
+        message: { ...updatedRow, civil_status: civilStatus },
       },
       { status: 200 },
     );

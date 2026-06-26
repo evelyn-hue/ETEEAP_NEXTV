@@ -11,6 +11,7 @@ function LandContent() {
   const [showProfile, setShowProfile] = useState(false);
   const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [isBusinessOwner, setIsBusinessOwner] = useState("No");
   const searchParams = useSearchParams();
   const params = searchParams.get('program');
   const [status, setStatus] = useState(true);
@@ -24,6 +25,7 @@ function LandContent() {
         setShowProfile(true);
         setEmail(response_data.email);
         setFullName(response_data.fullName ?? "");
+        setIsBusinessOwner(response_data.isBusinessOwner ?? "No");
         if (response_data.status === "Single") {
           setStatus(false);
         }
@@ -42,6 +44,7 @@ function LandContent() {
         applicantName={fullName}
         email={email}
         statusMarital={status}
+        isBusinessOwner={isBusinessOwner}
       />
       <Footer />
     </main>

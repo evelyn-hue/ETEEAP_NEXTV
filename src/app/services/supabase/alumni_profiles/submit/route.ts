@@ -27,6 +27,56 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    if (
+      !String(full_name).trim() ||
+      !String(nickname).trim() ||
+      !String(graduation_year).trim() ||
+      !String(birthday).trim() ||
+      !normalizedEmail ||
+      !Array.isArray(educational_attainments) || educational_attainments.length === 0 ||
+      !Array.isArray(programs) || programs.length === 0 ||
+      !Array.isArray(certificates) || certificates.length === 0 ||
+      !Array.isArray(work_experiences) || work_experiences.length === 0 ||
+      !String(experience).trim() ||
+      !String(transformation).trim() ||
+      !String(visibility).trim()
+    ) {
+      return NextResponse.json(
+        { success: false, error: "All alumni form fields are required." },
+        { status: 400 }
+      );
+    }
+
+    const { data: existingProfiles, error: lookupError } = await supabaseServer
+      .from("alumni_profiles")
+      .select("id, verification_status, created_at")
+      .eq("email", normalizedEmail)
+      .order("created_at", { ascending: false });
+
+    if (lookupError) {
+      console.error("Supabase lookup error:", lookupError);
+      return NextResponse.json(
+        { success: false, error: lookupError.message },
+        { status: 500 }
+      );
+    }
+
+    const hasActiveApplication = (existingProfiles ?? []).some(
+      (profile) => String(profile.verification_status ?? "").toLowerCase() !== "rejected",
+    );
+
+    if (hasActiveApplication) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.",
+        },
+        { status: 409 }
+      );
+    }
+
     const { data, error } = await supabaseServer
       .from("alumni_profiles")
       .insert([
@@ -43,7 +93,7 @@ export async function POST(req: NextRequest) {
           transformation,
           visibility: visibility || "public",
           verification_status: "pending",
-          email,
+          email: normalizedEmail,
         },
       ])
       .select();

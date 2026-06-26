@@ -12,6 +12,7 @@ export default function LandPage() {
   const [fullName, setFullName] = useState("");
   const [status, setStatus] = useState("");
   const [phone, setPhone] = useState("");
+  const [isBusinessOwner, setIsBusinessOwner] = useState("No");
 
   useEffect(() => {
     const Verify = async() => {
@@ -24,6 +25,7 @@ export default function LandPage() {
         setFullName(response_data.fullName);
         setStatus(response_data.status);
         setPhone(response_data.phone);
+        setIsBusinessOwner(response_data.isBusinessOwner ?? "No");
         return;
       }
       setShowProfile(false);
@@ -34,7 +36,7 @@ export default function LandPage() {
   return (
     <main> 
       <Header showProfile={showProfile} email={email} />
-      <ReviewApplication fullname={fullName} phone={phone} status={status} email={email} />
+      <ReviewApplication fullname={fullName} phone={phone} status={status} email={email} isBusinessOwner={isBusinessOwner} />
       <Footer />
     </main>
   );

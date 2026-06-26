@@ -1,6 +1,6 @@
-import Link from "next/link";
 import Image from "next/image";
 import imgSrc from "@/config/img_src.json";
+import ApplyButton from "./apply-button";
 
 export default function DetailedPrograms() {
   return (
@@ -158,12 +158,10 @@ export default function DetailedPrograms() {
             Take the first step towards your future in Bachelor of Arts in
             English Language Studies
           </p>
-          <Link
+          <ApplyButton
             href="/form?program=Bachelor of Arts in English Language Studies"
-            className="inline-block px-8 py-4 rounded-lg font-bold text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 transform bg-white text-blue-600 hover:bg-blue-50"
-          >
-            Apply Now
-          </Link>
+            programName="Bachelor of Arts in English Language Studies"
+          />
         </div>
 
         <div className="bg-white rounded-xl shadow-lg p-8 hover:shadow-xl transition-shadow duration-300">

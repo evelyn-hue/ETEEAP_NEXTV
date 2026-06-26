@@ -66,12 +66,14 @@ function AlumniActions({
   onView,
   onVerify,
   onReject,
+  onDelete,
   loading,
 }: {
   item: AlumniProfile;
   onView: () => void;
   onVerify: () => void;
   onReject: () => void;
+  onDelete: () => void;
   loading: boolean;
 }) {
   return (
@@ -87,7 +89,7 @@ function AlumniActions({
       <button
         type="button"
         onClick={onVerify}
-        disabled={item.verification_status === "verified" || loading}
+        disabled={item.verification_status !== "pending" || loading}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         <FiUserCheck />
@@ -96,12 +98,23 @@ function AlumniActions({
       <button
         type="button"
         onClick={onReject}
-        disabled={item.verification_status === "rejected" || loading}
+        disabled={item.verification_status !== "pending" || loading}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
         <FiUserX />
         Reject
       </button>
+      {item.verification_status === "rejected" ? (
+        <button
+            type="button"
+            onClick={onDelete}
+            disabled={loading}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+          >
+            <FiX />
+          Delete
+        </button>
+      ) : null}
     </div>
   );
 }
@@ -171,6 +184,8 @@ export default function AdminAlumni() {
     return haystack.includes(query.toLowerCase());
   });
 
+  const confirmAction = (message: string) => window.confirm(message);
+
   const updateStatus = async (id: string, status: AlumniStatus) => {
     setUpdatingId(id);
     try {
@@ -216,6 +231,41 @@ export default function AdminAlumni() {
     }
   };
 
+  const deleteAlumni = async (id: string) => {
+    setUpdatingId(id);
+    try {
+      const result = await Fetch_to("/services/supabase/alumni_profiles/delete", { id });
+
+      if (result.success) {
+        setAlumni((prev) => prev.filter((item) => item.id !== id));
+        if (selectedAlumni?.id === id) {
+          setSelectedAlumni(null);
+        }
+        setToast({
+          message: "Alumni profile deleted successfully!",
+          type: "success",
+        });
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        setToast({
+          message: `Failed to delete profile: ${result.message}`,
+          type: "error",
+        });
+        setTimeout(() => setToast(null), 3000);
+        console.error("Failed to delete profile:", result.message);
+      }
+    } catch (error) {
+      setToast({
+        message: `Error deleting profile: ${error instanceof Error ? error.message : "Unknown error"}`,
+        type: "error",
+      });
+      setTimeout(() => setToast(null), 3000);
+      console.error("Error deleting profile:", error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString();
@@ -225,7 +275,7 @@ export default function AdminAlumni() {
     <main className="min-h-screen bg-slate-100 p-6">
       {toast && (
         <div
-          className={`fixed top-6 right-6 z-[60] px-6 py-4 rounded-xl shadow-lg text-white font-semibold ${
+          className={`fixed top-6 right-6 z-60 px-6 py-4 rounded-xl shadow-lg text-white font-semibold ${
             toast.type === "success"
               ? "bg-green-600"
               : "bg-red-600"
@@ -335,8 +385,21 @@ export default function AdminAlumni() {
                     <AlumniActions
                       item={item}
                       onView={() => setSelectedAlumni(item)}
-                      onVerify={() => updateStatus(item.id, "verified")}
-                      onReject={() => updateStatus(item.id, "rejected")}
+                      onVerify={() => {
+                        if (confirmAction(`Verify ${item.full_name}?`)) {
+                          void updateStatus(item.id, "verified");
+                        }
+                      }}
+                      onReject={() => {
+                        if (confirmAction(`Reject ${item.full_name}?`)) {
+                          void updateStatus(item.id, "rejected");
+                        }
+                      }}
+                      onDelete={() => {
+                        if (confirmAction(`Delete rejected alumni profile for ${item.full_name}? This cannot be undone.`)) {
+                          void deleteAlumni(item.id);
+                        }
+                      }}
                       loading={updatingId === item.id}
                     />
                   </div>
@@ -386,8 +449,21 @@ export default function AdminAlumni() {
                           <AlumniActions
                             item={item}
                             onView={() => setSelectedAlumni(item)}
-                            onVerify={() => updateStatus(item.id, "verified")}
-                            onReject={() => updateStatus(item.id, "rejected")}
+                            onVerify={() => {
+                              if (confirmAction(`Verify ${item.full_name}?`)) {
+                                void updateStatus(item.id, "verified");
+                              }
+                            }}
+                            onReject={() => {
+                              if (confirmAction(`Reject ${item.full_name}?`)) {
+                                void updateStatus(item.id, "rejected");
+                              }
+                            }}
+                            onDelete={() => {
+                              if (confirmAction(`Delete rejected alumni profile for ${item.full_name}? This cannot be undone.`)) {
+                                void deleteAlumni(item.id);
+                              }
+                            }}
                             loading={updatingId === item.id}
                           />
                         </td>
@@ -617,8 +693,12 @@ export default function AdminAlumni() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateStatus(selectedAlumni.id, "verified")}
-                    disabled={selectedAlumni.verification_status === "verified" || updatingId === selectedAlumni.id}
+                    onClick={() => {
+                      if (confirmAction(`Verify ${selectedAlumni.full_name}?`)) {
+                        void updateStatus(selectedAlumni.id, "verified");
+                      }
+                    }}
+                    disabled={selectedAlumni.verification_status !== "pending" || updatingId === selectedAlumni.id}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-60"
                   >
                     <FiUserCheck />
@@ -626,13 +706,32 @@ export default function AdminAlumni() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => updateStatus(selectedAlumni.id, "rejected")}
-                    disabled={selectedAlumni.verification_status === "rejected" || updatingId === selectedAlumni.id}
+                    onClick={() => {
+                      if (confirmAction(`Reject ${selectedAlumni.full_name}?`)) {
+                        void updateStatus(selectedAlumni.id, "rejected");
+                      }
+                    }}
+                    disabled={selectedAlumni.verification_status !== "pending" || updatingId === selectedAlumni.id}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                   >
                     <FiUserX />
                     Reject
                   </button>
+                  {selectedAlumni.verification_status === "rejected" ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (confirmAction(`Delete rejected alumni profile for ${selectedAlumni.full_name}? This cannot be undone.`)) {
+                          void deleteAlumni(selectedAlumni.id);
+                        }
+                      }}
+                      disabled={updatingId === selectedAlumni.id}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
+                    >
+                      <FiX />
+                      Delete
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -16,6 +16,7 @@ interface Application {
   id: string;
   email: string;
   applicantName: string;
+  civil_status?: string;
   businessName?: string;
   isBusinessOwner?: string;
   program: string;
@@ -215,7 +216,7 @@ export default function AdminApplications() {
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full min-w-[700px]">
+                <table className="w-full min-w-175">
                   <thead className="bg-slate-50 text-left text-sm text-slate-600">
                     <tr>
                       <th className="px-6 py-4 font-semibold">Applicant</th>
@@ -295,6 +296,7 @@ export default function AdminApplications() {
                   <div className="grid gap-4 md:grid-cols-2">
                     <Detail label="Applicant Name" value={selectedApp.applicantName} />
                     <Detail label="Email" value={selectedApp.email} />
+                    <Detail label="Civil Status" value={selectedApp.civil_status} />
                     <Detail label="Program" value={selectedApp.program} />
                     <Detail label="Status" value={selectedApp.form_status} />
                     <Detail label="Business Owner" value={selectedApp.isBusinessOwner} />
@@ -363,7 +365,7 @@ export default function AdminApplications() {
                   Close
                 </button>
                 <a
-                  href={`/form/applicationstatus/${selectedApp.id}`}
+                  href={`/form/civilstatus/${selectedApp.id}`}
                   target="_blank"
                   rel="noreferrer"
                   className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition flex items-center gap-2"

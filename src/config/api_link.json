@@ -13,7 +13,8 @@
     "form" : {
         "submit" : "/services/supabase/form/submit",
         "delete" : "/services/supabase/form/delete",
-        "retrieveAll" : "/services/supabase/form/retrieve-all"
+        "retrieveAll" : "/services/supabase/form/retrieve-all",
+        "myApplication" : "/services/supabase/form/my-application"
     },
     "alumni_profiles" : {
         "submit" : "/services/supabase/alumni_profiles/submit",

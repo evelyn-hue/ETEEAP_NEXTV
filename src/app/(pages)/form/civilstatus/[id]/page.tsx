@@ -1,5 +1,5 @@
 import ApplicationStatus from "@/components/form/applicationstatus";
 
-export default function ApplicationStatusPage() {
+export default function CivilStatusDetailsPage() {
   return <ApplicationStatus />;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useEffect } from "react";
+import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FaExternalLinkAlt } from "react-icons/fa";
 
@@ -66,9 +66,10 @@ function fileToDataUrl(file: File) {
   });
 }
 
-async function filesToStoredFiles(files: FileList | null) {
+async function filesToStoredFiles(files: FileList | File[] | null) {
   if (!files || files.length === 0) return [];
-  return Promise.all(Array.from(files).map(fileToDataUrl));
+  const fileArray = Array.isArray(files) ? files : Array.from(files);
+  return Promise.all(fileArray.map(fileToDataUrl));
 }
 
 type ProgramDetailsProps = {
@@ -76,20 +77,134 @@ type ProgramDetailsProps = {
   applicantName: string;
   email: string;
   statusMarital: boolean;
+  isBusinessOwner?: string;
 };
 
-function ProgramDetails({ programName, applicantName, email, statusMarital }: ProgramDetailsProps) {
+function ProgramDetails({ programName, applicantName, email, statusMarital, isBusinessOwner }: ProgramDetailsProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
-  const [isBus, setIsBus] = useState("");
-  const [isBusStatus, setIsBusStatus] = useState(false);
+  const [isBus, setIsBus] = useState(isBusinessOwner ?? "No");
+  const [isBusStatus, setIsBusStatus] = useState((isBusinessOwner ?? "No") === "Yes");
+  const [savedFiles, setSavedFiles] = useState<Record<string, StoredFile[]>>({});
+  const [selectedFiles, setSelectedFiles] = useState<Record<string, File[]>>({});
+  const [, setFileCounts] = useState<Record<string, number>>({
+    employmentCertificate: 0,
+    certificates: 0,
+  });
   const router = useRouter();
 
-  useEffect(() => { 
+  const maxFileCount: Record<string, number> = {
+    employmentCertificate: 4,
+    certificates: 10,
+  };
+
+  const updateFileCount = (fieldId: string, savedLength: number, selectedLength: number) => {
+    if (!(fieldId in maxFileCount)) return;
+    setFileCounts((prev) => ({ ...prev, [fieldId]: savedLength + selectedLength }));
+  };
+
+  const handleRemoveSavedFile = (fieldId: string, fileIndex: number) => {
+    setSavedFiles((prev) => {
+      const fieldFiles = prev[fieldId] ?? [];
+      const updatedFiles = fieldFiles.filter((_, index) => index !== fileIndex);
+      const next = { ...prev };
+      if (updatedFiles.length > 0) {
+        next[fieldId] = updatedFiles;
+      } else {
+        delete next[fieldId];
+      }
+      updateFileCount(fieldId, updatedFiles.length, selectedFiles[fieldId]?.length ?? 0);
+      return next;
+    });
+  };
+
+  const handleRemoveSelectedFile = (fieldId: string, fileIndex: number) => {
+    setSelectedFiles((prev) => {
+      const fieldFiles = prev[fieldId] ?? [];
+      const updatedFiles = fieldFiles.filter((_, index) => index !== fileIndex);
+      const next = { ...prev };
+      if (updatedFiles.length > 0) {
+        next[fieldId] = updatedFiles;
+      } else {
+        delete next[fieldId];
+      }
+      updateFileCount(fieldId, savedFiles[fieldId]?.length ?? 0, updatedFiles.length);
+      return next;
+    });
+  };
+
+  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const { name, files } = event.target;
+    if (!name || !files) return;
+
+    const fileArray = Array.from(files);
+    const limit = maxFileCount[name as keyof typeof maxFileCount];
+    const currentFiles = selectedFiles[name] ?? [];
+    const existingSavedFiles = savedFiles[name] ?? [];
+    const combinedCount = existingSavedFiles.length + currentFiles.length + fileArray.length;
+    const combinedFiles = [...currentFiles, ...fileArray];
+
+    if (limit) {
+      if (combinedCount > limit) {
+        const allowedNewFiles = combinedFiles.slice(0, Math.max(0, limit - existingSavedFiles.length));
+        setSelectedFiles((prev) => ({ ...prev, [name]: allowedNewFiles }));
+        setFileCounts((prev) => ({ ...prev, [name]: existingSavedFiles.length + allowedNewFiles.length }));
+        setError(`${fileLabels[name as keyof typeof fileLabels] ?? name} supports up to ${limit} files.`);
+        const target = event.target as HTMLInputElement;
+        target.value = "";
+        return;
+      }
+      setSelectedFiles((prev) => ({ ...prev, [name]: combinedFiles }));
+      updateFileCount(name, existingSavedFiles.length, combinedFiles.length);
+      setError("");
+      const target = event.target as HTMLInputElement;
+      target.value = "";
+      return;
+    }
+
+    setSelectedFiles((prev) => ({ ...prev, [name]: fileArray.slice(0, 1) }));
+    setSavedFiles((prev) => {
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    if (name in maxFileCount) {
+      setFileCounts((prev) => ({ ...prev, [name]: fileArray.length }));
+    }
+    setError("");
+    const target = event.target as HTMLInputElement;
+    target.value = "";
+  };
+
+  // Load saved draft on component mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return;
+    try {
+      const draft: DraftApplication = JSON.parse(raw);
+      setSavedFiles(draft.files ?? {});
+      setFileCounts({
+        employmentCertificate: draft.files?.employmentCertificate?.length ?? 0,
+        certificates: draft.files?.certificates?.length ?? 0,
+      });
+      if (draft.businessName) {
+        const businessInput = document.querySelector('input[name="businessName"]') as HTMLInputElement;
+        if (businessInput) businessInput.value = draft.businessName;
+      }
+      if (draft.isBusinessOwner) {
+        setIsBus(draft.isBusinessOwner);
+      }
+    } catch {
+      // Silently fail if draft parsing fails
+    }
+  }, []);
+
+  useEffect(() => {
     if (isBus === "Yes") {
-      return setIsBusStatus(true);
+      setIsBusStatus(true);
     } else {
-      return setIsBusStatus(false);
+      setIsBusStatus(false);
     }
   }, [isBus]);
 
@@ -104,13 +219,35 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
 
     try {
       const fileEntries = Object.keys(fileLabels);
+      const invalidSelection = fileEntries.find((key) => {
+        const limit = maxFileCount[key as keyof typeof maxFileCount];
+        const selected = selectedFiles[key] ?? [];
+        const saved = savedFiles[key]?.length ?? 0;
+        return limit !== undefined && selected.length + saved > limit;
+      });
+
+      if (invalidSelection) {
+        setError(`${fileLabels[invalidSelection as keyof typeof fileLabels] ?? invalidSelection} can only have up to ${maxFileCount[invalidSelection]} files.`);
+        setIsSaving(false);
+        return;
+      }
+
       const files = await Promise.all(
         fileEntries.map(async (key) => {
           const input = formElement.elements.namedItem(key);
-          const fileList =
-            input instanceof HTMLInputElement ? input.files : null;
+          const fileList = input instanceof HTMLInputElement ? input.files : null;
+          const domFiles = fileList ? Array.from(fileList) : [];
+          const existingStored = savedFiles[key] ?? [];
+          const selected = selectedFiles[key] ?? domFiles;
+          const limit = maxFileCount[key as keyof typeof maxFileCount];
+          const selectedStoredFiles = await filesToStoredFiles(selected);
+          const combinedStoredFiles = limit
+            ? [...existingStored, ...selectedStoredFiles].slice(0, limit)
+            : selectedStoredFiles.length > 0
+              ? selectedStoredFiles
+              : existingStored;
 
-          return [key, await filesToStoredFiles(fileList)] as const;
+          return [key, combinedStoredFiles.length > 0 ? combinedStoredFiles : existingStored] as const;
         }),
       );
 
@@ -120,15 +257,11 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
         programName,
         isBusinessOwner:
           (
-            formElement.elements.namedItem(
-              "isBusinessOwner",
-            ) as HTMLSelectElement | null
+            formElement.elements.namedItem("isBusinessOwner") as HTMLSelectElement | null
           )?.value ?? "No",
         businessName:
           (
-            formElement.elements.namedItem(
-              "businessName",
-            ) as HTMLInputElement | null
+            formElement.elements.namedItem("businessName") as HTMLInputElement | null
           )?.value ?? "",
         files: Object.fromEntries(files),
       };
@@ -169,8 +302,10 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
               id="isBusinessOwner"
               name="isBusinessOwner"
               className="w-full border rounded-md px-4 py-2 mt-1 cursor-pointer"
-              defaultValue="No"
-              onChange={(e) => {setIsBus(e.target.value);}}
+              value={isBus}
+              onChange={(e) => {
+                setIsBus(e.target.value);
+              }}
             >
               <option value="No">No</option>
               <option value="Yes">Yes</option>
@@ -197,8 +332,11 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
               <li>All required documents must be submitted</li>
               <li>Accepted file formats: PDF, JPG, PNG</li>
               <li>Maximum file size: 5MB per file</li>
-              <li>Marriage certificate required for married applicants</li>
-              <li>Business registration required for business owners</li>
+              <li>Before uploading documents, rename them so the admin can review them properly.</li>
+              {statusMarital && <li>Marriage certificate required (you are married)</li>}
+              {!statusMarital && <li>Marriage certificate NOT required (you are not married)</li>}
+              {isBusStatus && <li>Business registration required (you are a business owner)</li>}
+              {!isBusStatus && <li>Business registration NOT required (you are not a business owner)</li>}
             </ul>
           </div>
         </div>
@@ -222,7 +360,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
             <div
               key={field.id}
               style={{ display: field.show ? "block" : "none" }}
-              className="border-dashed border-2 rounded-md p-4 text-center flex flex-col h-36 border-gray-300 cursor-pointer"
+              className="border-dashed border-2 rounded-md p-4 text-left flex flex-col border-gray-300 bg-white"
             >
               <label className="font-medium block mb-2" htmlFor={field.id}>
                 {fileLabels[field.id]}
@@ -231,16 +369,80 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
                 ) : null}
                 {field.id === "employmentCertificate" ? " (4 max)" : null}
                 {field.id === "certificates" ? " (10 max)" : null}
+                {savedFiles[field.id]?.length ? <span className="ml-2 text-xs text-green-600 font-semibold">(✓ Saved)</span> : null}
               </label>
-              <input
-                id={field.id}
-                name={field.id}
-                type="file"
-                multiple={field.multiple}
-                accept={field.accept ?? ".pdf, .jpg, .jpeg, .png"}
-                className="mx-auto text-sm cursor-pointer"
-              />
-              <p className="text-xs text-gray-400 mt-2">{field.note}</p>
+              {field.id in maxFileCount ? (
+                <>
+                  <input
+                    id={field.id}
+                    name={field.id}
+                    type="file"
+                    multiple
+                    accept={field.accept ?? ".pdf, .jpg, .jpeg, .png"}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => document.getElementById(field.id)?.click()}
+                    className="mx-auto rounded-md bg-slate-100 px-3 py-2 text-sm text-slate-700 hover:bg-slate-200"
+                  >
+                    Add file(s)
+                  </button>
+                  <p className="text-xs text-slate-500 mt-2">{(savedFiles[field.id]?.length ?? 0) + (selectedFiles[field.id]?.length ?? 0)}/{maxFileCount[field.id]} selected</p>
+                </>
+              ) : (
+                <>
+                  {((savedFiles[field.id]?.length ?? 0) + (selectedFiles[field.id]?.length ?? 0)) === 0 ? (
+                    <>
+                      <input
+                        id={field.id}
+                        name={field.id}
+                        type="file"
+                        multiple={field.multiple}
+                        accept={field.accept ?? ".pdf, .jpg, .jpeg, .png"}
+                        onChange={handleFileChange}
+                        className="mx-auto text-sm cursor-pointer"
+                      />
+                      <p className="text-xs text-gray-400 mt-2">{field.note}</p>
+                    </>
+                  ) : null}
+                </>
+              )}
+              {(savedFiles[field.id]?.length ?? 0) > 0 || (selectedFiles[field.id]?.length ?? 0) > 0 ? (
+                <div className="mt-3 space-y-2 text-left">
+                  {(savedFiles[field.id] ?? []).map((file, index) => (
+                    <div key={`saved-${field.id}-${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <span className="truncate block">{file.name}</span>
+                        <span className="text-xs text-slate-500">Saved</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSavedFile(field.id, index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  {(selectedFiles[field.id] ?? []).map((file, index) => (
+                    <div key={`selected-${field.id}-${file.name}-${index}`} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
+                      <div className="flex-1 min-w-0">
+                        <span className="truncate block">{file.name}</span>
+                        <span className="text-xs text-slate-500">New</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveSelectedFile(field.id, index)}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               {field.showForm ? (
                 <Link
                   href={eteeapFormUrl}
@@ -251,7 +453,6 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
                   Fill ETEEAP Form Online <FaExternalLinkAlt size={12} />
                 </Link>
               ) : null}
-              
             </div>
           ))}
         </div>
@@ -269,8 +470,6 @@ function ProgramDetails({ programName, applicantName, email, statusMarital }: Pr
           </button>
         </div>
       </form>
-
-      
     </main>
   );
 }

@@ -27,12 +27,10 @@ export default function JoinAlumniPage() {
   const [email, setEmail] = useState("");
 
   // Educational Attainments
-  const [educationalAttainments, setEducationalAttainments] = useState<string[]>([]);
-  const [selectedEducation, setSelectedEducation] = useState("");
+  const [educationalAttainment, setEducationalAttainment] = useState("");
 
   // Program Information
-  const [programs, setPrograms] = useState<string[]>([]);
-  const [selectedProgram, setSelectedProgram] = useState("");
+  const [program, setProgram] = useState("");
 
   // Work Experience
   const [workExperiences, setWorkExperiences] = useState<WorkExperience[]>([]);
@@ -68,26 +66,25 @@ export default function JoinAlumniPage() {
     }
   }, [authEmail, authFullName, authLoading, isAutoFilled]);
 
-  const addEducationalAttainment = () => {
-    if (selectedEducation && !educationalAttainments.includes(selectedEducation)) {
-      setEducationalAttainments([...educationalAttainments, selectedEducation]);
-      setSelectedEducation("");
-    }
-  };
+  const isCurrentWorkComplete =
+    currentWork.companyName.trim() !== "" &&
+    currentWork.roleOrReason.trim() !== "" &&
+    currentWork.workYear.trim() !== "";
 
-  const removeEducationalAttainment = (item: string) => {
-    setEducationalAttainments(educationalAttainments.filter((e) => e !== item));
-  };
-
-  const addProgram = () => {
-    if (selectedProgram && !programs.includes(selectedProgram)) {
-      setPrograms([...programs, selectedProgram]);
-      setSelectedProgram("");
-    }
-  };
-
-  const removeProgram = (item: string) => {
-    setPrograms(programs.filter((p) => p !== item));
+  const validateRequiredFields = () => {
+    if (!fullName.trim()) return "Full name is required.";
+    if (!nickname.trim()) return "Nickname is required.";
+    if (!graduationYear.trim()) return "Academic year is required.";
+    if (!birthday.trim()) return "Birthday is required.";
+    if (!email.trim()) return "Email is required.";
+    if (!educationalAttainment.trim()) return "Educational attainment is required.";
+    if (!program.trim()) return "Program is required.";
+    if (workExperiences.length === 0) return "At least one work experience is required.";
+    if (certificates.length === 0) return "At least one certificate or license is required.";
+    if (!experience.trim()) return "Reflection experience is required.";
+    if (!transformation.trim()) return "Reflection transformation is required.";
+    if (!visibility.trim()) return "Profile visibility is required.";
+    return "";
   };
 
   const addWorkExperience = () => {
@@ -123,8 +120,9 @@ export default function JoinAlumniPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!fullName || !email) {
-      setErrorMessage("Full name and email are required");
+    const validationError = validateRequiredFields();
+    if (validationError) {
+      setErrorMessage(validationError);
       return;
     }
 
@@ -138,8 +136,8 @@ export default function JoinAlumniPage() {
         nickname,
         graduation_year: graduationYear,
         birthday: birthday || null,
-        educational_attainments: educationalAttainments,
-        programs,
+        educational_attainments: educationalAttainment ? [educationalAttainment] : [],
+        programs: program ? [program] : [],
         certificates,
         work_experiences: workExperiences,
         experience,
@@ -163,8 +161,8 @@ export default function JoinAlumniPage() {
         setGraduationYear("");
         setBirthday("");
         setEmail("");
-        setEducationalAttainments([]);
-        setPrograms([]);
+        setEducationalAttainment("");
+        setProgram("");
         setCertificates([]);
         setWorkExperiences([]);
         setExperience("");
@@ -231,6 +229,7 @@ export default function JoinAlumniPage() {
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
                 className="border p-3 rounded w-full"
+                required
               />
               <input
                 name="graduationYear"
@@ -238,6 +237,7 @@ export default function JoinAlumniPage() {
                 value={graduationYear}
                 onChange={(e) => setGraduationYear(e.target.value)}
                 className="border p-3 rounded w-full"
+                required
               />
               <input
                 type="date"
@@ -245,6 +245,7 @@ export default function JoinAlumniPage() {
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
                 className="border p-3 rounded w-full"
+                required
               />
               <input
                 name="email"
@@ -261,90 +262,43 @@ export default function JoinAlumniPage() {
           {/* Educational Attainment */}
           <div>
             <h2 className="text-lg font-bold mb-4">Educational Attainment</h2>
-            <div className="flex gap-2 mb-4">
-              <select
-                value={selectedEducation}
-                onChange={(e) => setSelectedEducation(e.target.value)}
-                className="border p-2 rounded w-full"
-              >
-                <option value="">Select Educational Attainment</option>
-                <option>Primary School</option>
-                <option>Junior High School</option>
-                <option>Senior High School</option>
-                <option>Technical Vocational (TESDA)</option>
-                <option>Bachelor&apos;s Degree</option>
-                <option>Master&apos;s Degree</option>
-                <option>Doctorate Degree</option>
-              </select>
-              <button
-                type="button"
-                onClick={addEducationalAttainment}
-                className="bg-blue-700 text-white px-4 rounded"
-              >
-                Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {educationalAttainments.map((item) => (
-                <span
-                  key={item}
-                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
-                >
-                  {item}
-                  <button
-                    type="button"
-                    onClick={() => removeEducationalAttainment(item)}
-                    className="text-blue-800 hover:text-blue-600"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
+            <select
+              value={educationalAttainment}
+              onChange={(e) => setEducationalAttainment(e.target.value)}
+              className="border p-2 rounded w-full"
+              required
+            >
+              <option value="">Select Educational Attainment</option>
+                <option value="Associate">Associate</option>
+              <option value="Bachelor&apos;s">Bachelor&apos;s</option>
+              <option value="Master&apos;s">Master&apos;s</option>
+              <option value="Doctoral">Doctoral</option>
+            </select>
           </div>
 
           {/* Program Information */}
           <div>
             <h2 className="text-lg font-bold mb-4">Program Information</h2>
-            <div className="flex gap-2 mb-4">
-              <select
-                value={selectedProgram}
-                onChange={(e) => setSelectedProgram(e.target.value)}
-                className="border p-2 rounded w-full"
-              >
-                <option value="">Select Program</option>
-                <option>BS Information Technology</option>
-                <option>BS Education</option>
-                <option>BS Business Administration</option>
-                <option>BS Criminology</option>
-                <option>BS Nursing</option>
-                <option>ETEEAP Program</option>
-              </select>
-              <button
-                type="button"
-                onClick={addProgram}
-                className="bg-blue-700 text-white px-4 rounded"
-              >
-                Add
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {programs.map((item) => (
-                <span
-                  key={item}
-                  className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
-                >
-                  {item}
-                  <button
-                    type="button"
-                    onClick={() => removeProgram(item)}
-                    className="text-blue-800 hover:text-blue-600"
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
+            <select
+              value={program}
+              onChange={(e) => setProgram(e.target.value)}
+              className="border p-2 rounded w-full"
+              required
+            >
+              <option value="">Select Program</option>
+              <option value="Bachelor of Arts in English Language Studies">
+                Bachelor of Arts in English Language Studies
+              </option>
+              <option value="Bachelor of Science in Business Administration - Human Resource Management">
+                Bachelor of Science in Business Administration - Human Resource Management
+              </option>
+              <option value="Bachelor of Science in Business Administration - Marketing Management">
+                Bachelor of Science in Business Administration - Marketing Management
+              </option>
+              <option value="Bachelor of Science in Hospitality Management">
+                Bachelor of Science in Hospitality Management
+              </option>
+            </select>
           </div>
 
           {/* Work Experience */}
@@ -384,6 +338,7 @@ export default function JoinAlumniPage() {
               <button
                 type="button"
                 onClick={addWorkExperience}
+                disabled={!isCurrentWorkComplete}
                 className="bg-blue-700 text-white px-4 rounded"
               >
                 Add Experience
@@ -465,6 +420,7 @@ export default function JoinAlumniPage() {
               onChange={(e) => setExperience(e.target.value)}
               className="border p-3 rounded w-full mb-4"
               rows={4}
+              required
             />
             <textarea
               name="transformation"
@@ -473,6 +429,7 @@ export default function JoinAlumniPage() {
               onChange={(e) => setTransformation(e.target.value)}
               className="border p-3 rounded w-full"
               rows={4}
+              required
             />
           </div>
 
@@ -484,6 +441,7 @@ export default function JoinAlumniPage() {
               value={visibility}
               onChange={(e) => setVisibility(e.target.value)}
               className="border p-3 rounded w-full"
+              required
             >
               <option value="public">Public</option>
               <option value="private">Private</option>

@@ -31,7 +31,7 @@ export default function LandPage() {
     <main> 
       <Header showProfile={showProfile} email={email} />
       <Draft email={email} phone={phone}/>
-      <Footer />
+      <Footer/>
     </main>
   );
 }

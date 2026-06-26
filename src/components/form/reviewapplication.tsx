@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
-import { CheckCircle, FileText, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 
 const DRAFT_KEY = "eteeap-application-draft";
 
@@ -54,6 +54,7 @@ type JWTProps = {
   email: string;
   phone: string;
   status: string;
+  isBusinessOwner?: string;
 };
 
 const fileLabels: Record<string, string> = {
@@ -105,7 +106,7 @@ function dataUrlToFile(dataUrl: string, name: string, type: string) {
   return new File([bytes], name, { type: mime });
 }
 
-export default function ReviewApplication({ fullname, email, phone, status }: JWTProps) {
+export default function ReviewApplication({ fullname, email, phone, status, isBusinessOwner }: JWTProps) {
   const router = useRouter();
   const [draft, setDraft] = useState<DraftApplication | null>(null);
   const [selectedApplication, setSelectedApplication] = useState<SelectedApplication | null>(null);
@@ -114,16 +115,89 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
   const [progressLabel, setProgressLabel] = useState("");
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+
+  const handleDeleteFile = (fileKey: string, fileIndex: number) => {
+    const currentDraft = draft ?? getDraft();
+    if (!currentDraft) return;
+
+    const updatedFiles = { ...currentDraft.files };
+    if (updatedFiles[fileKey]) {
+      updatedFiles[fileKey] = updatedFiles[fileKey].filter((_, index) => index !== fileIndex);
+      if (updatedFiles[fileKey].length === 0) {
+        delete updatedFiles[fileKey];
+      }
+    }
+
+    const updatedDraft: DraftApplication = {
+      ...currentDraft,
+      files: updatedFiles,
+    };
+
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(updatedDraft));
+    setDraft(updatedDraft);
+  };
+  
   const currentStatus = (selectedApplication?.form_status || draft?.form_status || "").toLowerCase().trim();
   const isUnderReview = currentStatus === "under review";
   const isDraft = currentStatus === "draft";
   const isReject = currentStatus === "reject";
+  const isMarried = status?.toLowerCase() === "married";
+
+  // Required documents based on conditions
+  const getRequiredDocuments = () => {
+    const required = [
+      "letterOfIntent",
+      "resume",
+      "picture",
+      "applicationForm",
+      "recommendationLetter",
+      "schoolCredentials",
+      "highSchoolDiploma",
+      "transcript",
+      "birthCertificate",
+      "nbiClearance",
+    ];
+    if (isMarried) required.push("marriageCertificate");
+    if (isBusinessOwner === "Yes") required.push("businessRegistration");
+    return required;
+  };
+
+  const validateRequiredDocuments = (): boolean => {
+    const currentDraft = draft ?? getDraft();
+    if (!currentDraft) return false;
+
+    const required = getRequiredDocuments();
+    const missingDocs: string[] = [];
+
+    for (const docKey of required) {
+      const files = currentDraft.files?.[docKey] ?? [];
+      const submittedValue = selectedApplication?.[docKey as keyof SelectedApplication];
+      if (files.length === 0 && !submittedValue) {
+        missingDocs.push(fileLabels[docKey] || docKey);
+      }
+    }
+
+    setValidationErrors(missingDocs);
+    return missingDocs.length === 0;
+  };
 
   useEffect(() => {
     setDraft(getDraft());
     if (typeof window === "undefined") return;
 
-    const raw = window.localStorage.getItem("selected-application");
+    let raw = window.localStorage.getItem("selected-application");
+    if (!raw) {
+      raw = window.sessionStorage.getItem("selected-application");
+    }
+    if (!raw) {
+      const fallback = (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__;
+      if (fallback) {
+        setSelectedApplication(fallback as SelectedApplication);
+        return;
+      }
+    }
+
     if (!raw) return;
 
     try {
@@ -135,6 +209,13 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
 
   const handleSubmit = async (nextStatus: string) => {
     if (isDraft || isReject) return router.push("/courses");
+    
+    // Validate required documents before submitting
+    if (!validateRequiredDocuments()) {
+      setSubmitError("Please upload all required documents before submitting.");
+      return;
+    }
+
     const currentDraft = draft ?? getDraft();
     if (!currentDraft) {
       setSubmitError("No Data found in local storage.");
@@ -152,6 +233,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
     setProgressLabel("Preparing files...");
     setSubmitError("");
     setSubmitSuccess("");
+    setValidationErrors([]);
 
     try {
       const uploads: Array<{ file: File; documentType: string }> = [];
@@ -277,6 +359,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
               {Object.entries(fileLabels).map(([key, label]) => {
                 const files = draft?.files?.[key] ?? [];
                 const submittedValue = selectedApplication?.[key as keyof SelectedApplication];
+                const isMultiFile = ["employmentCertificate", "certificates"].includes(key);
 
                 if (files.length === 0 && !submittedValue) {
                   return null;
@@ -284,20 +367,39 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
 
                 return (
                   <div key={key} className="border-b last:border-b-0 pb-6 last:pb-0">
-                    <p className="text-slate-500 text-sm font-medium mb-4">{label}</p>
+                    <div className="flex items-center gap-3 mb-4">
+                      <p className="text-slate-500 text-sm font-medium">{label}</p>
+                      {isMultiFile && files.length > 0 && (
+                        <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 rounded-full px-2.5 py-0.5 text-xs font-semibold">
+                          {files.length} file{files.length !== 1 ? "s" : ""}
+                        </span>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-3">
                       {files.length > 0 ? (
-                        files.map((file) => (
-                          <a
-                            key={`${key}-${file.name}`}
-                            href={file.dataUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-medium hover:bg-blue-100 transition-colors"
+                        files.map((file, index) => (
+                          <div
+                            key={`${key}-${file.name}-${index}`}
+                            className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 rounded-full px-4 py-2 text-sm font-medium group relative"
                           >
-                            <FileText className="w-4 h-4" />
-                            <span className="truncate max-w-xs">{file.name}</span>
-                          </a>
+                            <a
+                              href={file.dataUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 hover:text-blue-900 transition-colors"
+                            >
+                              <FileText className="w-4 h-4" />
+                              <span className="truncate max-w-xs">{file.name}</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteFile(key, index)}
+                              className="ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-blue-200 rounded-full p-0.5 flex items-center justify-center"
+                              title="Delete file"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         ))
                       ) : submittedValue ? (
                         <a
@@ -355,6 +457,13 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             <div>
               <p className="text-red-900 font-semibold mb-2">Submission Error</p>
               <p className="text-red-800 text-sm">{submitError}</p>
+              {validationErrors.length > 0 && (
+                <ul className="mt-3 list-disc list-inside text-red-800 text-sm">
+                  {validationErrors.map((doc) => (
+                    <li key={doc}>{doc}</li>
+                  ))}
+                </ul>
+              )}
             </div>
           </div>
         ) : null}
@@ -374,14 +483,22 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
         <div className="sticky bottom-0 md:sticky md:bottom-auto bg-white md:bg-transparent rounded-t-2xl md:rounded-none shadow-2xl md:shadow-none p-6 md:p-0 flex flex-col-reverse md:flex-row md:justify-end gap-3 md:gap-4">
           <button
             type="button"
-            onClick={() => {
-              router.back();
-              window.localStorage.clear();
-            }}
+            onClick={() => router.back()}
             disabled={submitting}
             className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Back
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              router.push("/form/draft");
+            }}
+            disabled={submitting}
+            className="px-6 py-3 rounded-lg border border-slate-300 text-slate-700 font-semibold hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Save as Draft
           </button>
 
           <button
@@ -396,13 +513,7 @@ export default function ReviewApplication({ fullname, email, phone, status }: JW
             <span>{submitting ? "Submitting Application..." : "Submit"}</span>
           </button>
         </div>
-
-        {/* Footer Note */}
-        <div className="mt-8 md:mt-12 text-center">
-          <p className="text-slate-500 text-xs md:text-sm">
-            Files are stored temporarily in your browser until final submission
-          </p>
-        </div>
+        
       </div>
     </main>
   );

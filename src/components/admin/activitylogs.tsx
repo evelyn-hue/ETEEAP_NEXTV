@@ -105,7 +105,7 @@ export default function AdminActivityLog() {
           onKeyDown={(event) => {
             if (event.key === "Enter") onSearchSubmit();
           }}
-          className="border px-3 py-2 rounded-lg shadow-sm flex-1 min-w-[180px]"
+          className="border px-3 py-2 rounded-lg shadow-sm flex-1 min-w-45"
         />
 
         <button
@@ -122,7 +122,7 @@ export default function AdminActivityLog() {
             setActionFilter(event.target.value);
             setPage(1);
           }}
-          className="border px-3 py-2 rounded-lg shadow-sm min-w-[140px] w-full sm:w-auto"
+          className="border px-3 py-2 rounded-lg shadow-sm min-w-35 w-full sm:w-auto"
         >
           {actionOptions.map((option) => (
             <option key={option} value={option}>
@@ -138,7 +138,7 @@ export default function AdminActivityLog() {
             setDateFilter(event.target.value);
             setPage(1);
           }}
-          className="border px-3 py-2 rounded-lg shadow-sm min-w-[140px]"
+          className="border px-3 py-2 rounded-lg shadow-sm min-w-35"
         />
       </div>
 
@@ -150,7 +150,7 @@ export default function AdminActivityLog() {
       ) : null}
 
       <div className="hidden md:block overflow-x-auto rounded-lg border">
-        <table className="w-full min-w-[700px] text-left">
+        <table className="w-full min-w-175 text-left">
           <thead className="bg-blue-800 text-white">
             <tr>
               <th className="p-3">Date</th>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import api_links from "@/config/api_link.json";
 import {
   FileText,
@@ -52,11 +52,21 @@ interface Toast {
   type: "success" | "error" | "info";
 }
 
+interface MyApplicationResponse {
+  success: boolean;
+  data: Application | null;
+  remarks?: Record<string, { remark: string }>;
+  verified?: Record<string, boolean>;
+  meta?: {
+    requiredDocumentCount: number;
+    requiredUploadedCount: number;
+  };
+  error?: string;
+}
+
 export default function ApplicationStatus() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
-  const id = params.id as string;
 
   const [app, setApp] = useState<Application | null>(null);
   const [remarks, setRemarks] = useState<Record<string, { remark: string }>>({});
@@ -69,57 +79,91 @@ export default function ApplicationStatus() {
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    window.setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchDetails = async () => {
+  const isValidFile = (file: File) => {
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      return "File must be a PDF, JPG, or PNG.";
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return "File must be 10MB or smaller.";
+    }
+    return null;
+  };
+
+  const fetchDetails = async (signal: AbortSignal) => {
     try {
       setLoading(true);
       const response = await fetch(
-        "/services/supabase/form/retrieve",
+        "/services/supabase/form/my-application",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ formId: id }),
-        }
+          body: JSON.stringify({}),
+          signal,
+        },
       );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const body = await response.json().catch(() => null);
+        const message = body?.error || `HTTP error ${response.status}`;
+        throw new Error(message);
       }
 
-      const data = await response.json();
-      
-      if (data.success && data.data && data.data.length > 0) {
-        setApp(data.data[0]);
-        setRemarks(data.remarks || {});
-        setVerified(data.verified || {});
-      } else {
-        showToast("Application not found", "error");
+      const payload = (await response.json()) as MyApplicationResponse;
+      if (!payload.success) {
+        throw new Error(payload.error || "Failed to load application");
       }
+
+      if (!payload.data) {
+        showToast("No current application found.", "info");
+        setApp(null);
+        return;
+      }
+
+      setApp(payload.data);
+      setRemarks(payload.remarks || {});
+      setVerified(payload.verified || {});
     } catch (err) {
+      if ((err as DOMException).name === "AbortError") {
+        return;
+      }
       console.error("Fetch error:", err);
-      showToast("Failed to load application", "error");
+      showToast((err as Error).message || "Failed to load application", "error");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (id) {
-      fetchDetails();
+    const controller = new AbortController();
+    fetchDetails(controller.signal);
 
-      const doc = searchParams.get("doc");
-      if (doc) {
-        setTimeout(() => {
-          const el = document.getElementById(`doc-${doc}`);
-          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 400);
-      }
+    const doc = searchParams.get("doc");
+    if (doc) {
+      setTimeout(() => {
+        const el = document.getElementById(`doc-${doc}`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 400);
     }
-  }, [id, searchParams]);
+
+    return () => controller.abort();
+  }, [searchParams]);
 
   const handleFileChange = (key: string, file: File | null) => {
+    if (!file) {
+      setFileInputs((prev) => ({ ...prev, [key]: null }));
+      return;
+    }
+
+    const validationError = isValidFile(file);
+    if (validationError) {
+      showToast(validationError, "error");
+      return;
+    }
+
     setFileInputs((prev) => ({ ...prev, [key]: file }));
   };
 
@@ -137,21 +181,38 @@ export default function ApplicationStatus() {
     setDraggedOver(null);
     const files = e.dataTransfer.files;
     if (files.length > 0) {
+      const validationError = isValidFile(files[0]);
+      if (validationError) {
+        showToast(validationError, "error");
+        return;
+      }
       handleFileChange(key, files[0]);
     }
   };
 
   const handleResubmit = async (key: string) => {
-    if (!fileInputs[key]) {
+    const file = fileInputs[key];
+    if (!file) {
       showToast("Choose a file to upload", "error");
+      return;
+    }
+
+    const validationError = isValidFile(file);
+    if (validationError) {
+      showToast(validationError, "error");
+      return;
+    }
+
+    if (!app?.id) {
+      showToast("Application not available for upload.", "error");
       return;
     }
 
     setUploadingDoc(key);
     try {
       const formData = new FormData();
-      formData.append("file", fileInputs[key]!);
-      formData.append("formId", id);
+      formData.append("file", file);
+      formData.append("formId", app.id);
       formData.append("documentType", key);
 
       const response = await fetch("/services/supabase/form/submit", {
@@ -160,14 +221,17 @@ export default function ApplicationStatus() {
       });
 
       if (!response.ok) {
-        throw new Error("Upload failed");
+        const body = await response.json().catch(() => null);
+        const message = body?.error || "Upload failed";
+        throw new Error(message);
       }
 
       showToast("Document uploaded successfully", "success");
       setFileInputs((p) => ({ ...p, [key]: null }));
-      fetchDetails();
+      const controller = new AbortController();
+      await fetchDetails(controller.signal);
     } catch (err) {
-      showToast("Upload failed. Please try again.", "error");
+      showToast((err as Error).message || "Upload failed. Please try again.", "error");
       console.error(err);
     } finally {
       setUploadingDoc(null);
@@ -179,11 +243,16 @@ export default function ApplicationStatus() {
       return;
     }
 
+    if (!app?.id) {
+      showToast("Application ID is not available.", "error");
+      return;
+    }
+
     try {
       const response = await fetch(api_links.form.delete, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: id }),
+        body: JSON.stringify({ formId: app.id }),
       });
 
       if (!response.ok) {
@@ -199,10 +268,14 @@ export default function ApplicationStatus() {
   };
 
   // Calculate statistics
-  const uploadedCount = DOCUMENTS.filter((d) => app?.[d.key]).length;
-  const missingCount = DOCUMENTS.filter((d) => !app?.[d.key]).length;
+  const requiredDocuments = DOCUMENTS.filter((document) => document.required);
+  const requiredUploadedCount = requiredDocuments.filter((document) => app?.[document.key]).length;
+  const uploadedCount = DOCUMENTS.filter((document) => app?.[document.key]).length;
+  const missingCount = DOCUMENTS.filter((document) => !app?.[document.key]).length;
   const verifiedCount = Object.values(verified).filter(Boolean).length;
-  const progressPercentage = Math.round((uploadedCount / DOCUMENTS.length) * 100);
+  const progressPercentage = requiredDocuments.length > 0
+    ? Math.round((requiredUploadedCount / requiredDocuments.length) * 100)
+    : 0;
 
   if (loading) {
     return (
