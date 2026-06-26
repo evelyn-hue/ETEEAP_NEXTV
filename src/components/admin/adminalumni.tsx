@@ -2,8 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  FiCheckCircle,
-  FiClock,
   FiSearch,
   FiEye,
   FiUserCheck,
@@ -487,55 +485,17 @@ export default function AdminAlumni() {
           </>
         )}
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-blue-50 p-3 text-blue-700">
-                <FiClock />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Review Mode</p>
-                <p className="font-semibold text-slate-900">Manual verification</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-green-50 p-3 text-green-700">
-                <FiCheckCircle />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Approved</p>
-                <p className="font-semibold text-slate-900">Visible on alumni list</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-red-50 p-3 text-red-700">
-                <FiUserX />
-              </div>
-              <div>
-                <p className="text-sm text-slate-500">Rejected</p>
-                <p className="font-semibold text-slate-900">Kept out of public list</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {selectedAlumni ? (
           <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0 sm:items-center sm:px-4 sm:py-8"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
             onClick={(event) => {
               if (event.target === event.currentTarget) {
                 setSelectedAlumni(null);
               }
             }}
           >
-            <div className="h-dvh w-full max-w-5xl overflow-y-auto rounded-none bg-white shadow-2xl sm:h-auto sm:max-h-[92vh] sm:rounded-3xl">
-              <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4">
+            <div className="w-full h-full rounded-none bg-white shadow-2xl overflow-auto">
+              <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4 sticky top-0 bg-white z-10">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
                     Alumni Details
@@ -558,7 +518,7 @@ export default function AdminAlumni() {
                 </button>
               </div>
 
-              <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[1fr_1fr]">
+              <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[1fr_1fr] h-[calc(100vh-96px)] overflow-y-auto">
                 <div className="space-y-6">
                   <section className="rounded-2xl bg-slate-50 p-5">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">

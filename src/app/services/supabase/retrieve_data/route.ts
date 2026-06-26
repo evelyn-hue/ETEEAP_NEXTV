@@ -44,6 +44,13 @@ const REQUIRED_DOCUMENT_KEYS = [
   "nbiClearance",
 ] as const;
 
+const ALL_DOCUMENT_KEYS = [
+  ...REQUIRED_DOCUMENT_KEYS,
+  "marriageCertificate",
+  "businessRegistration",
+  "certificates",
+] as const;
+
 function parseApprovals(value: unknown): ApprovalEntry[] {
   if (!Array.isArray(value)) return [];
   const approvals: ApprovalEntry[] = [];
@@ -181,7 +188,7 @@ export async function PATCH(params: NextRequest) {
 
     const { data: currentRow, error: readError } = await supabaseServer
       .from("form")
-      .select("id, email, applicantName, form_status, forms_approvals, letterOfIntent, resume, picture, applicationForm, recommendationLetter, schoolCredentials, highSchoolDiploma, transcript, birthCertificate, employmentCertificate, nbiClearance")
+      .select("id, email, applicantName, form_status, forms_approvals, letterOfIntent, resume, picture, applicationForm, recommendationLetter, schoolCredentials, highSchoolDiploma, transcript, birthCertificate, employmentCertificate, nbiClearance, marriageCertificate, businessRegistration, certificates")
       .eq("id", rowId)
       .single();
 
@@ -193,6 +200,8 @@ export async function PATCH(params: NextRequest) {
     }
 
     const approvals = parseApprovals(currentRow.forms_approvals);
+    const requestedStatus = String(form_status ?? "").trim();
+    const normalizedRequestedStatus = requestedStatus.toLowerCase();
 
     if (documentId) {
       const nextEntry: ApprovalEntry = {
@@ -221,6 +230,42 @@ export async function PATCH(params: NextRequest) {
         String(reviewedBy ?? ""),
         nextEntry.status === "Verified" ? "Verify Document" : nextEntry.status === "Rejected" ? "Reject Document" : "Update Document",
         `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) document ${nextEntry.documentId} marked as ${nextEntry.status}${nextEntry.remark ? `. Remark: ${nextEntry.remark}` : ""}`,
+      );
+    } else if (
+      normalizedRequestedStatus === "approve" ||
+      normalizedRequestedStatus === "approved" ||
+      normalizedRequestedStatus === "reject" ||
+      normalizedRequestedStatus === "rejected"
+    ) {
+      const bulkStatus = normalizedRequestedStatus === "approve" || normalizedRequestedStatus === "approved"
+        ? "Verified"
+        : "Rejected";
+
+      for (const key of ALL_DOCUMENT_KEYS) {
+        if (!currentRow[key]) continue;
+
+        const nextEntry: ApprovalEntry = {
+          documentId: key,
+          status: bulkStatus,
+          remark: String(remark ?? ""),
+          reviewedBy: String(reviewedBy ?? ""),
+          reviewedAt: new Date().toISOString(),
+        };
+
+        const existingIndex = approvals.findIndex(
+          (entry) => entry.documentId === nextEntry.documentId,
+        );
+        if (existingIndex >= 0) {
+          approvals[existingIndex] = nextEntry;
+        } else {
+          approvals.push(nextEntry);
+        }
+      }
+
+      await insertActivityLog(
+        String(reviewedBy ?? ""),
+        bulkStatus === "Verified" ? "Verify Document" : "Reject Document",
+        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) all uploaded documents marked as ${bulkStatus}`,
       );
     }
 

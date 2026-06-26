@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { FiFileText, FiHome, FiLogOut, FiMenu, FiSettings, FiUsers, FiX } from "react-icons/fi";
+import { FiFileText, FiHome, FiLogOut, FiMenu, FiUsers, FiX } from "react-icons/fi";
 import { Fetch_to } from "@/utilities";
 import api_link from "@/config/api_link.json";
 
@@ -12,7 +12,7 @@ const navItems = [
   { href: "/admin/application", label: "Applications", icon: FiFileText, badge: "5" },
   { href: "/admin/adminalumni", label: "Alumni", icon: FiFileText, badge: "5" },
   { href: "/admin/activitylogs", label: "Activity Logs", icon: FiUsers },
-  { href: "/admin/setting", label: "Settings", icon: FiSettings },
+  //{ href: "/admin/setting", label: "Settings", },
 ];
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {

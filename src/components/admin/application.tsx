@@ -108,8 +108,8 @@ const baseDocuments: DocumentDefinition[] = [
 
 function normalizeFormStatus(status?: string): FormStatus {
   const normalized = String(status ?? "").toLowerCase().trim();
-  if (normalized === "approve") return "Approve";
-  if (normalized === "reject") return "Reject";
+  if (normalized === "approve" || normalized === "approved") return "Approve";
+  if (normalized === "reject" || normalized === "rejected") return "Reject";
   if (normalized === "under review") return "Under Review";
   if (normalized === "delete") return "Delete";
   return "Draft";
@@ -257,12 +257,14 @@ function DocumentCard({
   onRemarkChange,
   onRemarkSave,
   isSaving,
+  disabled,
 }: {
   document: DocumentItem;
   onStatusChange: (status: DocumentStatus, remark: string) => void;
   onRemarkChange: (remark: string) => void;
   onRemarkSave: (remark: string) => void;
   isSaving?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -305,7 +307,8 @@ function DocumentCard({
         <button
           type="button"
           onClick={() => onStatusChange("Verified", document.remark)}
-          className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700"
+          disabled={disabled}
+          className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Check size={16} />
           Verify
@@ -313,7 +316,8 @@ function DocumentCard({
         <button
           type="button"
           onClick={() => onStatusChange("Rejected", document.remark)}
-          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+          disabled={disabled}
+          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <XCircle size={16} />
           Reject
@@ -328,13 +332,14 @@ function DocumentCard({
           value={document.remark}
           onChange={(e) => onRemarkChange(e.target.value)}
           rows={3}
-          placeholder="Add a remark for this document..."
-          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-700/20"
+          placeholder={disabled ? "Document review is locked." : "Add a remark for this document..."}
+          disabled={disabled}
+          className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-700/20 disabled:cursor-not-allowed disabled:bg-slate-100"
         />
         <button
           type="button"
           onClick={() => onRemarkSave(document.remark)}
-          disabled={isSaving}
+          disabled={disabled || isSaving}
           className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
         >
           {isSaving ? (
@@ -433,6 +438,7 @@ export default function Application() {
     return [
       "All Programs",
       "Bachelor of Science in Hospitality Management",
+      "Bachelor of Science in Business Administration - Human Resource Management",
       ...new Set(applications.map((item) => item.program)),
     ];
   }, [applications]);
@@ -656,11 +662,13 @@ export default function Application() {
     item: ApplicationRecord,
     status: FormStatus,
   ) => {
-    const actionLabel = status === "Approve" ? "accept" : status === "Reject" ? "reject" : status.toLowerCase();
+    const actionLabel = status === "Approve" ? "Yes" : status === "Reject" ? "Yes" : status === "Under Review" ? "Restore" : "Update";
+    const actionVerb = status === "Approve" ? "accept" : status === "Reject" ? "reject" : status === "Under Review" ? "restore" : "update";
+
     openConfirmation({
-      title: `${status === "Approve" ? "Accept" : status === "Reject" ? "Reject" : "Update"} Application`,
-      message: `Are you sure you want to ${actionLabel} the application for ${item.applicant}?`,
-      confirmLabel: status === "Approve" ? "Accept" : status === "Reject" ? "Reject" : "Confirm",
+      title: `${actionLabel} Application`,
+      message: `Are you sure you want to bulk ${actionVerb} the application of ${item.applicant}?`,
+      confirmLabel: actionLabel,
       cancelLabel: "Cancel",
       execute: () => updateApplicationStatus(item.id, status),
     });
@@ -682,13 +690,8 @@ export default function Application() {
     document: DocumentItem,
     status: DocumentStatus,
   ) => {
-    openConfirmation({
-      title: `${status === "Verified" ? "Verify" : "Reject"} Document`,
-      message: `Are you sure you want to ${status === "Verified" ? "verify" : "reject"} ${document.label} for ${applicantName}?`,
-      confirmLabel: status === "Verified" ? "Verify" : "Reject",
-      cancelLabel: "Cancel",
-      execute: () => updateDocumentStatus(applicationId, document.id, status, document.remark),
-    });
+    // Directly update document status without confirmation
+    updateDocumentStatus(applicationId, document.id, status, document.remark);
   };
 
   return (
@@ -737,7 +740,6 @@ export default function Application() {
                 <option value="Under Review">Under Review</option>
                 <option value="Approve">Approve</option>
                 <option value="Reject">Reject</option>
-                <option value="Draft">Draft</option>
                 <option value="Delete">Delete</option>
               </select>
               <input
@@ -849,10 +851,6 @@ export default function Application() {
                   <th className="px-6 py-4 font-semibold">Status</th>
                   <th className="px-6 py-4 font-semibold">Documents</th>
                   <th className="px-6 py-4 font-semibold">
-                    <div className="flex items-center justify-between gap-3">
-                      <span>Action</span>
-                      <Trash2 size={16} className="text-slate-500" />
-                    </div>
                   </th>
                 </tr>
               </thead>
@@ -893,15 +891,15 @@ export default function Application() {
 
         {selectedApplication ? (
           <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0 sm:items-center sm:px-4 sm:py-8"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
             onClick={(event) => {
               if (event.target === event.currentTarget) {
                 setSelectedApplication(null);
               }
             }}
           >
-            <div className="w-full max-w-7xl overflow-y-auto rounded-none bg-white shadow-2xl h-dvh sm:h-auto sm:max-h-[92vh] sm:rounded-3xl">
-              <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4">
+            <div className="w-full h-full rounded-none bg-white shadow-2xl overflow-auto">
+              <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4 sticky top-0 bg-white z-10">
                 <button
                   type="button"
                   onClick={() => setSelectedApplication(null)}
@@ -912,7 +910,7 @@ export default function Application() {
                 </button>
               </div>
 
-              <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)]">
+              <div className="grid gap-6 p-4 sm:p-6 lg:grid-cols-[320px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] h-[calc(100vh-96px)] overflow-y-auto">
                 <aside className="space-y-6">
                   <section className="rounded-2xl bg-slate-50 p-5">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
@@ -972,6 +970,10 @@ export default function Application() {
                           )
                         }
                         isSaving={savingRemark === `${selectedApplication.id}-${document.id}`}
+                        disabled={
+                          selectedApplication.status === "Approve" ||
+                          selectedApplication.status === "Reject"
+                        }
                       />
                     ))}
                   </div>

@@ -262,14 +262,14 @@ export default function AdminApplications() {
         {/* Modal - Application Details */}
         {selectedApp && (
           <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-4 py-8 sm:items-center"
+            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
             onClick={(e) => {
               if (e.target === e.currentTarget) setSelectedApp(null);
             }}
           >
-            <div className="w-full max-w-4xl rounded-3xl bg-white shadow-2xl">
+            <div className="w-full h-full rounded-none bg-white shadow-2xl overflow-auto">
               {/* Modal Header */}
-              <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4">
+              <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4 sticky top-0 bg-white z-10">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
                     Application Details
@@ -289,7 +289,7 @@ export default function AdminApplications() {
               </div>
 
               {/* Modal Content */}
-              <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto">
+              <div className="p-6 space-y-6 h-[calc(100vh-96px)] overflow-y-auto">
                 {/* Application Information */}
                 <section className="rounded-2xl bg-slate-50 p-5 border border-slate-200">
                   <h3 className="font-semibold text-slate-900 mb-4">Application Information</h3>

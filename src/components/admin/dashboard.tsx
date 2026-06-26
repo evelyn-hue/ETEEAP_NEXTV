@@ -126,9 +126,6 @@ export default function Dashboard() {
             <div className="h-11 w-11 rounded-full bg-blue-600" />
             <div>
               <h4 className="font-semibold">Admin User</h4>
-              <p className="text-xs text-gray-500">
-                Super Administrator
-              </p>
             </div>
           </div>
         </div>

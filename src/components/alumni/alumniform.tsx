@@ -15,6 +15,7 @@ export default function JoinAlumniPage() {
   const router = useRouter();
   const { email: authEmail, fullName: authFullName, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [savingDraft, setSavingDraft] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isAutoFilled, setIsAutoFilled] = useState(false);
@@ -115,6 +116,46 @@ export default function JoinAlumniPage() {
 
   const removeCertificate = (item: string) => {
     setCertificates(certificates.filter((c) => c !== item));
+  };
+
+  const saveDraft = () => {
+    const draft = {
+      applicantName: fullName,
+      programName: program,
+      fullName,
+      nickname,
+      graduationYear,
+      birthday,
+      email,
+      educationalAttainment,
+      program,
+      workExperiences,
+      certificates,
+      experience,
+      transformation,
+      visibility,
+      created_at: new Date().toISOString(),
+    };
+
+    setSavingDraft(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      window.localStorage.setItem("eteeap-application-draft", JSON.stringify(draft));
+      window.localStorage.setItem("selected-application", JSON.stringify(draft));
+      setSuccessMessage("Draft saved to Drafts.");
+    } catch {
+      try {
+        window.sessionStorage.setItem("eteeap-application-draft", JSON.stringify(draft));
+        window.sessionStorage.setItem("selected-application", JSON.stringify(draft));
+        setSuccessMessage("Draft saved to session storage.");
+      } catch {
+        setErrorMessage("Unable to save draft. Please try again.");
+      }
+    } finally {
+      setSavingDraft(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -448,13 +489,30 @@ export default function JoinAlumniPage() {
             </select>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-700 text-white py-3 rounded-xl font-semibold hover:bg-blue-800 disabled:bg-gray-400"
-          >
-            {loading ? "Submitting..." : "Submit for Verification"}
-          </button>
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <button
+              type="button"
+              onClick={() => router.back()}
+              className="w-full md:w-40 border border-slate-300 bg-white text-slate-900 py-3 rounded-xl font-semibold transition hover:bg-slate-50"
+            >
+              Back
+            </button>
+            <button
+              type="button"
+              onClick={saveDraft}
+              disabled={savingDraft}
+              className="w-full md:w-40 bg-slate-900 text-white py-3 rounded-xl font-semibold transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+            >
+              {savingDraft ? "Saving Draft..." : "Save Draft"}
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full md:w-40 bg-blue-700 text-white py-3 rounded-xl font-semibold transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
+            >
+              {loading ? "Submitting..." : "Submit"}
+            </button>
+          </div>
         </form>
       </div>
     </main>
