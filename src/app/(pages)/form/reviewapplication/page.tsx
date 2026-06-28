@@ -23,7 +23,7 @@ export default function LandPage() {
         setShowProfile(true);
         setEmail(response_data.email);
         setFullName(response_data.fullName);
-        setStatus(response_data.status);
+        setStatus(response_data.civil_status || response_data.status || "");
         setPhone(response_data.phone);
         setIsBusinessOwner(response_data.isBusinessOwner ?? "No");
         return;

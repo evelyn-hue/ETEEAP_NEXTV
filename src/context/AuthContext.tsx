@@ -37,7 +37,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verify = async () => {
     setLoading(true);
     try {
-      const response = await Fetch_to(api_link.jwt.verify);
+      let response = await Fetch_to(api_link.jwt.verify);
+
+      if (!response.success && typeof window !== "undefined") {
+        const storedToken = localStorage.getItem("authToken");
+        if (storedToken) {
+          response = await Fetch_to(api_link.jwt.verify, {}, {
+            Authorization: `Bearer ${storedToken}`,
+          });
+        }
+      }
+
       if (response.success) {
         const response_data = response.data.message.final_data.data[0];
         setEmail(response_data.email);
@@ -83,6 +93,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCivilStatus("");
     setProfilePicture("");
     setIsLoggedIn(false);
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+    }
   };
 
   return (

@@ -61,7 +61,14 @@ export default function ApplyButton({ href, programName, label = "Apply Now" }: 
           ? `You already have an alumni application in progress or approved for ${programName}. You can apply again only after it has been rejected.`
           : undefined
       }
-      onClick={() => router.push(href)}
+      onClick={() => {
+        if (!email) {
+          router.push(`/auth/signin?next=${encodeURIComponent(href)}`);
+          return;
+        }
+
+        router.push(href);
+      }}
     >
       {hasActiveAlumniApplication ? "Applied" : label}
     </button>

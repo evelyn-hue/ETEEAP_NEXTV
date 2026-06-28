@@ -51,6 +51,27 @@ const ALL_DOCUMENT_KEYS = [
   "certificates",
 ] as const;
 
+const DOCUMENT_LABELS: Record<string, string> = {
+  letterOfIntent: "Letter of Intent",
+  resume: "Resume",
+  picture: "Formal Picture",
+  applicationForm: "Application Form",
+  recommendationLetter: "Recommendation Letter",
+  schoolCredentials: "School Credentials",
+  highSchoolDiploma: "High School Diploma",
+  transcript: "Transcript",
+  birthCertificate: "Birth Certificate",
+  marriageCertificate: "Marriage Certificate",
+  employmentCertificate: "Employment Certificate",
+  nbiClearance: "NBI Clearance",
+  businessRegistration: "Business Registration",
+  certificates: "Certificates",
+};
+
+function documentKeyToLabel(key: string) {
+  return DOCUMENT_LABELS[key] ?? key;
+}
+
 function parseApprovals(value: unknown): ApprovalEntry[] {
   if (!Array.isArray(value)) return [];
   const approvals: ApprovalEntry[] = [];
@@ -229,8 +250,16 @@ export async function PATCH(params: NextRequest) {
       await insertActivityLog(
         String(reviewedBy ?? ""),
         nextEntry.status === "Verified" ? "Verify Document" : nextEntry.status === "Rejected" ? "Reject Document" : "Update Document",
-        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) document ${nextEntry.documentId} marked as ${nextEntry.status}${nextEntry.remark ? `. Remark: ${nextEntry.remark}` : ""}`,
+        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) ${documentKeyToLabel(nextEntry.documentId)} marked as ${nextEntry.status}${nextEntry.remark ? `. Remark: ${nextEntry.remark}` : ""}`,
       );
+
+      if (currentRow.email) {
+        await insertActivityLog(
+          String(currentRow.email),
+          nextEntry.status === "Verified" ? "Verify Document" : nextEntry.status === "Rejected" ? "Reject Document" : "Update Document",
+          `Your ${documentKeyToLabel(nextEntry.documentId)} was ${nextEntry.status.toLowerCase()}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy)}` : ""}${nextEntry.remark ? ` Remark: ${nextEntry.remark}` : ""}`,
+        );
+      }
     } else if (
       normalizedRequestedStatus === "approve" ||
       normalizedRequestedStatus === "approved" ||
@@ -267,6 +296,14 @@ export async function PATCH(params: NextRequest) {
         bulkStatus === "Verified" ? "Verify Document" : "Reject Document",
         `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) all uploaded documents marked as ${bulkStatus}`,
       );
+
+      if (currentRow.email) {
+        await insertActivityLog(
+          String(currentRow.email),
+          bulkStatus === "Verified" ? "Verify Document" : "Reject Document",
+          `All uploaded documents for your application were marked as ${bulkStatus}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy)}` : ""}.`,
+        );
+      }
     }
 
     const approvalMap = new Map(
@@ -305,6 +342,14 @@ export async function PATCH(params: NextRequest) {
         statusAction,
         `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) status updated to ${nextStatus}`,
       );
+
+      if (currentRow.email) {
+        await insertActivityLog(
+          String(currentRow.email),
+          statusAction,
+          `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy)}` : ""}.`,
+        );
+      }
     }
 
     const { data: updatedRow, error: updateError } = await supabaseServer

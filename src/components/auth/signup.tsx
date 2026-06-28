@@ -64,9 +64,7 @@ export default function SignUp() {
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
+  const validateForm = () => {
     const validationErrors: Partial<Record<keyof FormState, string>> = {};
 
     if (!form.firstName.trim()) {
@@ -96,17 +94,32 @@ export default function SignUp() {
     }
 
     setErrors(validationErrors);
+    return Object.keys(validationErrors).length === 0;
+  };
 
-    if (Object.keys(validationErrors).length > 0) {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!validateForm()) {
       return;
     }
+    await submitForm();
+  };
 
+  const submitForm = async () => {
     const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`;
     const response = await Fetch_to(apiLink.auth.signup, {
-      fullName: fullName, password: form.password, civil_status: form.civilStatus, phone: form.phone, email: form.email,
+      fullName: fullName,
+      password: form.password,
+      civil_status: form.civilStatus,
+      phone: form.phone,
+      email: form.email,
     });
 
     if (response.success) {
+      if (typeof window !== "undefined" && response.token) {
+        localStorage.setItem("authToken", response.token);
+      }
+
       // Reset form
       setForm({
         firstName: "",
@@ -117,16 +130,12 @@ export default function SignUp() {
         password: "",
         c_password: ""
       });
-      
-      // Refresh auth context with new user data
+
       await refreshAuth();
-      
-      // Navigate to home/overview
-      router.push("/overview");
+      router.push("/");
     } else {
       alert(`Error: ${response.message}`);
     }
-
   };
 
   return (
@@ -286,161 +295,154 @@ export default function SignUp() {
 
       </form>
       {modalType && (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg max-w-lg w-full">
+            <h3 className="text-xl font-bold mb-4">
+              {modalType === "terms" ? "Terms & Conditions" : "Privacy Policy"}
+            </h3>
+            <div className="text-sm text-gray-700 max-h-80 overflow-y-auto space-y-3">
+              {modalType === "terms" ? (
+                <>
+                  <p className="font-semibold">1. Acceptance of Terms</p>
+                  <p>
+                    By accessing and using the LCCB ETEEAP Online Application and Alumni System, you agree to comply with these Terms and Conditions. If you do not agree, you must not use the system.
+                  </p>
 
-    <div className="bg-white p-6 rounded-lg max-w-lg w-full">
+                  <p className="font-semibold">2. Purpose of the System</p>
+                  <p>
+                    This system is designed for the submission, processing, evaluation, and management of ETEEAP applications and alumni records of LCCB.
+                  </p>
 
-      <h3 className="text-xl font-bold mb-4">
-        {modalType === "terms" ? "Terms & Conditions" : "Privacy Policy"}
-      </h3>
+                  <p className="font-semibold">3. Eligibility</p>
+                  <p>
+                    Users must be legitimate applicants or alumni of LCCB. Providing false identity or unauthorized access is strictly prohibited.
+                  </p>
 
-      <div className="text-sm text-gray-700 max-h-80 overflow-y-auto space-y-3">
+                  <p className="font-semibold">4. User Responsibilities</p>
+                  <p>
+                    Users are responsible for ensuring that all information, documents, images, and files submitted are accurate, complete, and valid. You are also responsible for maintaining the confidentiality of your account.
+                  </p>
 
-        {modalType === "terms" ? (
-         <>
-          <p className="font-semibold">1. Acceptance of Terms</p>
-          <p>
-            By accessing and using the LCCB ETEEAP Online Application and Alumni System, you agree to comply with these Terms and Conditions. If you do not agree, you must not use the system.
-          </p>
+                  <p className="font-semibold">5. Prohibited Actions</p>
+                  <p>
+                    Users must not:
+                    - Submit false or misleading information  
+                    - Upload inappropriate or unauthorized content  
+                    - Attempt to hack, disrupt, or misuse the system  
+                    - Create multiple accounts or impersonate others  
+                  </p>
 
-          <p className="font-semibold">2. Purpose of the System</p>
-          <p>
-            This system is designed for the submission, processing, evaluation, and management of ETEEAP applications and alumni records of LCCB.
-          </p>
+                  <p className="font-semibold">6. Account Management</p>
+                  <p>
+                    The LCCB ETEEAP Coordinator reserves the right to suspend or terminate accounts that violate these terms without prior notice.
+                  </p>
 
-          <p className="font-semibold">3. Eligibility</p>
-          <p>
-            Users must be legitimate applicants or alumni of LCCB. Providing false identity or unauthorized access is strictly prohibited.
-          </p>
+                  <p className="font-semibold">7. Data Accuracy</p>
+                  <p>
+                    All submitted data including documents, images, and personal details are subject to verification by LCCB administrators.
+                  </p>
 
-          <p className="font-semibold">4. User Responsibilities</p>
-          <p>
-            Users are responsible for ensuring that all information, documents, images, and files submitted are accurate, complete, and valid. You are also responsible for maintaining the confidentiality of your account.
-          </p>
+                  <p className="font-semibold">8. System Modifications</p>
+                  <p>
+                    LCCB reserves the right to modify or update the system and its policies at any time.
+                  </p>
 
-          <p className="font-semibold">5. Prohibited Actions</p>
-          <p>
-            Users must not:
-            - Submit false or misleading information  
-            - Upload inappropriate or unauthorized content  
-            - Attempt to hack, disrupt, or misuse the system  
-            - Create multiple accounts or impersonate others  
-          </p>
+                  <p className="font-semibold">9. Limitation of Liability</p>
+                  <p>
+                    The institution is not liable for any issues arising from incorrect information provided by users or unauthorized access due to user negligence.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold">1. Introduction</p>
+                  <p>
+                    The LCCB ETEEAP Online Application and Alumni System is committed to protecting your personal data in compliance with the Data Privacy Act of 2012 (RA 10173).
+                  </p>
 
-          <p className="font-semibold">6. Account Management</p>
-          <p>
-            The LCCB ETEEAP Coordinator reserves the right to suspend or terminate accounts that violate these terms without prior notice.
-          </p>
+                  <p className="font-semibold">2. Information We Collect</p>
+                  <p>
+                    We collect the following personal data:
+                    - Full name  
+                    - Email address (including Google login email)  
+                    - Phone number  
+                    - Civil status  
+                    - Uploaded documents (files, credentials, requirements)  
+                    - Profile images or identification photos  
+                  </p>
 
-          <p className="font-semibold">7. Data Accuracy</p>
-          <p>
-            All submitted data including documents, images, and personal details are subject to verification by LCCB administrators.
-          </p>
+                  <p className="font-semibold">3. How We Collect Data</p>
+                  <p>
+                    Data is collected during registration, application submission, document uploads, and through Google OAuth authentication.
+                  </p>
 
-          <p className="font-semibold">8. System Modifications</p>
-          <p>
-            LCCB reserves the right to modify or update the system and its policies at any time.
-          </p>
+                  <p className="font-semibold">4. Purpose of Data Collection</p>
+                  <p>
+                    Your information is used for:
+                    - Processing ETEEAP applications  
+                    - Alumni record management  
+                    - Identity verification  
+                    - Communication with applicants  
+                    - System authentication via Google login  
+                  </p>
 
-          <p className="font-semibold">9. Limitation of Liability</p>
-          <p>
-            The institution is not liable for any issues arising from incorrect information provided by users or unauthorized access due to user negligence.
-          </p>
-        </>
-        ) : (
-          <>
-          <p className="font-semibold">1. Introduction</p>
-          <p>
-            The LCCB ETEEAP Online Application and Alumni System is committed to protecting your personal data in compliance with the Data Privacy Act of 2012 (RA 10173).
-          </p>
+                  <p className="font-semibold">5. Data Storage and Protection</p>
+                  <p>
+                    All personal data is securely stored and accessible only to authorized LCCB ETEEAP coordinators and system administrators.
+                  </p>
 
-          <p className="font-semibold">2. Information We Collect</p>
-          <p>
-            We collect the following personal data:
-            - Full name  
-            - Email address (including Google login email)  
-            - Phone number  
-            - Civil status  
-            - Uploaded documents (files, credentials, requirements)  
-            - Profile images or identification photos  
-          </p>
+                  <p className="font-semibold">6. Data Sharing</p>
+                  <p>
+                    Your data is NOT sold or shared with third parties. Information may only be accessed by authorized LCCB personnel for academic and administrative purposes.
+                  </p>
 
-          <p className="font-semibold">3. How We Collect Data</p>
-          <p>
-            Data is collected during registration, application submission, document uploads, and through Google OAuth authentication.
-          </p>
+                  <p className="font-semibold">7. Google Authentication</p>
+                  <p>
+                    If you sign in using Google, we only receive basic account information such as your name and email address for authentication purposes.
+                  </p>
 
-          <p className="font-semibold">4. Purpose of Data Collection</p>
-          <p>
-            Your information is used for:
-            - Processing ETEEAP applications  
-            - Alumni record management  
-            - Identity verification  
-            - Communication with applicants  
-            - System authentication via Google login  
-          </p>
+                  <p className="font-semibold">8. Data Retention</p>
+                  <p>
+                    Your data will be retained as long as necessary for academic, administrative, and alumni record purposes unless deletion is requested or required by law.
+                  </p>
 
-          <p className="font-semibold">5. Data Storage and Protection</p>
-          <p>
-            All personal data is securely stored and accessible only to authorized LCCB ETEEAP coordinators and system administrators.
-          </p>
+                  <p className="font-semibold">9. Your Rights</p>
+                  <p>
+                    You have the right to:
+                    - Access your personal data  
+                    - Request correction of inaccurate data  
+                    - Request deletion of your account (subject to institutional policies)  
+                  </p>
 
-          <p className="font-semibold">6. Data Sharing</p>
-          <p>
-            Your data is NOT sold or shared with third parties. Information may only be accessed by authorized LCCB personnel for academic and administrative purposes.
-          </p>
+                  <p className="font-semibold">10. Security Measures</p>
+                  <p>
+                    We implement security measures to protect against unauthorized access, alteration, or disclosure of your data.
+                  </p>
 
-          <p className="font-semibold">7. Google Authentication</p>
-          <p>
-            If you sign in using Google, we only receive basic account information such as your name and email address for authentication purposes.
-          </p>
+                  <p className="font-semibold">11. Policy Updates</p>
+                  <p>
+                    This Privacy Policy may be updated periodically. Continued use of the system means you accept any changes.
+                  </p>
 
-          <p className="font-semibold">8. Data Retention</p>
-          <p>
-            Your data will be retained as long as necessary for academic, administrative, and alumni record purposes unless deletion is requested or required by law.
-          </p>
+                  <p className="font-semibold">12. Contact Information</p>
+                  <p>
+                    For concerns regarding your data privacy, please contact the LCCB ETEEAP Coordinator or system administrator.
+                  </p>
+                </>
+              )}
+            </div>
 
-          <p className="font-semibold">9. Your Rights</p>
-          <p>
-            You have the right to:
-            - Access your personal data  
-            - Request correction of inaccurate data  
-            - Request deletion of your account (subject to institutional policies)  
-          </p>
-
-          <p className="font-semibold">10. Security Measures</p>
-          <p>
-            We implement security measures to protect against unauthorized access, alteration, or disclosure of your data.
-          </p>
-
-          <p className="font-semibold">11. Policy Updates</p>
-          <p>
-            This Privacy Policy may be updated periodically. Continued use of the system means you accept any changes.
-          </p>
-
-          <p className="font-semibold">12. Contact Information</p>
-          <p>
-            For concerns regarding your data privacy, please contact the LCCB ETEEAP Coordinator or system administrator.
-          </p>
-        </>
-        )}
-
+            <div className="mt-6 text-right">
+              <button
+                onClick={() => setModalType(null)}
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
-
-      <div className="mt-6 text-right">
-        <button
-          onClick={() => setModalType(null)}
-          className="px-4 py-2 bg-blue-600 text-white rounded"
-        >
-          Close
-        </button>
-      </div>
-
-    </div>
-  </div>
-)}
-
-    </div>
-    </section>
+      </section>
   );
 }

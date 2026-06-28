@@ -3,19 +3,17 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 let supabaseServerInstance: SupabaseClient | null = null;
 
-function getSupabaseServer() {
-    if (supabaseServerInstance) {
-        return supabaseServerInstance;
-    }
-
+function createSupabaseServer(): SupabaseClient | null {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey) {
-        throw new Error("Missing Supabase environment variables");
+        // avoid throwing during module import; throw when actually attempting to use the client
+        console.warn("Supabase environment variables are not set: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+        return null;
     }
 
-    supabaseServerInstance = createClient(
+    return createClient(
         supabaseUrl,
         supabaseKey,
         {
@@ -24,13 +22,20 @@ function getSupabaseServer() {
             }
         }
     );
+}
 
+function getSupabaseServer() {
+    if (supabaseServerInstance) return supabaseServerInstance;
+    const client = createSupabaseServer();
+    if (!client) throw new Error("Supabase not configured. Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    supabaseServerInstance = client;
     return supabaseServerInstance;
 }
 
 export const supabaseServer = new Proxy({} as SupabaseClient, {
     get(_target, prop) {
         const client = getSupabaseServer();
-        return client[prop as keyof SupabaseClient];
+        const property = prop as keyof SupabaseClient;
+        return client[property];
     }
 });

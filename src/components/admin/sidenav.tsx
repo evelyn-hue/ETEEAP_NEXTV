@@ -1,21 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FiFileText, FiHome, FiLogOut, FiMenu, FiUsers, FiX } from "react-icons/fi";
 import { Fetch_to } from "@/utilities";
+import { useAuth } from "@/context/AuthContext";
 import api_link from "@/config/api_link.json";
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: FiHome },
-  { href: "/admin/application", label: "Applications", icon: FiFileText, badge: "5" },
-  { href: "/admin/adminalumni", label: "Alumni", icon: FiFileText, badge: "5" },
-  { href: "/admin/activitylogs", label: "Activity Logs", icon: FiUsers },
-  //{ href: "/admin/setting", label: "Settings", },
-];
+type NavItem = {
+  href: string;
+  label: string;
+  icon: typeof FiHome;
+  badge?: number;
+};
 
-function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
+function SidenavNavItems({
+  counts,
+  onNavigate,
+}: {
+  counts: { pendingApplications: number; pendingAlumni: number };
+  onNavigate?: () => void;
+}) {
+  const navItems: NavItem[] = [
+    { href: "/admin", label: "Dashboard", icon: FiHome },
+    { href: "/admin/application", label: "Applications", icon: FiFileText, badge: counts.pendingApplications },
+    { href: "/admin/adminalumni", label: "Alumni", icon: FiFileText, badge: counts.pendingAlumni },
+    { href: "/admin/activitylogs", label: "Activity Logs", icon: FiUsers },
+  ];
+
   return (
     <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6">
       {navItems.map((item) => {
@@ -29,10 +43,8 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           >
             <Icon size={20} />
             <span className="flex-1 font-medium">{item.label}</span>
-            {item.badge ? (
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-                {item.badge}
-              </span>
+            {item.badge && item.badge > 0 ? (
+              <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>
             ) : null}
           </Link>
         );
@@ -41,7 +53,13 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   );
 }
 
-function SidebarShell({ onNavigate }: { onNavigate?: () => void }) {
+function NavLinks({ onNavigate, counts }: { onNavigate?: () => void; counts: { pendingApplications: number; pendingAlumni: number } }) {
+  return (
+    <SidenavNavItems counts={counts} onNavigate={onNavigate} />
+  );
+}
+
+function SidebarShell({ onNavigate, counts, onLogoutConfirm }: { onNavigate?: () => void; counts: { pendingApplications: number; pendingAlumni: number }; onLogoutConfirm: () => void }) {
   return (
     <aside className="flex h-full w-64 flex-col bg-linear-to-b from-blue-900 to-blue-800 text-white">
       <div className="flex h-20 items-center justify-between border-b border-blue-700 px-4">
@@ -65,11 +83,11 @@ function SidebarShell({ onNavigate }: { onNavigate?: () => void }) {
         </button>
       </div>
 
-      <NavLinks onNavigate={onNavigate} />
+      <NavLinks onNavigate={onNavigate} counts={counts} />
 
       <div className="border-t border-blue-700 p-3">
         <button
-          onClick={() => {Fetch_to(api_link.jwt.deauth); window.location.reload(); }}
+          onClick={onLogoutConfirm}
           className="flex w-full items-center gap-3 rounded-xl px-4 py-3 font-medium text-white transition-colors hover:bg-blue-700 cursor-pointer"
         >
           <FiLogOut size={20} />
@@ -81,7 +99,36 @@ function SidebarShell({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 export default function Sidenav() {
+  const router = useRouter();
+  const { logout } = useAuth();
   const [open, setOpen] = useState(false);
+  const [counts, setCounts] = useState({ pendingApplications: 0, pendingAlumni: 0 });
+
+  useEffect(() => {
+    const loadCounts = async () => {
+      const response = await Fetch_to("/services/supabase/dashboard/statistics", {});
+      const payload = response.data?.data || response.data || {};
+      if (response.success) {
+        setCounts({
+          pendingApplications: Number(payload.pendingReview ?? 0),
+          pendingAlumni: Number(payload.pendingAlumni ?? 0),
+        });
+      }
+    };
+
+    void loadCounts();
+  }, []);
+
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleLogout = async () => {
+    try {
+      await Fetch_to(api_link.jwt.deauth);
+    } finally {
+      logout();
+      router.push("/auth/signin");
+    }
+  };
 
   return (
     <>
@@ -95,7 +142,7 @@ export default function Sidenav() {
       </button>
 
       <div className="hidden md:fixed md:left-0 md:top-0 md:z-40 md:block md:h-screen">
-        <SidebarShell />
+        <SidebarShell counts={counts} onLogoutConfirm={() => setShowLogoutConfirm(true)} />
       </div>
 
       {open ? (
@@ -105,7 +152,35 @@ export default function Sidenav() {
             onClick={() => setOpen(false)}
           />
           <div className="absolute left-0 top-0 h-full">
-            <SidebarShell onNavigate={() => setOpen(false)} />
+            <SidebarShell onNavigate={() => setOpen(false)} counts={counts} onLogoutConfirm={() => setShowLogoutConfirm(true)} />
+          </div>
+        </div>
+      ) : null}
+
+      {showLogoutConfirm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-semibold text-slate-900">Confirm Logout</h2>
+            <p className="mt-2 text-sm text-slate-600">Are you sure you want to logout?</p>
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={async () => {
+                  setShowLogoutConfirm(false);
+                  await handleLogout();
+                }}
+                className="inline-flex flex-1 items-center justify-center rounded-2xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Logout
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLogoutConfirm(false)}
+                className="inline-flex flex-1 items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
