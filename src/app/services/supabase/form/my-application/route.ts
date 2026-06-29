@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabaseServer
       .from("form")
       .select("*, id")
-      .eq("email", userEmail)
+      .eq("email", userEmail.toLowerCase().trim())
       .limit(1);
 
     if (error) {
