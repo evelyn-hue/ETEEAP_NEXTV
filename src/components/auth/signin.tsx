@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
 import { useAuth } from "@/context/AuthContext";
@@ -21,6 +22,30 @@ export default function SignIn() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [toastOpen, setToastOpen] = useState(false);
+
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+    setLoading(true);
+    setErrorMessage("");
+
+    try {
+      const response = await Fetch_to("/services/supabase/auth/google-auth", {
+        credential: credentialResponse.credential,
+      });
+
+      if (response.success && typeof window !== "undefined" && response.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+        await refreshAuth();
+        router.push("/");
+      } else {
+        setErrorMessage(response.message || "Google sign in failed");
+      }
+    } catch {
+      setErrorMessage("Google sign in failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -80,7 +105,10 @@ export default function SignIn() {
     setLoading(false);
   };
 
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
   return (
+    <GoogleOAuthProvider clientId={clientId}>
     <section className="min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16">
        <div className="bg-white/90 p-8 rounded-lg shadow-lg">
         {/* Header */}
@@ -178,6 +206,29 @@ export default function SignIn() {
           </button>
         </form>
 
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or</span>
+          </div>
+        </div>
+
+        {/* Google Sign In */}
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setErrorMessage("Google sign in failed")}
+            theme="outline"
+            size="large"
+            text="continue_with"
+            shape="rectangular"
+            width="100%"
+          />
+        </div>
+
         {/* Sign Up Link */}
         <p className="text-center text-gray-700">
           Don{"'"}t have an account?{" "}
@@ -196,5 +247,6 @@ export default function SignIn() {
         </div>
       )}
     </section>
+    </GoogleOAuthProvider>
   );
 } 
