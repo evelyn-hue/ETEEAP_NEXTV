@@ -3,7 +3,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
@@ -162,10 +162,7 @@ export default function SignUp() {
     }
   };
 
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
-
   return (
-    <GoogleOAuthProvider clientId={clientId}>
     <section className="min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16">
       <div className="bg-white/90 p-8 rounded-lg shadow-lg">
 
@@ -331,7 +328,6 @@ export default function SignUp() {
             size="large"
             text="signup_with"
             shape="rectangular"
-            width="100%"
           />
         </div>
 
@@ -494,6 +490,5 @@ export default function SignUp() {
       )}
       </div>
       </section>
-      </GoogleOAuthProvider>
   );
 }

@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
+import { GoogleLogin } from "@react-oauth/google";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
 import { useAuth } from "@/context/AuthContext";
@@ -105,10 +105,8 @@ export default function SignIn() {
     setLoading(false);
   };
 
-  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
 
   return (
-    <GoogleOAuthProvider clientId={clientId}>
     <section className="min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16">
        <div className="bg-white/90 p-8 rounded-lg shadow-lg">
         {/* Header */}
@@ -225,7 +223,6 @@ export default function SignIn() {
             size="large"
             text="continue_with"
             shape="rectangular"
-            width="100%"
           />
         </div>
 
@@ -247,6 +244,5 @@ export default function SignIn() {
         </div>
       )}
     </section>
-    </GoogleOAuthProvider>
   );
 } 
