@@ -257,7 +257,7 @@ export async function PATCH(params: NextRequest) {
         await insertActivityLog(
           String(currentRow.email),
           nextEntry.status === "Verified" ? "Verify Document" : nextEntry.status === "Rejected" ? "Reject Document" : "Update Document",
-          `Your ${documentKeyToLabel(nextEntry.documentId)} was ${nextEntry.status.toLowerCase()}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy)}` : ""}${nextEntry.remark ? ` Remark: ${nextEntry.remark}` : ""}`,
+          `Your ${documentKeyToLabel(nextEntry.documentId)} was ${nextEntry.status.toLowerCase()}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy).split('@')[0]}` : ""}${nextEntry.remark ? ` Remark: ${nextEntry.remark}` : ""}`,
         );
       }
     } else if (
@@ -301,7 +301,7 @@ export async function PATCH(params: NextRequest) {
         await insertActivityLog(
           String(currentRow.email),
           bulkStatus === "Verified" ? "Verify Document" : "Reject Document",
-          `All uploaded documents for your application were marked as ${bulkStatus}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy)}` : ""}.`,
+          `All uploaded documents for your application were marked as ${bulkStatus}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy).split('@')[0]}` : ""}.`,
         );
       }
     }
@@ -347,7 +347,7 @@ export async function PATCH(params: NextRequest) {
         await insertActivityLog(
           String(currentRow.email),
           statusAction,
-          `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy)}` : ""}.`,
+          `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy).split('@')[0]}` : ""}.`,
         );
       }
     }

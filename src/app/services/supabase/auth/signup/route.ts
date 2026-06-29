@@ -18,6 +18,11 @@ export async function POST(req: NextRequest) {
             .insert([{ email: cleanEmail, phone, civil_status, password: hashedPassword, fullName }]);
 
         if (error) {
+            // Handle duplicate email / unique constraint violation
+            const msg = String(error.message || "").toLowerCase();
+            if (msg.includes("duplicate") || msg.includes("unique constraint") || (error.code && String(error.code) === "23505")) {
+                return NextResponse.json({ success: false, error: "Email already exists" }, { status: 409 });
+            }
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
 

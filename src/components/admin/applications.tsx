@@ -10,7 +10,16 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-type ApplicationStatus = "draft" | "Under Review" | "accepted" | "rejected";
+type ApplicationStatus =
+  | "draft"
+  | "Under Review"
+  | "accepted"
+  | "rejected"
+  | "Approve"
+  | "Reject"
+  | "Delete"
+  | "Pending"
+  | "pending";
 
 interface Application {
   id: string;
@@ -29,13 +38,16 @@ interface Application {
 }
 
 function StatusBadge({ status }: { status: ApplicationStatus }) {
+  const normalized = String(status).toLowerCase();
   const styles =
-    status === "accepted"
+    normalized.includes("accept") || normalized === "accepted"
       ? "bg-green-100 text-green-800"
-      : status === "rejected"
+      : normalized.includes("reject")
       ? "bg-red-100 text-red-800"
-      : status === "Under Review"
+      : normalized.includes("under review") || normalized.includes("pending")
       ? "bg-blue-100 text-blue-800"
+      : normalized.includes("delete")
+      ? "bg-slate-100 text-slate-700"
       : "bg-amber-100 text-amber-800";
 
   return (
@@ -80,11 +92,20 @@ export default function AdminApplications() {
       setFetching(false);
     }
   };
+  const normalizeStatus = (status: string) => {
+    const normalized = String(status).trim().toLowerCase();
+    if (normalized.includes("under review") || normalized.includes("pending") || normalized.includes("pending review")) return "under review";
+    if (normalized.includes("reject")) return "rejected";
+    if (normalized.includes("delete")) return "delete";
+    if (normalized.includes("accept") || normalized.includes("approve") || normalized.includes("approved")) return "accepted";
+    if (normalized.includes("draft")) return "draft";
+    return normalized;
+  };
 
   const totals = useMemo(() => {
     return applications.reduce(
       (acc, item) => {
-        const status = String(item.form_status).toLowerCase();
+        const status = normalizeStatus(String(item.form_status));
         if (status === "draft") acc.draft += 1;
         if (status === "under review") acc.underReview += 1;
         if (status === "accepted") acc.accepted += 1;
@@ -99,6 +120,25 @@ export default function AdminApplications() {
     const haystack = `${item.applicantName} ${item.email} ${item.program} ${item.form_status}`.toLowerCase();
     return haystack.includes(query.toLowerCase());
   });
+
+  const sortedApplications = useMemo(() => {
+    // reuse outer normalizeStatus
+
+    const statusOrder: Record<string, number> = {
+      "under review": 0,
+      rejected: 1,
+      delete: 2,
+      accepted: 3,
+      draft: 4,
+    };
+
+    return [...filteredApplications].sort((a, b) => {
+      const aStatus = statusOrder[normalizeStatus(a.form_status)] ?? 99;
+      const bStatus = statusOrder[normalizeStatus(b.form_status)] ?? 99;
+      if (aStatus !== bStatus) return aStatus - bStatus;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+  }, [filteredApplications]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -173,7 +213,7 @@ export default function AdminApplications() {
           <>
             {/* Mobile View */}
             <section className="space-y-4 md:hidden">
-              {filteredApplications.map((item) => (
+              {sortedApplications.map((item) => (
                 <article
                   key={item.id}
                   className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
@@ -228,7 +268,7 @@ export default function AdminApplications() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {filteredApplications.map((item) => (
+                    {sortedApplications.map((item) => (
                       <tr key={item.id} className="hover:bg-slate-50 transition">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
                           {item.applicantName}
