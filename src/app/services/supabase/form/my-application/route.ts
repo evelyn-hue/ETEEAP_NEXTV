@@ -15,17 +15,18 @@ const REQUIRED_DOCUMENTS = [
   "nbiClearance",
 ];
 
-function extractToken(req: NextRequest) {
+async function extractToken(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7);
   }
-  return cookies().get("token")?.value;
+  const cookieStore = await cookies();
+  return cookieStore.get("token")?.value;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const token = extractToken(req);
+    const token = await extractToken(req);
     if (!token) {
       return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
     }
@@ -36,15 +37,15 @@ export async function POST(req: NextRequest) {
     }
 
     const decoded = jwt.verify(token, secret) as { final_data?: { data?: Array<{ id?: string; email?: string }> } };
-    const userId = decoded.final_data?.data?.[0]?.id;
-    if (!userId) {
+    const userEmail = decoded.final_data?.data?.[0]?.email;
+    if (!userEmail) {
       return NextResponse.json({ success: false, error: "Authenticated user not found" }, { status: 401 });
     }
 
     const { data, error } = await supabaseServer
       .from("form")
       .select("*, id")
-      .eq("user_id", userId)
+      .eq("email", userEmail)
       .limit(1);
 
     if (error) {

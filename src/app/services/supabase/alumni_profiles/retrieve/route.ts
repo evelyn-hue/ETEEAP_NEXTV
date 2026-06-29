@@ -56,7 +56,31 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, verification_status, remarks } = body;
+    const { id, verification_status, remarks, email: bodyEmail } = body;
+
+    // Support email-based lookup (used by Fetch_to which always sends POST)
+    if (bodyEmail && !id) {
+      let query = supabaseServer
+        .from("alumni_profiles")
+        .select("*", { count: "exact" })
+        .eq("email", bodyEmail.trim().toLowerCase());
+
+      const { data, error, count } = await query
+        .order("created_at", { ascending: false })
+        .limit(1);
+
+      if (error) {
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        { success: true, data, count },
+        { status: 200 }
+      );
+    }
 
     if (!id || !verification_status) {
       return NextResponse.json(

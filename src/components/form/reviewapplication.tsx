@@ -6,7 +6,7 @@ import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 
-const DRAFT_KEY = "eteeap-application-draft";
+const DRAFTS_KEY = "eteeap-application-drafts";
 
 type StoredFile = {
   name: string;
@@ -84,11 +84,12 @@ function shortenLinkLabel(value: string) {
 function getDraft() {
   if (typeof window === "undefined") return null;
 
-  const raw = window.localStorage.getItem(DRAFT_KEY);
+  const raw = window.localStorage.getItem(DRAFTS_KEY);
   if (!raw) return null;
 
   try {
-    return JSON.parse(raw) as DraftApplication;
+    const drafts: DraftApplication[] = JSON.parse(raw);
+    return drafts.length > 0 ? drafts[drafts.length - 1] : null;
   } catch {
     return null;
   }
@@ -135,7 +136,23 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       files: updatedFiles,
     };
 
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(updatedDraft));
+    const existingRaw = localStorage.getItem(DRAFTS_KEY);
+    if (existingRaw) {
+      try {
+        const allDrafts: DraftApplication[] = JSON.parse(existingRaw);
+        const idx = allDrafts.findIndex((d) => d.programName === updatedDraft.programName);
+        if (idx >= 0) {
+          allDrafts[idx] = updatedDraft;
+        } else {
+          allDrafts.push(updatedDraft);
+        }
+        localStorage.setItem(DRAFTS_KEY, JSON.stringify(allDrafts));
+      } catch {
+        localStorage.setItem(DRAFTS_KEY, JSON.stringify([updatedDraft]));
+      }
+    } else {
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify([updatedDraft]));
+    }
     setDraft(updatedDraft);
   };
   
@@ -287,7 +304,23 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
 
       setProgress(100);
       setProgressLabel("Finalizing...");
-      window.localStorage.clear();
+      window.localStorage.removeItem("selected-application");
+      window.sessionStorage.removeItem("selected-application");
+      const submittedProgram = currentDraft.programName;
+      const existingRaw = window.localStorage.getItem(DRAFTS_KEY);
+      if (existingRaw && submittedProgram) {
+        try {
+          const drafts: DraftApplication[] = JSON.parse(existingRaw);
+          const filtered = drafts.filter((d) => d.programName !== submittedProgram);
+          if (filtered.length > 0) {
+            window.localStorage.setItem(DRAFTS_KEY, JSON.stringify(filtered));
+          } else {
+            window.localStorage.removeItem(DRAFTS_KEY);
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
       setSubmitSuccess(response.message || "Your application was submitted successfully.");
       await notifyApplicant(
         submitEmail,

@@ -26,9 +26,7 @@ function LandContent() {
         setEmail(response_data.email);
         setFullName(response_data.fullName ?? "");
         setIsBusinessOwner(response_data.isBusinessOwner ?? "No");
-        if (response_data.status === "Single") {
-          setStatus(false);
-        }
+        setStatus(response_data.civil_status === "Married");
         return;
       }
       setShowProfile(false);

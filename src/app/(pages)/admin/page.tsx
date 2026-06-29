@@ -7,7 +7,7 @@ export default function AdminPage() {
     <div className="flex min-h-screen bg-gray-100">
       
       {/* Sidebar */}
-      <div className="w-64 shrink-0">
+      <div className="md:w-64 shrink-0">
         <SideNav />
       </div>
 

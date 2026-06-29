@@ -16,6 +16,7 @@ export default function SignIn() {
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -61,7 +62,8 @@ export default function SignIn() {
         message?: string;
       };
       if (authResponse.success && typeof window !== "undefined" && authResponse.data?.token) {
-        localStorage.setItem("authToken", authResponse.data.token);
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem("authToken", authResponse.data.token);
       }
       await refreshAuth();
       const nextPath = formData.email === "admin@admin.com" ? "/admin" : "/";
@@ -143,6 +145,8 @@ export default function SignIn() {
             <label className="flex items-center">
               <input
                 type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
               />
               <span className="ml-2 text-gray-700">Remember me</span>

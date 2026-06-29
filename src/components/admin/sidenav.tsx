@@ -135,7 +135,7 @@ export default function Sidenav() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed left-4 top-4 z-50 inline-flex items-center justify-center rounded-xl bg-blue-900 p-3 text-white shadow-lg md:hidden"
+        className="fixed left-4 top-4 z-[60] inline-flex items-center justify-center rounded-xl bg-blue-900 p-3 text-white shadow-lg md:hidden"
         aria-label="Open navigation"
       >
         <FiMenu size={22} />
@@ -146,7 +146,7 @@ export default function Sidenav() {
       </div>
 
       {open ? (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true">
+        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
           <div
             className="absolute inset-0 bg-black/50"
             onClick={() => setOpen(false)}

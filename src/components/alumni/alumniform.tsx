@@ -18,6 +18,7 @@ export default function JoinAlumniPage() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [existingProfile, setExistingProfile] = useState<"checking" | "none" | "exists">("checking");
   const [showSubmissionInfoModal, setShowSubmissionInfoModal] = useState(false);
   const [infoModalMessage, setInfoModalMessage] = useState("");
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
@@ -52,8 +53,39 @@ export default function JoinAlumniPage() {
   const [experience, setExperience] = useState("");
   const [transformation, setTransformation] = useState("");
 
+  // Profile Picture
+  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
+  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
+  const [uploadingPicture, setUploadingPicture] = useState(false);
+
   // Profile Visibility
   const [visibility, setVisibility] = useState("public");
+
+  // Check if user already has an alumni profile
+  useEffect(() => {
+    if (authLoading) return;
+    if (!authEmail) {
+      setExistingProfile("none");
+      return;
+    }
+    const checkExisting = async () => {
+      try {
+        const result = await Fetch_to("/services/supabase/alumni_profiles/retrieve", { email: authEmail });
+        if (result.success) {
+          const data = Array.isArray(result.data) ? result.data : (result.data?.data || []);
+          const hasActive = data.some(
+            (p: { verification_status?: string }) => String(p.verification_status ?? "").toLowerCase() !== "rejected"
+          );
+          setExistingProfile(hasActive ? "exists" : "none");
+        } else {
+          setExistingProfile("none");
+        }
+      } catch {
+        setExistingProfile("none");
+      }
+    };
+    checkExisting();
+  }, [authEmail, authLoading]);
 
   // Auto-fill email and fullName from AuthContext on mount
   useEffect(() => {
@@ -155,8 +187,7 @@ export default function JoinAlumniPage() {
     setSuccessMessage("");
 
     try {
-      window.localStorage.setItem("eteeap-application-draft", JSON.stringify(draft));
-      window.localStorage.setItem("selected-application", JSON.stringify(draft));
+      window.localStorage.setItem("eteeap-alumni-draft", JSON.stringify(draft));
       setSuccessMessage("Draft saved to Drafts.");
       if (email) {
         await notifyApplicant(
@@ -167,8 +198,9 @@ export default function JoinAlumniPage() {
       }
     } catch {
       try {
-        window.sessionStorage.setItem("eteeap-application-draft", JSON.stringify(draft));
-        window.sessionStorage.setItem("selected-application", JSON.stringify(draft));
+        window.sessionStorage.removeItem("eteeap-application-draft");
+        window.sessionStorage.removeItem("selected-application");
+        window.sessionStorage.setItem("eteeap-alumni-draft", JSON.stringify(draft));
         setSuccessMessage("Draft saved to session storage.");
         if (email) {
           await notifyApplicant(
@@ -216,6 +248,27 @@ export default function JoinAlumniPage() {
     setSuccessMessage("");
 
     try {
+      let profilePictureUrl = "";
+
+      // Upload profile picture first if selected
+      if (profilePictureFile) {
+        setUploadingPicture(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append("file", profilePictureFile);
+        uploadFormData.append("email", email || authEmail || "");
+
+        const uploadRes = await fetch("/services/supabase/alumni_profiles/upload-picture", {
+          method: "POST",
+          body: uploadFormData,
+        });
+
+        const uploadResult = await uploadRes.json();
+        if (uploadResult.success) {
+          profilePictureUrl = uploadResult.data.profilePictureUrl;
+        }
+        setUploadingPicture(false);
+      }
+
       const payload = {
         full_name: fullName,
         nickname,
@@ -229,6 +282,7 @@ export default function JoinAlumniPage() {
         transformation,
         visibility,
         email,
+        profile_picture: profilePictureUrl || undefined,
       };
 
       const result = await Fetch_to(
@@ -276,6 +330,35 @@ export default function JoinAlumniPage() {
       setLoading(false);
     }
   };
+
+  if (existingProfile === "checking") {
+    return (
+      <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
+          <p className="text-gray-600">Checking your alumni status...</p>
+        </div>
+      </main>
+    );
+  }
+
+  if (existingProfile === "exists") {
+    return (
+      <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
+          <h1 className="text-2xl font-bold text-blue-800 mb-4">Already Submitted</h1>
+          <p className="text-gray-600 mb-4">
+            You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.
+          </p>
+          <button
+            onClick={() => router.push("/alumni")}
+            className="px-6 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800"
+          >
+            Back to Alumni
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
@@ -347,6 +430,46 @@ export default function JoinAlumniPage() {
                 className="border p-3 rounded w-full"
                 required
               />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Profile Picture
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0] || null;
+                    setProfilePictureFile(file);
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = () => setProfilePicturePreview(String(reader.result));
+                      reader.readAsDataURL(file);
+                    } else {
+                      setProfilePicturePreview(null);
+                    }
+                  }}
+                  className="border p-2 rounded w-full text-sm"
+                />
+                {profilePicturePreview && (
+                  <div className="mt-2 flex items-center gap-3">
+                    <img
+                      src={profilePicturePreview}
+                      alt="Preview"
+                      className="w-16 h-16 rounded-full object-cover border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfilePictureFile(null);
+                        setProfilePicturePreview(null);
+                      }}
+                      className="text-red-600 text-sm hover:text-red-800"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 

@@ -190,7 +190,7 @@ export default function AdminAlumni() {
 
   const sortedAlumni = useMemo(() => {
     const normalize = (s: string) => String(s || "").toLowerCase().trim();
-    const order: Record<string, number> = { pending: 0, verified: 1, rejected: 2 };
+    const order: Record<string, number> = { pending: 0, rejected: 1, verified: 2 };
     return [...filteredAlumni].sort((a, b) => {
       const aKey = order[normalize(a.verification_status)] ?? 99;
       const bKey = order[normalize(b.verification_status)] ?? 99;

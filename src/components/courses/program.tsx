@@ -63,14 +63,14 @@ export default function Program() {
   const { email, loading: authLoading, applicant_status } = useAuth();
   const [checkingApplication, setCheckingApplication] = useState(true);
   const [hasSubmittedApplication, setHasSubmittedApplication] = useState(false);
+  const [isAlumni, setIsAlumni] = useState(false);
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
+    if (authLoading) return;
 
     if (!email) {
       setHasSubmittedApplication(false);
+      setIsAlumni(false);
       setCheckingApplication(false);
       return;
     }
@@ -78,7 +78,22 @@ export default function Program() {
     const normalizedStatus = String(applicant_status || "").trim().toLowerCase();
     const blockedStatuses = ["submitted", "under review", "accepted", "approved", "pending", "in progress"];
     setHasSubmittedApplication(blockedStatuses.includes(normalizedStatus));
-    setCheckingApplication(false);
+
+    fetch("/services/supabase/alumni_profiles/retrieve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        const profiles = Array.isArray(data) ? data : (data.data || []);
+        const hasActive = profiles.some(
+          (p: { verification_status?: string }) => String(p.verification_status ?? "").toLowerCase() !== "rejected",
+        );
+        setIsAlumni(hasActive);
+      })
+      .catch(() => setIsAlumni(false))
+      .finally(() => setCheckingApplication(false));
   }, [authLoading, email, applicant_status]);
   
 
@@ -141,11 +156,13 @@ export default function Program() {
                 </button>
                 <button
                   className="mt-8 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-green-500/50 hover:scale-105 cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-400 disabled:hover:scale-100 disabled:hover:bg-gray-400"
-                  disabled={checkingApplication || hasSubmittedApplication}
+                  disabled={checkingApplication || hasSubmittedApplication || isAlumni}
                   title={
                     hasSubmittedApplication
                       ? "You already applied for this account. If your application was rejected, you can apply again."
-                      : undefined
+                      : isAlumni
+                        ? "You are already an alumni member."
+                        : undefined
                   }
                   onClick={() => {
                     if (!email) {
@@ -158,7 +175,7 @@ export default function Program() {
                     router.push(`${program.apply}`);
                   }}
                 >
-                  {checkingApplication ? "Checking..." : hasSubmittedApplication ? "Already Applied" : "Apply"}
+                  {checkingApplication ? "Checking..." : hasSubmittedApplication ? "Already Applied" : isAlumni ? "Already an Alumni" : "Apply"}
                 </button>
               </div>
             </div>

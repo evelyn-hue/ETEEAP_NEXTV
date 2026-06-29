@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       let response = await Fetch_to(api_link.jwt.verify);
 
       if (!response.success && typeof window !== "undefined") {
-        const storedToken = localStorage.getItem("authToken");
+        const storedToken = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
         if (storedToken) {
           response = await Fetch_to(api_link.jwt.verify, {}, {
             Authorization: `Bearer ${storedToken}`,
@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
+      sessionStorage.removeItem("authToken");
     }
   };
 

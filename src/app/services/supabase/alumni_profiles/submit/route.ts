@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       transformation,
       visibility,
       email,
+      profile_picture,
     } = body;
 
     if (!full_name || !email) {
@@ -77,25 +78,29 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const insertPayload: Record<string, unknown> = {
+      full_name,
+      nickname,
+      graduation_year,
+      birthday,
+      educational_attainments,
+      programs,
+      certificates,
+      work_experiences,
+      experience,
+      transformation,
+      visibility: visibility || "public",
+      verification_status: "pending",
+      email: normalizedEmail,
+    };
+
+    if (profile_picture) {
+      insertPayload.profile_picture = profile_picture;
+    }
+
     const { data, error } = await supabaseServer
       .from("alumni_profiles")
-      .insert([
-        {
-          full_name,
-          nickname,
-          graduation_year,
-          birthday,
-          educational_attainments,
-          programs,
-          certificates,
-          work_experiences,
-          experience,
-          transformation,
-          visibility: visibility || "public",
-          verification_status: "pending",
-          email: normalizedEmail,
-        },
-      ])
+      .insert([insertPayload])
       .select();
 
     if (error) {
