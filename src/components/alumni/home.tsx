@@ -243,7 +243,7 @@ export default function AlumniFeedPage() {
               <div className="flex items-center gap-3 mb-4">
                 {(() => {
                   const entryPic = person.profile_picture;
-                  const isCurrentUser = authEmail && person.email && authEmail === person.email;
+                  const isCurrentUser = authEmail && person.email && authEmail.toLowerCase().trim() === person.email.toLowerCase().trim();
                   const avatarSrc = entryPic || (isCurrentUser ? authProfilePicture : undefined);
                   if (avatarSrc) {
                     return (
