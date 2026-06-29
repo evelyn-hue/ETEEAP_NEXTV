@@ -32,14 +32,12 @@ function ProfileBody() {
   const [civilStatus, setCivilStatus] = useState(authCivilStatus || "");
 
   useEffect(() => {
-    if (!authLoading) {
-      if (authProfilePicture && !preview) {
+    if (!authLoading && !preview) {
+      if (authProfilePicture) {
         setPreview(authProfilePicture);
-      } else if (!authProfilePicture && !preview) {
-        setPreview(imgSrc.heroImage);
       }
     }
-  }, [authProfilePicture, authLoading]);
+  }, [authProfilePicture, authLoading, preview]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -184,15 +182,19 @@ function ProfileBody() {
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
         <section className="shrink-0">
           <div className="h-36 w-36 overflow-hidden rounded-3xl border-4 border-white bg-slate-200 shadow-lg">
-            <Image
-              key={`modal-profile-${preview}`}
-              src={preview || imgSrc.heroImage}
-              alt="Profile picture"
-              width={300}
-              height={300}
-              className="h-full w-full object-cover"
-              unoptimized
-            />
+            {preview ? (
+              <Image
+                key={`modal-profile-${preview}`}
+                src={preview}
+                alt="Profile picture"
+                width={300}
+                height={300}
+                className="h-full w-full object-cover"
+                unoptimized
+              />
+            ) : (
+              <div className="h-full w-full bg-slate-200" />
+            )}
           </div>
 
           <label className="mt-4 block">

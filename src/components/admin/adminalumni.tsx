@@ -124,6 +124,12 @@ export default function AdminAlumni() {
   const [selectedAlumni, setSelectedAlumni] = useState<AlumniProfile | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+  const [confirmModal, setConfirmModal] = useState<{
+    show: boolean;
+    action: "verify" | "reject" | "";
+    alumniId: string;
+    fullName: string;
+  }>({ show: false, action: "", alumniId: "", fullName: "" });
 
   useEffect(() => {
     fetchAlumni();
@@ -182,7 +188,33 @@ export default function AdminAlumni() {
     return haystack.includes(query.toLowerCase());
   });
 
+  const sortedAlumni = useMemo(() => {
+    const normalize = (s: string) => String(s || "").toLowerCase().trim();
+    const order: Record<string, number> = { pending: 0, verified: 1, rejected: 2 };
+    return [...filteredAlumni].sort((a, b) => {
+      const aKey = order[normalize(a.verification_status)] ?? 99;
+      const bKey = order[normalize(b.verification_status)] ?? 99;
+      if (aKey !== bKey) return aKey - bKey;
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
+  }, [filteredAlumni]);
+
   const confirmAction = (message: string) => window.confirm(message);
+
+  const openConfirmModal = (action: "verify" | "reject", alumniId: string, fullName: string) => {
+    setConfirmModal({ show: true, action, alumniId, fullName });
+  };
+
+  const cancelConfirmModal = () => {
+    setConfirmModal({ show: false, action: "", alumniId: "", fullName: "" });
+  };
+
+  const confirmModalYes = () => {
+    const { action, alumniId } = confirmModal;
+    cancelConfirmModal();
+    if (!alumniId || !action) return;
+    void updateStatus(alumniId, action === "verify" ? "verified" : "rejected");
+  };
 
   const updateStatus = async (id: string, status: AlumniStatus) => {
     setUpdatingId(id);
@@ -349,7 +381,7 @@ export default function AdminAlumni() {
         ) : (
           <>
             <section className="space-y-4 md:hidden">
-              {filteredAlumni.map((item) => (
+              {sortedAlumni.map((item) => (
                 <article
                   key={item.id}
                   className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
@@ -408,7 +440,7 @@ export default function AdminAlumni() {
             <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
               <div className="border-b border-slate-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-slate-900">
-                  Alumni Profiles ({filteredAlumni.length})
+                  Alumni Profiles ({sortedAlumni.length})
                 </h2>
               </div>
 
@@ -425,7 +457,7 @@ export default function AdminAlumni() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAlumni.map((item) => (
+                    {sortedAlumni.map((item) => (
                       <tr key={item.id} className="border-t border-slate-100">
                         <td className="px-6 py-5">
                           <p className="font-semibold text-slate-900">{item.full_name}</p>
@@ -447,16 +479,8 @@ export default function AdminAlumni() {
                           <AlumniActions
                             item={item}
                             onView={() => setSelectedAlumni(item)}
-                            onVerify={() => {
-                              if (confirmAction(`Verify ${item.full_name}?`)) {
-                                void updateStatus(item.id, "verified");
-                              }
-                            }}
-                            onReject={() => {
-                              if (confirmAction(`Reject ${item.full_name}?`)) {
-                                void updateStatus(item.id, "rejected");
-                              }
-                            }}
+                            onVerify={() => openConfirmModal("verify", item.id, item.full_name)}
+                            onReject={() => openConfirmModal("reject", item.id, item.full_name)}
                             onDelete={() => {
                               if (confirmAction(`Delete rejected alumni profile for ${item.full_name}? This cannot be undone.`)) {
                                 void deleteAlumni(item.id);
@@ -653,11 +677,7 @@ export default function AdminAlumni() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirmAction(`Verify ${selectedAlumni.full_name}?`)) {
-                        void updateStatus(selectedAlumni.id, "verified");
-                      }
-                    }}
+                    onClick={() => openConfirmModal("verify", selectedAlumni.id, selectedAlumni.full_name)}
                     disabled={selectedAlumni.verification_status !== "pending" || updatingId === selectedAlumni.id}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-60"
                   >
@@ -666,11 +686,7 @@ export default function AdminAlumni() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirmAction(`Reject ${selectedAlumni.full_name}?`)) {
-                        void updateStatus(selectedAlumni.id, "rejected");
-                      }
-                    }}
+                    onClick={() => openConfirmModal("reject", selectedAlumni.id, selectedAlumni.full_name)}
                     disabled={selectedAlumni.verification_status !== "pending" || updatingId === selectedAlumni.id}
                     className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
                   >
@@ -698,6 +714,35 @@ export default function AdminAlumni() {
           </div>
         ) : null}
       </div>
+
+      {confirmModal.show && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-slate-900">
+              {confirmModal.action === "verify" ? "Confirm Verify" : "Confirm Reject"}
+            </h3>
+            <p className="mt-4 text-sm text-slate-600">
+              Are you sure you want to {confirmModal.action} {confirmModal.fullName}?
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={cancelConfirmModal}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                No
+              </button>
+              <button
+                type="button"
+                onClick={confirmModalYes}
+                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

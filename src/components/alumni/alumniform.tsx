@@ -18,6 +18,9 @@ export default function JoinAlumniPage() {
   const [savingDraft, setSavingDraft] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [showSubmissionInfoModal, setShowSubmissionInfoModal] = useState(false);
+  const [infoModalMessage, setInfoModalMessage] = useState("");
+  const [showDraftConfirm, setShowDraftConfirm] = useState(false);
   const [isAutoFilled, setIsAutoFilled] = useState(false);
 
   // Personal Information
@@ -128,7 +131,7 @@ export default function JoinAlumniPage() {
     });
   };
 
-  const saveDraft = async () => {
+  const doSaveDraft = async () => {
     const draft = {
       applicantName: fullName,
       programName: program,
@@ -182,6 +185,23 @@ export default function JoinAlumniPage() {
     }
   };
 
+  const saveDraft = () => {
+    setShowDraftConfirm(true);
+  };
+
+  const confirmSaveDraft = async () => {
+    setShowDraftConfirm(false);
+    await doSaveDraft();
+  };
+
+  const cancelSaveDraft = () => {
+    setShowDraftConfirm(false);
+  };
+
+  const closeSubmissionInfoModal = () => {
+    setShowSubmissionInfoModal(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -217,6 +237,10 @@ export default function JoinAlumniPage() {
       );
 
       if (result.success) {
+        setInfoModalMessage(
+          "Wait for 3-7 business days for the verification of admin and check your notification for update."
+        );
+        setShowSubmissionInfoModal(true);
         setSuccessMessage(
           "Alumni profile submitted successfully for verification!"
         );
@@ -240,11 +264,6 @@ export default function JoinAlumniPage() {
         setExperience("");
         setTransformation("");
         setVisibility("public");
-        
-        // Redirect after 2 seconds
-        setTimeout(() => {
-          router.push("/alumni");
-        }, 2000);
       } else {
         setErrorMessage(
           result.message || "Failed to submit alumni profile. Please try again."
@@ -546,6 +565,53 @@ export default function JoinAlumniPage() {
           </div>
         </form>
       </div>
+
+      {showDraftConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-xl font-semibold text-slate-900">Save Draft</h3>
+            <p className="mt-3 text-sm text-slate-600">
+              Are you sure you want to save this form as a draft? You can complete it later.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={cancelSaveDraft}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={confirmSaveDraft}
+                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                Save Draft
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSubmissionInfoModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-xl font-semibold text-slate-900">Submission Sent</h3>
+            <p className="mt-3 text-sm text-slate-600">
+              {infoModalMessage}
+            </p>
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={closeSubmissionInfoModal}
+                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
+import Image from "next/image";
 import Fetch_to from "@/utilities/Fetch_to";
 
 type WorkExperience = {
@@ -12,6 +14,7 @@ type WorkExperience = {
 
 type AlumniProfile = {
   id: string;
+  email: string;
   full_name: string;
   nickname: string | null;
   graduation_year: string | null;
@@ -24,9 +27,11 @@ type AlumniProfile = {
   transformation: string | null;
   visibility: "public" | "private";
   verification_status: string;
+  profile_picture: string | null;
 };
 
 export default function AlumniFeedPage() {
+  const { email: authEmail, profilePicture: authProfilePicture } = useAuth();
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -199,9 +204,28 @@ export default function AlumniFeedPage() {
           {filteredAlumni.map((person) => (
             <div key={person.id} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold">
-                  {getInitials(person.full_name)}
-                </div>
+                {(() => {
+                  const entryPic = person.profile_picture;
+                  const isCurrentUser = authEmail && person.email && authEmail === person.email;
+                  const avatarSrc = entryPic || (isCurrentUser ? authProfilePicture : undefined);
+                  if (avatarSrc) {
+                    return (
+                      <Image
+                        src={avatarSrc}
+                        alt={person.full_name}
+                        width={48}
+                        height={48}
+                        className="w-12 h-12 rounded-full object-cover"
+                        unoptimized
+                      />
+                    );
+                  }
+                  return (
+                    <div className="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center font-bold">
+                      {getInitials(person.full_name)}
+                    </div>
+                  );
+                })()}
 
                 <div>
                   <h2 className="text-xl font-bold text-blue-800">
