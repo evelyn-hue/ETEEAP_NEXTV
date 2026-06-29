@@ -16,6 +16,7 @@ import {
   Lock,
   BarChart3,
   Clock,
+  XCircle,
 } from "lucide-react";
 
 const DOCUMENTS = [
@@ -309,7 +310,8 @@ export default function ApplicationStatus() {
   }
 
   const statusLower = String(app.form_status || "").toLowerCase();
-  const readOnly = statusLower.includes("accept") || statusLower.includes("reject");
+  const hasRemarks = Object.keys(remarks).length > 0;
+  const readOnly = !statusLower.includes("reject") && !hasRemarks;
 
   const getStatusBadgeClass = () => {
     switch (statusLower) {
@@ -496,6 +498,11 @@ export default function ApplicationStatus() {
                           <CheckCircle className="w-3 h-3" />
                           Verified
                         </span>
+                      ) : remark ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <XCircle className="w-3 h-3" />
+                          Rejected
+                        </span>
                       ) : val ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                           <CheckCircle className="w-3 h-3" />
@@ -506,7 +513,7 @@ export default function ApplicationStatus() {
                           Missing
                         </span>
                       )}
-                      {remark && (
+                      {remark && !isVerified && (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                           Needs Revision
                         </span>
