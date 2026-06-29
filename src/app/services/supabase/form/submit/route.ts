@@ -67,6 +67,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
+    for (const { file } of uploadItems) {
+      if (!allowedTypes.includes(file.type)) {
+        return NextResponse.json(
+          { success: false, error: `File "${file.name}" is not an accepted type. Please upload PDF, JPG, or PNG only.` },
+          { status: 400 },
+        );
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        return NextResponse.json(
+          { success: false, error: `File "${file.name}" exceeds the 10MB limit.` },
+          { status: 400 },
+        );
+      }
+    }
+
     const bucketName = "Form_Data";
     const rowData: Record<string, string> = {
       email,

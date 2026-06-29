@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import jwt from "jsonwebtoken";
+import { cookies } from "next/headers";
 
 export async function GET(req: NextRequest) {
   try {
@@ -59,11 +61,28 @@ export async function POST(req: NextRequest) {
     const { id, verification_status, remarks, email: bodyEmail } = body;
 
     // Support email-based lookup (used by Fetch_to which always sends POST)
-    if (bodyEmail && !id) {
+    let lookupEmail = bodyEmail;
+    if (!lookupEmail) {
+      // Extract from JWT token
+      const authHeader = req.headers.get("authorization");
+      const cookieStore = await cookies();
+      const cookieToken = cookieStore.get("token")?.value;
+      const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null;
+      const token = bearerToken || cookieToken;
+
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as { final_data?: { data?: Array<{ email?: string }> } };
+          lookupEmail = decoded.final_data?.data?.[0]?.email;
+        } catch {}
+      }
+    }
+
+    if (lookupEmail && !id) {
       let query = supabaseServer
         .from("alumni_profiles")
         .select("*", { count: "exact" })
-        .eq("email", bodyEmail.trim().toLowerCase());
+        .eq("email", lookupEmail.trim().toLowerCase());
 
       const { data, error, count } = await query
         .order("created_at", { ascending: false })

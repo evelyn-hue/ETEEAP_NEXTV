@@ -14,7 +14,9 @@ type ActivityLogAction =
 	| "Login"
 	| "Logout"
 	| "Update Profile"
-	| "Update Profile Picture";
+	| "Update Profile Picture"
+	| "Verified Alumni"
+	| "Rejected Alumni";
 
 export async function POST(params: NextRequest) {
 	try {

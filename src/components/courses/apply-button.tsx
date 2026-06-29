@@ -14,7 +14,7 @@ type ApplyButtonProps = {
 
 export default function ApplyButton({ href, programName, label = "Apply Now" }: ApplyButtonProps) {
   const router = useRouter();
-  const { email, loading: authLoading, applicant_status } = useAuth();
+  const { email, loading: authLoading, applicant_status, isLoggedIn } = useAuth();
   const [checking, setChecking] = useState(true);
   const [hasActiveApplication, setHasActiveApplication] = useState(false);
   const [isAlumni, setIsAlumni] = useState(false);
@@ -65,7 +65,7 @@ export default function ApplyButton({ href, programName, label = "Apply Now" }: 
             : undefined
       }
       onClick={() => {
-        if (!verifiedEmail) {
+    if (!email || !isLoggedIn) {
           router.push(`/auth/signin?next=${encodeURIComponent(href)}`);
           return;
         }

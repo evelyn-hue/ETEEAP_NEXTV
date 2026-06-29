@@ -3,6 +3,7 @@
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
@@ -113,6 +114,26 @@ export default function SignUp() {
     await submitForm();
   };
 
+  const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
+    if (!credentialResponse.credential) return;
+
+    try {
+      const response = await Fetch_to("/services/supabase/auth/google-auth", {
+        credential: credentialResponse.credential,
+      });
+
+      if (response.success && typeof window !== "undefined" && response.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
+        await refreshAuth();
+        router.push("/");
+      } else {
+        alert("Google sign in failed");
+      }
+    } catch {
+      alert("Google sign in failed");
+    }
+  };
+
   const submitForm = async () => {
     const fullName = `${form.firstName.trim()} ${form.lastName.trim()}`;
     const response = await Fetch_to(apiLink.auth.signup, {
@@ -124,21 +145,16 @@ export default function SignUp() {
     });
 
     if (response.success) {
-      if (typeof window !== "undefined" && response.data?.token) {
-        localStorage.setItem("authToken", response.data.token);
+      if (response.data?.require_otp) {
+        const signupEmail = response.data?.email || form.email;
+        router.push(`/auth/verify-otp?email=${encodeURIComponent(signupEmail)}`);
+        return;
       }
 
-      // Reset form
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        civilStatus: "Single",
-        password: "",
-        c_password: ""
-      });
-
+      // Fallback: direct JWT (OTP columns not yet migrated)
+      if (response.data?.token && typeof window !== "undefined") {
+        localStorage.setItem("authToken", response.data.token);
+      }
       await refreshAuth();
       router.push("/");
     } else {
@@ -146,7 +162,10 @@ export default function SignUp() {
     }
   };
 
+  const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "";
+
   return (
+    <GoogleOAuthProvider clientId={clientId}>
     <section className="min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16">
       <div className="bg-white/90 p-8 rounded-lg shadow-lg">
 
@@ -292,6 +311,29 @@ export default function SignUp() {
         >
           Sign Up
         </button>
+
+        {/* Divider */}
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center text-sm">
+            <span className="px-2 bg-white text-gray-500">Or</span>
+          </div>
+        </div>
+
+        {/* Google Sign In */}
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => alert("Google sign in failed")}
+            theme="outline"
+            size="large"
+            text="signup_with"
+            shape="rectangular"
+            width="100%"
+          />
+        </div>
 
         <p className="text-center text-sm text-gray-600 mt-4">
             Already have an account?{" "}
@@ -452,5 +494,6 @@ export default function SignUp() {
       )}
       </div>
       </section>
+      </GoogleOAuthProvider>
   );
 }

@@ -16,8 +16,31 @@ export async function POST() {
       );
     }
 
+    // Enrich profiles missing profile_picture with auth profilePicture
+    const enriched = await Promise.all(
+      (data || []).map(async (profile) => {
+        if (profile.profile_picture) return profile;
+        if (!profile.email) return profile;
+
+        try {
+          const { data: authUser } = await supabaseServer
+            .from("auth")
+            .select("profilePicture")
+            .eq("email", profile.email.trim().toLowerCase())
+            .limit(1)
+            .single();
+
+          if (authUser?.profilePicture) {
+            return { ...profile, profile_picture: authUser.profilePicture };
+          }
+        } catch {}
+
+        return profile;
+      })
+    );
+
     return NextResponse.json(
-      { success: true, data: data || [] },
+      { success: true, data: enriched },
       { status: 200 }
     );
   } catch (error) {

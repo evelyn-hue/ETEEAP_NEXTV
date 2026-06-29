@@ -60,7 +60,7 @@ const staff = [
 
 export default function Program() {
   const router = useRouter();
-  const { email, loading: authLoading, applicant_status } = useAuth();
+  const { email, loading: authLoading, applicant_status, isLoggedIn } = useAuth();
   const [checkingApplication, setCheckingApplication] = useState(true);
   const [hasSubmittedApplication, setHasSubmittedApplication] = useState(false);
   const [isAlumni, setIsAlumni] = useState(false);
@@ -165,7 +165,7 @@ export default function Program() {
                         : undefined
                   }
                   onClick={() => {
-                    if (!email) {
+    if (!email || !isLoggedIn) {
                       router.push(`/auth/signin?next=${encodeURIComponent(
                         program.apply
                       )}`);

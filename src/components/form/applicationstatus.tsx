@@ -16,6 +16,7 @@ import {
   Lock,
   BarChart3,
   Clock,
+  XCircle,
 } from "lucide-react";
 
 const DOCUMENTS = [
@@ -64,6 +65,53 @@ interface MyApplicationResponse {
   error?: string;
 }
 
+function AlumniStatusCard({ profile }: { profile: Record<string, unknown> }) {
+  const status = String(profile.verification_status || "");
+  const statusLower = status.toLowerCase();
+  const isVerified = statusLower === "verified";
+  const isRejected = statusLower === "rejected";
+  const isPending = statusLower === "pending" || !status;
+
+  return (
+    <div className="mb-0">
+      <div className="flex items-center gap-3 mb-4">
+        <h2 className="text-xl font-bold text-gray-800">Alumni Registration</h2>
+        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
+          isVerified ? "bg-emerald-100 text-emerald-700" :
+          isRejected ? "bg-red-100 text-red-700" :
+          "bg-amber-100 text-amber-700"
+        }`}>
+          {isVerified ? "Verified" : isRejected ? "Rejected" : "Pending"}
+        </span>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+        <div>
+          <span className="text-gray-500">Name:</span>
+          <span className="ml-2 font-medium">{String(profile.full_name || "-")}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Graduation Year:</span>
+          <span className="ml-2 font-medium">{String(profile.graduation_year || "-")}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Programs:</span>
+          <span className="ml-2 font-medium">{Array.isArray(profile.programs) ? (profile.programs as string[]).join(", ") : "-"}</span>
+        </div>
+        <div>
+          <span className="text-gray-500">Submitted:</span>
+          <span className="ml-2 font-medium">{profile.created_at ? new Date(profile.created_at as string).toLocaleDateString() : "-"}</span>
+        </div>
+      </div>
+      {profile.remarks ? (
+        <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <p className="text-xs text-amber-700 font-medium">Admin Remarks:</p>
+          <p className="text-xs text-amber-600 mt-1">{String(profile.remarks)}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function ApplicationStatus() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -76,6 +124,8 @@ export default function ApplicationStatus() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [loading, setLoading] = useState(true);
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
+  const [alumniProfile, setAlumniProfile] = useState<Record<string, unknown> | null>(null);
+  const [alumniChecking, setAlumniChecking] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
@@ -118,14 +168,12 @@ export default function ApplicationStatus() {
       }
 
       if (!payload.data) {
-        showToast("No current application found.", "info");
         setApp(null);
-        return;
+      } else {
+        setApp(payload.data);
+        setRemarks(payload.remarks || {});
+        setVerified(payload.verified || {});
       }
-
-      setApp(payload.data);
-      setRemarks(payload.remarks || {});
-      setVerified(payload.verified || {});
     } catch (err) {
       if ((err as DOMException).name === "AbortError") {
         return;
@@ -134,6 +182,23 @@ export default function ApplicationStatus() {
       showToast((err as Error).message || "Failed to load application", "error");
     } finally {
       setLoading(false);
+    }
+    // Also fetch alumni profile status
+    try {
+      setAlumniChecking(true);
+      const alumniRes = await fetch("/services/supabase/alumni_profiles/retrieve", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (alumniRes.ok) {
+        const alumniPayload = await alumniRes.json();
+        const profiles = alumniPayload?.data || alumniPayload || [];
+        const active = Array.isArray(profiles) ? profiles[0] : profiles;
+        setAlumniProfile(active || null);
+      }
+    } catch {} finally {
+      setAlumniChecking(false);
     }
   };
 
@@ -212,7 +277,8 @@ export default function ApplicationStatus() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("formId", app.id);
+      formData.append("email", app.email);
+      formData.append("applicantName", app.applicant || "");
       formData.append("documentType", key);
 
       const response = await fetch("/services/supabase/form/submit", {
@@ -279,7 +345,7 @@ export default function ApplicationStatus() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center justify-center p-12">
             <Loader className="w-8 h-8 animate-spin text-blue-600" />
@@ -291,24 +357,45 @@ export default function ApplicationStatus() {
 
   if (!app) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-6xl mx-auto px-4 py-12">
-          <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-            <p className="text-gray-600 mb-4">Application not found</p>
-            <button
-              onClick={() => router.back()}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-            >
-              Go Back
-            </button>
-          </div>
+          {alumniProfile ? (
+            <div className="bg-white rounded-xl shadow-sm p-8">
+              <AlumniStatusCard profile={alumniProfile} />
+              <div className="text-center mt-6 text-gray-500 text-sm">
+                No program application found.{" "}
+                <button onClick={() => router.push("/courses")} className="text-blue-600 hover:underline font-medium">
+                  Apply to a program
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+              <p className="text-gray-600 mb-4">No applications or alumni registrations found.</p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => router.push("/courses")}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  Apply to Program
+                </button>
+                <button
+                  onClick={() => router.push("/alumni/alumniform")}
+                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
+                >
+                  Join Alumni
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     );
   }
 
   const statusLower = String(app.form_status || "").toLowerCase();
-  const readOnly = statusLower.includes("accept") || statusLower.includes("reject");
+  const hasRemarks = Object.keys(remarks).length > 0;
+  const readOnly = !statusLower.includes("reject") && !hasRemarks;
 
   const getStatusBadgeClass = () => {
     switch (statusLower) {
@@ -324,7 +411,7 @@ export default function ApplicationStatus() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 pt-20">
       {/* Toast Notification */}
       {toast && (
         <div
@@ -495,6 +582,11 @@ export default function ApplicationStatus() {
                           <CheckCircle className="w-3 h-3" />
                           Verified
                         </span>
+                      ) : remark ? (
+                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                          <XCircle className="w-3 h-3" />
+                          Rejected
+                        </span>
                       ) : val ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
                           <CheckCircle className="w-3 h-3" />
@@ -505,7 +597,7 @@ export default function ApplicationStatus() {
                           Missing
                         </span>
                       )}
-                      {remark && (
+                      {remark && !isVerified && (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                           Needs Revision
                         </span>
@@ -635,6 +727,13 @@ export default function ApplicationStatus() {
             )}
           </div>
         </div>
+
+        {/* Alumni registration status */}
+        {alumniProfile ? (
+          <div className="mt-8 bg-white rounded-xl shadow-sm p-8">
+            <AlumniStatusCard profile={alumniProfile} />
+          </div>
+        ) : null}
       </div>
     </main>
   );

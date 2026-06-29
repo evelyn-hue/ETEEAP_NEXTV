@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const { data, error } = await supabaseServer
       .from("form")
       .select("*, id")
-      .eq("email", userEmail)
+      .eq("email", userEmail.toLowerCase().trim())
       .limit(1);
 
     if (error) {
@@ -61,10 +61,25 @@ export async function POST(req: NextRequest) {
       return count + (application[key] ? 1 : 0);
     }, 0);
 
+    const approvals = Array.isArray(application.forms_approvals) ? application.forms_approvals : [];
+    const verified: Record<string, boolean> = {};
+    const remarks: Record<string, { remark: string }> = {};
+
+    for (const entry of approvals) {
+      if (entry && typeof entry === "object" && "documentId" in entry && "status" in entry) {
+        verified[`${entry.documentId}_verified`] = entry.status === "Verified";
+        if (entry.remark) {
+          remarks[entry.documentId] = { remark: String(entry.remark) };
+        }
+      }
+    }
+
     return NextResponse.json(
       {
         success: true,
         data: application,
+        remarks,
+        verified,
         meta: {
           requiredDocumentCount: REQUIRED_DOCUMENTS.length,
           requiredUploadedCount: requiredCount,

@@ -13,7 +13,7 @@ type WorkExperience = {
 
 export default function JoinAlumniPage() {
   const router = useRouter();
-  const { email: authEmail, fullName: authFullName, loading: authLoading } = useAuth();
+  const { email: authEmail, fullName: authFullName, profilePicture: authProfilePicture, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -101,6 +101,29 @@ export default function JoinAlumniPage() {
       }
     }
   }, [authEmail, authFullName, authLoading, isAutoFilled]);
+
+  // Load saved alumni draft on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem("eteeap-alumni-draft");
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw);
+      if (draft.fullName) setFullName(draft.fullName);
+      if (draft.nickname) setNickname(draft.nickname);
+      if (draft.graduationYear) setGraduationYear(draft.graduationYear);
+      if (draft.birthday) setBirthday(draft.birthday);
+      if (draft.email) setEmail(draft.email);
+      if (draft.educationalAttainment) setEducationalAttainment(draft.educationalAttainment);
+      if (draft.program) setProgram(draft.program);
+      if (Array.isArray(draft.workExperiences)) setWorkExperiences(draft.workExperiences);
+      if (Array.isArray(draft.certificates)) setCertificates(draft.certificates);
+      if (draft.experience) setExperience(draft.experience);
+      if (draft.transformation) setTransformation(draft.transformation);
+      if (draft.visibility) setVisibility(draft.visibility);
+      setIsAutoFilled(true);
+    } catch {}
+  }, []);
 
   const isCurrentWorkComplete =
     currentWork.companyName.trim() !== "" &&
@@ -232,6 +255,7 @@ export default function JoinAlumniPage() {
 
   const closeSubmissionInfoModal = () => {
     setShowSubmissionInfoModal(false);
+    router.push("/alumni");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -267,6 +291,8 @@ export default function JoinAlumniPage() {
           profilePictureUrl = uploadResult.data.profilePictureUrl;
         }
         setUploadingPicture(false);
+      } else if (authProfilePicture) {
+        profilePictureUrl = authProfilePicture;
       }
 
       const payload = {
@@ -434,19 +460,39 @@ export default function JoinAlumniPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Profile Picture
                 </label>
+                {authProfilePicture && !profilePicturePreview ? (
+                  <div className="flex items-center gap-3 mb-2">
+                    <img
+                      src={authProfilePicture}
+                      alt="Profile"
+                      className="w-16 h-16 rounded-full object-cover border"
+                    />
+                    <span className="text-xs text-gray-500">From account details</span>
+                  </div>
+                ) : null}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    setProfilePictureFile(file);
                     if (file) {
+                      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+                      if (!allowedTypes.includes(file.type)) {
+                        setErrorMessage("Please upload a JPG or PNG file for your profile picture.");
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        setErrorMessage("Profile picture must be under 5MB.");
+                        return;
+                      }
+                      setErrorMessage("");
                       const reader = new FileReader();
                       reader.onload = () => setProfilePicturePreview(String(reader.result));
                       reader.readAsDataURL(file);
                     } else {
                       setProfilePicturePreview(null);
                     }
+                    setProfilePictureFile(file);
                   }}
                   className="border p-2 rounded w-full text-sm"
                 />

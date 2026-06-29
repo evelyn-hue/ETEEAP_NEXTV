@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoggedIn(true);
   };
 
-  const logout = () => {
+  const logout = async () => {
     setEmail("");
     setFullName("");
     setPhone("");
@@ -102,7 +102,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
       sessionStorage.removeItem("authToken");
+      localStorage.removeItem("eteeap-application-drafts");
+      localStorage.removeItem("eteeap-alumni-draft");
     }
+    try {
+      await Fetch_to(api_link.jwt.deauth);
+    } catch {}
   };
 
   return (
