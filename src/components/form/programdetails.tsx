@@ -14,7 +14,7 @@ const eteeapFormId = [
 ].join("");
 
 const eteeapFormUrl = `https://docs.google.com/forms/d/e/${eteeapFormId}/viewform?usp=pp_url`;
-const DRAFT_KEY = "eteeap-application-draft";
+const DRAFTS_KEY = "eteeap-application-drafts";
 const REVIEW_ROUTE = "/form/reviewapplication";
 
 type StoredFile = {
@@ -179,10 +179,12 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
   // Load saved draft on component mount
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(DRAFT_KEY);
+    const raw = window.localStorage.getItem(DRAFTS_KEY);
     if (!raw) return;
     try {
-      const draft: DraftApplication = JSON.parse(raw);
+      const drafts: DraftApplication[] = JSON.parse(raw);
+      const draft = drafts.find((d) => d.programName === programName);
+      if (!draft) return;
       setSavedFiles(draft.files ?? {});
       setFileCounts({
         employmentCertificate: draft.files?.employmentCertificate?.length ?? 0,
@@ -198,7 +200,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
     } catch {
       // Silently fail if draft parsing fails
     }
-  }, []);
+  }, [programName]);
 
   useEffect(() => {
     if (isBus === "Yes") {
@@ -266,7 +268,16 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         files: Object.fromEntries(files),
       };
 
-      localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      const existing = localStorage.getItem(DRAFTS_KEY);
+      const drafts: DraftApplication[] = existing ? JSON.parse(existing) : [];
+      const idx = drafts.findIndex((d) => d.programName === draft.programName);
+      if (idx >= 0) {
+        drafts[idx] = draft;
+      } else {
+        drafts.push(draft);
+      }
+      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+      localStorage.setItem("selected-application", JSON.stringify(draft));
       router.push(REVIEW_ROUTE);
     } catch (draftError) {
       setError("Unable to save the draft files. Try again with smaller files.");

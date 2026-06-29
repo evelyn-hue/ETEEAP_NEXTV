@@ -128,7 +128,7 @@ export default function Dashboard() {
 
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4">
+        <div className="flex items-center justify-between pl-20 pr-6 py-4 md:px-6">
           <div>
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <p className="text-sm text-gray-600">
@@ -292,46 +292,58 @@ export default function Dashboard() {
             </button>
           </div>
 
-          <div className="overflow-x-auto mt-4">
-
-            <table className="w-full">
-
-              <thead>
-                <tr className="text-left text-gray-600">
-                  <th>User</th>
-                  <th>Action</th>
-                  <th>Status</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-
-              <tbody>
-
+          {loading ? (
+            <p className="mt-4 text-gray-600 text-sm">Loading activities...</p>
+          ) : activities.length === 0 ? (
+            <p className="mt-4 text-gray-500 text-sm">No recent activities.</p>
+          ) : (
+            <>
+              {/* Mobile card view */}
+              <div className="md:hidden space-y-3 mt-4">
                 {activities.map((a) => (
-                  <tr key={a.id} className="border-t">
-
-                    <td className="py-3">{a.user}</td>
-
-                    <td>{a.actions}</td>
-
-                    <td>
-                      <span className="text-xs px-2 py-1 rounded bg-gray-200">
-                        {a.details || "-"}
-                      </span>
-                    </td>
-
-                    <td className="text-gray-500 text-sm">
-                      {new Date(a.created_at).toLocaleString()}
-                    </td>
-
-                  </tr>
+                  <div key={a.id} className="bg-gray-50 rounded-lg border p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-xs text-blue-700">{a.actions || "-"}</span>
+                      <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
+                    </div>
+                    <p className="text-xs mt-1 text-gray-600">{a.details || "-"}</p>
+                    <p className="text-xs mt-1 text-gray-400">{a.user || "-"}</p>
+                  </div>
                 ))}
+              </div>
 
-              </tbody>
+              {/* Desktop table */}
+              <div className="hidden md:block overflow-x-auto mt-4">
+                <table className="w-full min-w-[600px]">
+                  <thead>
+                    <tr className="text-left text-gray-600">
+                      <th className="pb-2">User</th>
+                      <th className="pb-2">Action</th>
+                      <th className="pb-2">Status</th>
+                      <th className="pb-2">Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {activities.map((a) => (
+                      <tr key={a.id} className="border-t">
+                        <td className="py-3 pr-4 text-sm">{a.user}</td>
+                        <td className="py-3 pr-4 text-sm">{a.actions}</td>
+                        <td className="py-3 pr-4">
+                          <span className="text-xs px-2 py-1 rounded bg-gray-200 whitespace-nowrap">
+                            {a.details || "-"}
+                          </span>
+                        </td>
+                        <td className="py-3 text-gray-500 text-sm whitespace-nowrap">
+                          {new Date(a.created_at).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
 
-            </table>
-
-          </div>
         </div>
       </div>
     </div>

@@ -31,9 +31,11 @@ type AlumniProfile = {
 };
 
 export default function AlumniFeedPage() {
-  const { email: authEmail, profilePicture: authProfilePicture } = useAuth();
+  const { email: authEmail, profilePicture: authProfilePicture, loading: authLoading } = useAuth();
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasExistingAlumni, setHasExistingAlumni] = useState(false);
+  const [checkingAlumniStatus, setCheckingAlumniStatus] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
@@ -55,6 +57,31 @@ export default function AlumniFeedPage() {
     }
     return years;
   }, []);
+
+  // Check if current user already has an alumni profile
+  useEffect(() => {
+    if (authLoading || !authEmail) {
+      if (!authEmail) setCheckingAlumniStatus(false);
+      return;
+    }
+    const checkExisting = async () => {
+      try {
+        const result = await Fetch_to("/services/supabase/alumni_profiles/retrieve", { email: authEmail });
+        if (result.success) {
+          const data = Array.isArray(result.data) ? result.data : (result.data?.data || []);
+          const hasActive = data.some(
+            (p: AlumniProfile) => String(p.verification_status ?? "").toLowerCase() !== "rejected"
+          );
+          setHasExistingAlumni(hasActive);
+        }
+      } catch {
+        // Silently fail
+      } finally {
+        setCheckingAlumniStatus(false);
+      }
+    };
+    checkExisting();
+  }, [authEmail, authLoading]);
 
   // Fetch verified and public alumni profiles
   useEffect(() => {
@@ -117,12 +144,22 @@ export default function AlumniFeedPage() {
         <h1 className="text-3xl font-bold text-blue-800">Alumni Feed</h1>
         <p className="text-gray-500">Verified alumni profiles from our community</p>
 
-        <Link
-          href="/alumni/alumniform"
-          className="inline-block mt-4 bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800"
-        >
-          Join Alumni
-        </Link>
+        {checkingAlumniStatus || authLoading ? (
+          <span className="inline-block mt-4 bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed">
+            Checking...
+          </span>
+        ) : hasExistingAlumni ? (
+          <span className="inline-block mt-4 bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed">
+            Already Applied
+          </span>
+        ) : (
+          <Link
+            href="/alumni/alumniform"
+            className="inline-block mt-4 bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800"
+          >
+            Join Alumni
+          </Link>
+        )}
       </div>
 
       <div className="max-w-5xl mx-auto mb-6 bg-white p-6 rounded-xl shadow">

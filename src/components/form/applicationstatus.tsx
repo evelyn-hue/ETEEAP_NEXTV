@@ -252,7 +252,7 @@ export default function ApplicationStatus() {
       const response = await fetch(api_links.form.delete, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ formId: app.id }),
+        body: JSON.stringify({ id: Number(app.id), email: app.email }),
       });
 
       if (!response.ok) {
@@ -624,7 +624,7 @@ export default function ApplicationStatus() {
           </button>
 
           <div>
-            {statusLower.includes("reject") && (
+            {(statusLower.includes("reject") || statusLower.includes("draft")) && (
               <button
                 onClick={handleDelete}
                 className="px-6 py-3 rounded-lg border-2 border-red-600 text-red-600 font-medium hover:bg-red-50 transition flex items-center gap-2"

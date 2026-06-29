@@ -20,7 +20,8 @@ async function extractToken(req: NextRequest) {
   if (authHeader?.startsWith("Bearer ")) {
     return authHeader.slice(7);
   }
-  return (await cookies()).get("token")?.value;
+  const cookieStore = await cookies();
+  return cookieStore.get("token")?.value;
 }
 
 export async function POST(req: NextRequest) {
@@ -35,19 +36,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Server misconfiguration" }, { status: 500 });
     }
 
-    const decoded = jwt.verify(token, secret) as {
-      final_data?: { data?: Array<{ email?: string }> };
-      email?: string;
-    };
-    const email = (decoded.final_data?.data?.[0]?.email || decoded.email)?.trim().toLowerCase();
-    if (!email) {
+    const decoded = jwt.verify(token, secret) as { final_data?: { data?: Array<{ id?: string; email?: string }> } };
+    const userEmail = decoded.final_data?.data?.[0]?.email;
+    if (!userEmail) {
       return NextResponse.json({ success: false, error: "Authenticated user not found" }, { status: 401 });
     }
 
     const { data, error } = await supabaseServer
       .from("form")
       .select("*, id")
-      .eq("email", email)
+      .eq("email", userEmail)
       .limit(1);
 
     if (error) {

@@ -91,6 +91,14 @@ export default function SignUp() {
 
     if (!form.password) {
       validationErrors.password = "Password is required";
+    } else if (form.password.length < 8) {
+      validationErrors.password = "Password must be at least 8 characters";
+    } else if (!/[A-Z]/.test(form.password)) {
+      validationErrors.password = "Password must include at least one uppercase letter";
+    } else if (!/[a-z]/.test(form.password)) {
+      validationErrors.password = "Password must include at least one lowercase letter";
+    } else if (!/[0-9]/.test(form.password)) {
+      validationErrors.password = "Password must include at least one number";
     }
 
     setErrors(validationErrors);
