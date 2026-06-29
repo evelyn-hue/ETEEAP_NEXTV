@@ -65,7 +65,7 @@ export default function ApplyButton({ href, programName, label = "Apply Now" }: 
             : undefined
       }
       onClick={() => {
-        if (!verifiedEmail) {
+        if (!email) {
           router.push(`/auth/signin?next=${encodeURIComponent(href)}`);
           return;
         }
