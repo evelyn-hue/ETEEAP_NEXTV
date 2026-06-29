@@ -116,8 +116,8 @@ export default function SignUp() {
     });
 
     if (response.success) {
-      if (typeof window !== "undefined" && response.token) {
-        localStorage.setItem("authToken", response.token);
+      if (typeof window !== "undefined" && response.data?.token) {
+        localStorage.setItem("authToken", response.data.token);
       }
 
       // Reset form

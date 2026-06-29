@@ -369,6 +369,22 @@ export async function PATCH(params: NextRequest) {
       );
     }
 
+    if (currentRow.email) {
+      const applicantStatusForAuth =
+        nextStatus === "Reject"
+          ? "rejected"
+          : nextStatus === "Approve"
+            ? "accepted"
+            : nextStatus === "Under Review"
+              ? "submitted"
+              : "draft";
+
+      await supabaseServer
+        .from("auth")
+        .update({ applicant_status: applicantStatusForAuth })
+        .eq("email", currentRow.email);
+    }
+
     const civilStatus = await getApplicantCivilStatus(currentRow.email);
 
     return NextResponse.json(

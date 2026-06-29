@@ -55,9 +55,13 @@ export default function SignIn() {
     });
 
     if (response.success) {
-      const authResponse = await Fetch_to(apiLink.jwt.auth, { email: formData.email });
-      if (authResponse.success && typeof window !== "undefined" && authResponse.token) {
-        localStorage.setItem("authToken", authResponse.token);
+      const authResponse = await Fetch_to(apiLink.jwt.auth, { email: formData.email }) as {
+        success: boolean;
+        data?: { token?: string };
+        message?: string;
+      };
+      if (authResponse.success && typeof window !== "undefined" && authResponse.data?.token) {
+        localStorage.setItem("authToken", authResponse.data.token);
       }
       await refreshAuth();
       const nextPath = formData.email === "admin@admin.com" ? "/admin" : "/";

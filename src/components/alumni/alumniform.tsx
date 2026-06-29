@@ -341,10 +341,10 @@ export default function JoinAlumniPage() {
               required
             >
               <option value="">Select Educational Attainment</option>
-                <option value="Associate">Associate</option>
-              <option value="Bachelor&apos;s">Bachelor&apos;s</option>
-              <option value="Master&apos;s">Master&apos;s</option>
-              <option value="Doctoral">Doctoral</option>
+                <option value="Associate">Associate Degree</option>
+              <option value="Bachelor&apos;s">Bachelor&apos;s Degree</option>
+              <option value="Master&apos;s">Master&apos;s Degree</option>
+              <option value="Doctoral">Doctoral Degree</option>
             </select>
           </div>
 

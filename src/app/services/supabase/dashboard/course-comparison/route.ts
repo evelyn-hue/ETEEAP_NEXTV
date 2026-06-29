@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 
+const supportedPrograms = [
+  "Bachelor of Arts in English Language Studies",
+  "Bachelor of Science in Business Administration - Marketing Management",
+  "Bachelor of Science in Business Administration - Human Resource Management",
+  "Bachelor of Science in Hospitality Management",
+] as const;
+
 function getCourseAbbrev(course: string) {
   const map: Record<string, string> = {
     "Bachelor of Arts in English Language Studies": "BAELS",
@@ -12,26 +19,56 @@ function getCourseAbbrev(course: string) {
   return map[course] ?? course;
 }
 
+function normalizeProgram(program?: string | null) {
+  const value = String(program ?? "").trim().toLowerCase();
+
+  if (!value) {
+    return null;
+  }
+
+  if (value.includes("baels") || value.includes("english language studies")) {
+    return supportedPrograms[0];
+  }
+
+  if ((value.includes("bsba") || value.includes("marketing")) && (value.includes("marketing") || value.includes("mm"))) {
+    return supportedPrograms[1];
+  }
+
+  if ((value.includes("bsba") || value.includes("human resource")) && (value.includes("human resource") || value.includes("hrm"))) {
+    return supportedPrograms[2];
+  }
+
+  if (value.includes("hospitality") || value.includes("bshm")) {
+    return supportedPrograms[3];
+  }
+
+  return null;
+}
+
 export async function POST() {
   try {
-    // Get all applications with programs
     const { data: applicationData } = await supabaseServer
       .from("form")
       .select("program, created_at");
 
-    // Get all alumni with programs
     const { data: alumniData } = await supabaseServer
       .from("alumni_profiles")
       .select("programs, created_at");
 
-    // Process course comparison
     const courseMap: Record<string, { applications: number; alumni: number; lastUpdated?: string }> = {};
 
-    // Count applications per course
+    supportedPrograms.forEach((course) => {
+      courseMap[course] = { applications: 0, alumni: 0, lastUpdated: undefined };
+    });
+
     if (applicationData) {
-      applicationData.forEach((app: { program: string; created_at?: string }) => {
-        const course = app.program || "Unknown";
-        const row = courseMap[course] || { applications: 0, alumni: 0, lastUpdated: undefined };
+      applicationData.forEach((app: { program?: string | null; created_at?: string }) => {
+        const course = normalizeProgram(app.program);
+        if (!course) {
+          return;
+        }
+
+        const row = courseMap[course];
         row.applications += 1;
         if (app.created_at) {
           const appDate = new Date(app.created_at).toISOString();
@@ -39,38 +76,43 @@ export async function POST() {
             row.lastUpdated = appDate;
           }
         }
-        courseMap[course] = row;
       });
     }
 
-    // Count alumni per course (programs is an array)
     if (alumniData) {
-      alumniData.forEach((alumni: { programs: string[]; created_at?: string }) => {
-        if (Array.isArray(alumni.programs)) {
-          alumni.programs.forEach((program: string) => {
-            const course = program || "Unknown";
-            const row = courseMap[course] || { applications: 0, alumni: 0, lastUpdated: undefined };
-            row.alumni += 1;
-            if (alumni.created_at) {
-              const alumniDate = new Date(alumni.created_at).toISOString();
-              if (!row.lastUpdated || alumniDate > row.lastUpdated) {
-                row.lastUpdated = alumniDate;
-              }
-            }
-            courseMap[course] = row;
-          });
+      alumniData.forEach((alumni: { programs?: string[] | null; created_at?: string }) => {
+        if (!Array.isArray(alumni.programs)) {
+          return;
         }
+
+        alumni.programs.forEach((program: string) => {
+          const course = normalizeProgram(program);
+          if (!course) {
+            return;
+          }
+
+          const row = courseMap[course];
+          row.alumni += 1;
+          if (alumni.created_at) {
+            const alumniDate = new Date(alumni.created_at).toISOString();
+            if (!row.lastUpdated || alumniDate > row.lastUpdated) {
+              row.lastUpdated = alumniDate;
+            }
+          }
+        });
       });
     }
 
-    // Convert to array format for chart
-    const courseComparison = Object.entries(courseMap).map(([course, data]) => ({
-      course,
-      courseAbbrev: getCourseAbbrev(course),
-      applications: data.applications,
-      alumni: data.alumni,
-      lastUpdated: data.lastUpdated ?? null,
-    }));
+    const courseComparison = supportedPrograms.map((course) => {
+      const data = courseMap[course];
+      return {
+        course,
+        courseAbbrev: getCourseAbbrev(course),
+        applications: data.applications,
+        alumni: data.alumni,
+        lastUpdated: data.lastUpdated ?? null,
+      };
+    });
 
     return NextResponse.json(
       {

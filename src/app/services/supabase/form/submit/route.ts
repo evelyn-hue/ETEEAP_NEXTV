@@ -119,6 +119,18 @@ export async function POST(req: NextRequest) {
     );
     }
 
+    const { error: authUpdateError } = await supabaseServer
+      .from("auth")
+      .update({ applicant_status: "submitted" })
+      .eq("email", email);
+
+    if (authUpdateError) {
+      return NextResponse.json(
+        { success: false, error: authUpdateError.message },
+        { status: 500 },
+      );
+    }
+
     return NextResponse.json(
       { success: true, message: "Submitted Successfully" },
       { status: 200 },

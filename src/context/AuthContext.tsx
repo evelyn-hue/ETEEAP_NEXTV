@@ -11,6 +11,7 @@ type AuthContextType = {
   phone: string;
   civil_status: string;
   profilePicture: string;
+  applicant_status: string;
   loading: boolean;
   login: (email: string) => void;
   logout: () => void;
@@ -27,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [phone, setPhone] = useState("");
   const [civil_status, setCivilStatus] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
+  const [applicant_status, setApplicantStatus] = useState("");
   const [loading, setLoading] = useState(true);
 
   // Verify token on mount
@@ -55,6 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPhone(response_data.phone ?? "");
         setCivilStatus(response_data.civil_status ?? "");
         setProfilePicture(response_data.profilePicture ?? "");
+        setApplicantStatus(response_data.applicant_status ?? "");
         setIsLoggedIn(true);
       } else {
         setIsLoggedIn(false);
@@ -63,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPhone("");
         setCivilStatus("");
         setProfilePicture("");
+        setApplicantStatus("");
       }
     } catch (error) {
       console.error("Auth verification failed:", error);
@@ -92,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPhone("");
     setCivilStatus("");
     setProfilePicture("");
+    setApplicantStatus("");
     setIsLoggedIn(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
@@ -99,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ isLoggedIn, email, fullName, phone, civil_status, profilePicture, loading, login, logout, verify, refreshAuth }}>
+    <AuthContext.Provider value={{ isLoggedIn, email, fullName, phone, civil_status, profilePicture, applicant_status, loading, login, logout, verify, refreshAuth }}>
       {children}
     </AuthContext.Provider>
   );

@@ -288,17 +288,16 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       setProgress(100);
       setProgressLabel("Finalizing...");
       window.localStorage.clear();
-      setSubmitSuccess(response.message);
+      setSubmitSuccess(response.message || "Your application was submitted successfully.");
       await notifyApplicant(
         submitEmail,
         "Under Review Applicant",
         "Your application has been submitted and is now under review.",
       );
-      
-      // Navigate to my applications page after successful submission
+
       setTimeout(() => {
-        router.push("/form");
-      }, 2000);
+        router.push("/");
+      }, 1800);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Submission failed.";
       setSubmitError(message);
@@ -486,11 +485,12 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
 
         {/* Success Message */}
         {submitSuccess ? (
-          <div className="mb-8 bg-green-50 border border-green-200 rounded-xl p-6 md:p-8 flex gap-4">
-            <CheckCircle className="w-6 h-6 text-green-600 shrink-0 mt-1" />
-            <div>
-              <p className="text-green-900 font-semibold mb-2">Application Submitted</p>
-              <p className="text-green-800 text-sm">{submitSuccess}</p>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 px-4 py-6">
+            <div className="w-full max-w-md rounded-3xl bg-white shadow-2xl border border-green-200 p-8 text-center">
+              <div className="mx-auto mb-4 inline-flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                <CheckCircle className="w-8 h-8 text-green-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-slate-900 mb-2">Submitted Successfully</h3>
             </div>
           </div>
         ) : null}

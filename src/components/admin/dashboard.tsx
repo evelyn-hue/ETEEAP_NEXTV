@@ -227,11 +227,15 @@ export default function Dashboard() {
                         <div className="rounded-xl bg-white p-3 shadow-lg border border-slate-200">
                           <p className="font-semibold text-slate-900">{shortLabel}</p>
                           <p className="text-xs text-slate-500">Last updated: {formattedDate}</p>
-                          {payload.map((entry) => (
-                            <p key={entry.dataKey as string} className="text-sm text-slate-700">
-                              <span className="font-semibold">{entry.name ?? entry.dataKey}:</span> {entry.value}
-                            </p>
-                          ))}
+                          {payload.map((entry) => {
+                            const label = String(entry.name ?? entry.dataKey ?? "");
+
+                            return (
+                              <p key={String(entry.dataKey)} className="text-sm text-slate-700">
+                                <span className="font-semibold">{label}:</span> {entry.value}
+                              </p>
+                            );
+                          })}
                         </div>
                       );
                     }}
