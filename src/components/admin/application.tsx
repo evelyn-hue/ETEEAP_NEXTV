@@ -89,6 +89,11 @@ type FormRow = {
   certificates?: string | null;
 };
 
+type Toast = {
+  message: string;
+  type: "success" | "error" | "info";
+};
+
 const baseDocuments: DocumentDefinition[] = [
   { id: "letterOfIntent", label: "A. Letter of Intent", required: true },
   { id: "resume", label: "B. Resume / CV", required: true },
@@ -198,6 +203,10 @@ function ApplicationActions({
   currentStatus: FormStatus;
   isDeleted: boolean;
 }) {
+  const isUnderReview = currentStatus === "Under Review";
+  const isRejected = currentStatus === "Reject";
+  const canDelete = isUnderReview || isRejected;
+
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
       <button
@@ -222,7 +231,7 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onAccept}
-            disabled={currentStatus !== "Under Review"}
+            disabled={!isUnderReview}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <Check size={16} />
@@ -231,7 +240,7 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onReject}
-            disabled={currentStatus !== "Under Review"}
+            disabled={!isUnderReview}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <XCircle size={16} />
@@ -240,7 +249,8 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onDelete}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 sm:w-auto"
+            disabled={!canDelete}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <Trash2 size={16} />
             Delete
@@ -369,6 +379,7 @@ export default function Application() {
     useState<ApplicationRecord | null>(null);
   const [savingRemark, setSavingRemark] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [toast, setToast] = useState<Toast | null>(null);
 
   const syncApplication = (updated: ApplicationRecord) => {
     setApplications((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
@@ -381,6 +392,11 @@ export default function Application() {
 
   const closeConfirmation = () => {
     setPendingAction(null);
+  };
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
+    setToast({ message, type });
+    window.setTimeout(() => setToast(null), 3000);
   };
 
   const fetchApplications = async (userEmail: string) => {
@@ -435,12 +451,17 @@ export default function Application() {
   }, [applications, query, programFilter, statusFilter, dateFilter]);
 
   const programOptions = useMemo(() => {
-    return [
+    const basePrograms = [
       "All Programs",
       "Bachelor of Science in Hospitality Management",
       "Bachelor of Science in Business Administration - Human Resource Management",
-      ...new Set(applications.map((item) => item.program)),
     ];
+
+    const applicationPrograms = applications
+      .map((item) => item.program)
+      .filter((program) => !basePrograms.includes(program));
+
+    return [...basePrograms, ...new Set(applicationPrograms)];
   }, [applications]);
 
   const downloadPdf = () => {
@@ -523,7 +544,7 @@ export default function Application() {
         | null;
 
       if (!response.ok || !payload?.success || !payload.message) {
-        alert(payload?.error || "Failed to update form status.");
+        showToast(payload?.error || "Failed to update form status.", "error");
         return;
       }
 
@@ -559,7 +580,7 @@ export default function Application() {
         | null;
 
       if (!response.ok || !payload?.success || !payload.message) {
-        alert(payload?.error || "Failed to update document status.");
+        showToast(payload?.error || "Failed to update document status.", "error");
         return;
       }
 
@@ -635,18 +656,18 @@ export default function Application() {
         if (!response.ok || !payload?.success || !payload.message) {
           const errorMsg = payload?.error || "Failed to save remark.";
           console.error("Remark save error:", errorMsg);
-          alert(errorMsg);
+          showToast(errorMsg, "error");
           setSavingRemark(null);
           return;
         }
 
         syncApplication(mapRowToApplication(payload.message));
-        alert("Remark saved successfully!");
+        showToast("Remark saved successfully!", "success");
         setSavingRemark(null);
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : "Unknown error";
         console.error("Remark save exception:", errorMsg);
-        alert(`Error saving remark: ${errorMsg}`);
+        showToast(`Error saving remark: ${errorMsg}`, "error");
         setSavingRemark(null);
       }
     };
@@ -1019,6 +1040,17 @@ export default function Application() {
           </div>
         ) : null}
       </div>
+      {toast ? (
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border p-4 shadow-2xl ring-1 ring-slate-200 bg-white">
+          <div className={`flex items-start gap-3 ${toast.type === "success" ? "text-green-900" : toast.type === "error" ? "text-red-900" : "text-slate-900"}`}>
+            <div className={`mt-1 h-2.5 w-2.5 rounded-full ${toast.type === "success" ? "bg-green-500" : toast.type === "error" ? "bg-red-500" : "bg-slate-400"}`} />
+            <div>
+              <p className="font-semibold">{toast.type === "success" ? "Success" : toast.type === "error" ? "Error" : "Info"}</p>
+              <p className="mt-1 text-sm leading-6">{toast.message}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </main>
   );
 }

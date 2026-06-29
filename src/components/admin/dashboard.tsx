@@ -28,13 +28,17 @@ type Statistics = {
   totalApplications: number;
   pendingReview: number;
   approved: number;
+  pendingAlumni: number;
   verifiedAlumni: number;
+  totalAlumni: number;
 };
 
 type CourseData = {
   course: string;
+  courseAbbrev?: string;
   applications: number;
   alumni: number;
+  lastUpdated?: string | null;
 };
 
 type EnrollmentData = {
@@ -46,8 +50,8 @@ type EnrollmentData = {
 type Activity = {
   id: number;
   user: string;
-  action: string;
-  status: string;
+  actions: string;
+  details: string;
   created_at: string;
 };
 
@@ -56,7 +60,9 @@ export default function Dashboard() {
     totalApplications: 0,
     pendingReview: 0,
     approved: 0,
+    pendingAlumni: 0,
     verifiedAlumni: 0,
+    totalAlumni: 0,
   });
 
   const [courseData, setCourseData] = useState<CourseData[]>([]);
@@ -95,8 +101,16 @@ export default function Dashboard() {
         }
 
         if (activityRes.success) {
+          const allActivities = activityRes.data?.message || activityRes.data || [];
           setActivities(
-            activityRes.data?.message || activityRes.data || []
+            Array.isArray(allActivities)
+              ? allActivities
+                  .filter((activity) => {
+                    const userValue = String(activity.user ?? "").toLowerCase();
+                    return userValue.includes("admin");
+                  })
+                  .slice(0, 5)
+              : []
           );
         }
       } catch (err) {
@@ -139,11 +153,11 @@ export default function Dashboard() {
         )}
 
         {/* STATS */}
-        <div className="mb-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-8 grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
 
           <StatCard
             icon={<FiFileText />}
-            label="Total Applications"
+            label="Total Applicants"
             value={statistics.totalApplications}
             color="blue"
           />
@@ -163,10 +177,24 @@ export default function Dashboard() {
           />
 
           <StatCard
+            icon={<FiClock />}
+            label="Pending Alumni"
+            value={statistics.pendingAlumni}
+            color="yellow"
+          />
+
+          <StatCard
             icon={<FiUsers />}
             label="Verified Alumni"
             value={statistics.verifiedAlumni}
             color="purple"
+          />
+
+          <StatCard
+            icon={<FiUsers />}
+            label="Total Alumni"
+            value={statistics.totalAlumni}
+            color="teal"
           />
         </div>
 
@@ -185,10 +213,32 @@ export default function Dashboard() {
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="course" />
                   <YAxis />
-                  <Tooltip />
+                  <Tooltip
+                    content={({ active, payload }) => {
+                      if (!active || !payload || payload.length === 0) return null;
+
+                      const data = payload[0].payload as CourseData;
+                      const formattedDate = data.lastUpdated
+                        ? new Date(data.lastUpdated).toLocaleDateString()
+                        : "No date";
+                      const shortLabel = data.courseAbbrev || data.course;
+
+                      return (
+                        <div className="rounded-xl bg-white p-3 shadow-lg border border-slate-200">
+                          <p className="font-semibold text-slate-900">{shortLabel}</p>
+                          <p className="text-xs text-slate-500">Last updated: {formattedDate}</p>
+                          {payload.map((entry) => (
+                            <p key={entry.dataKey as string} className="text-sm text-slate-700">
+                              <span className="font-semibold">{entry.name ?? entry.dataKey}:</span> {entry.value}
+                            </p>
+                          ))}
+                        </div>
+                      );
+                    }}
+                  />
                   <Legend />
-                  <Bar dataKey="applications" fill="#2563eb" />
-                  <Bar dataKey="alumni" fill="#16a34a" />
+                  <Bar dataKey="applications" name="applications" fill="#2563eb" />
+                  <Bar dataKey="alumni" name="alumni" fill="#16a34a" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -258,11 +308,11 @@ export default function Dashboard() {
 
                     <td className="py-3">{a.user}</td>
 
-                    <td>{a.action}</td>
+                    <td>{a.actions}</td>
 
                     <td>
                       <span className="text-xs px-2 py-1 rounded bg-gray-200">
-                        {a.status}
+                        {a.details || "-"}
                       </span>
                     </td>
 
@@ -289,7 +339,7 @@ type StatCardProps = {
   icon: React.ReactNode;
   label: string;
   value: number;
-  color: "blue" | "yellow" | "green" | "purple";
+  color: "blue" | "yellow" | "green" | "purple" | "teal";
 };
 
 function StatCard({
@@ -298,11 +348,12 @@ function StatCard({
   value,
   color,
 }: StatCardProps) {
-  const colors: Record<"blue" | "yellow" | "green" | "purple", string> = {
+  const colors: Record<"blue" | "yellow" | "green" | "purple" | "teal", string> = {
     blue: "bg-blue-50 text-blue-600",
     yellow: "bg-yellow-50 text-yellow-600",
     green: "bg-green-50 text-green-600",
     purple: "bg-purple-50 text-purple-600",
+    teal: "bg-teal-50 text-teal-600",
   };
 
   return (

@@ -6,9 +6,11 @@ import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SignIn() {
   const router = useRouter();
+  const { refreshAuth } = useAuth();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -16,6 +18,8 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [toastOpen, setToastOpen] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -51,12 +55,18 @@ export default function SignIn() {
     });
 
     if (response.success) {
-      alert("Sign in successful!");
-      await Fetch_to(apiLink.jwt.auth, { email: formData.email });
-      if (formData.email === "admin@admin.com") {
-        return router.push("/admin");
+      const authResponse = await Fetch_to(apiLink.jwt.auth, { email: formData.email });
+      if (authResponse.success && typeof window !== "undefined" && authResponse.token) {
+        localStorage.setItem("authToken", authResponse.token);
       }
-      router.push("/");
+      await refreshAuth();
+      const nextPath = formData.email === "admin@admin.com" ? "/admin" : "/";
+      setSuccessMessage("Sign in successful!");
+      setToastOpen(true);
+      setTimeout(() => {
+        setToastOpen(false);
+        router.push(nextPath);
+      }, 1400);
     } else {
       setErrorMessage(response.message || "Sign in failed. Please try again.");
     }
@@ -144,6 +154,12 @@ export default function SignIn() {
             </p>
           )}
 
+          {successMessage && (
+            <div className="rounded-md border border-green-300 bg-green-50 px-4 py-3 text-sm text-green-800" role="status">
+              {successMessage}
+            </div>
+          )}
+
           {/* Sign In Button */}
           <button
             type="submit"
@@ -173,6 +189,14 @@ export default function SignIn() {
         </p>
       </div>
 
+      {toastOpen && (
+        <div className="fixed right-6 top-6 z-50 flex w-full max-w-sm flex-col gap-3 px-4">
+          <div className="rounded-2xl bg-emerald-600 p-4 shadow-xl ring-1 ring-slate-900/10 text-white">
+            <div className="text-sm font-semibold">Success</div>
+            <div className="mt-2 text-sm">{successMessage}</div>
+          </div>
+        </div>
+      )}
     </section>
   );
 } 

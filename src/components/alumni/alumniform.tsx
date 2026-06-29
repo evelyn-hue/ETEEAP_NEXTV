@@ -118,7 +118,17 @@ export default function JoinAlumniPage() {
     setCertificates(certificates.filter((c) => c !== item));
   };
 
-  const saveDraft = () => {
+  const notifyApplicant = async (userEmail: string, action: string, details: string) => {
+    if (!userEmail) return;
+    await Fetch_to("/services/supabase/activity_logs", {
+      mode: "insert",
+      user: userEmail,
+      actions: action,
+      details,
+    });
+  };
+
+  const saveDraft = async () => {
     const draft = {
       applicantName: fullName,
       programName: program,
@@ -145,11 +155,25 @@ export default function JoinAlumniPage() {
       window.localStorage.setItem("eteeap-application-draft", JSON.stringify(draft));
       window.localStorage.setItem("selected-application", JSON.stringify(draft));
       setSuccessMessage("Draft saved to Drafts.");
+      if (email) {
+        await notifyApplicant(
+          email,
+          "Draft Applicant",
+          "Your alumni form draft has been saved and can be completed later.",
+        );
+      }
     } catch {
       try {
         window.sessionStorage.setItem("eteeap-application-draft", JSON.stringify(draft));
         window.sessionStorage.setItem("selected-application", JSON.stringify(draft));
         setSuccessMessage("Draft saved to session storage.");
+        if (email) {
+          await notifyApplicant(
+            email,
+            "Draft Applicant",
+            "Your alumni form draft has been saved and can be completed later.",
+          );
+        }
       } catch {
         setErrorMessage("Unable to save draft. Please try again.");
       }
@@ -196,6 +220,13 @@ export default function JoinAlumniPage() {
         setSuccessMessage(
           "Alumni profile submitted successfully for verification!"
         );
+        if (email) {
+          await notifyApplicant(
+            email,
+            "Under Review Applicant",
+            "Your alumni profile has been submitted and is now under verification.",
+          );
+        }
         // Reset form
         setFullName("");
         setNickname("");

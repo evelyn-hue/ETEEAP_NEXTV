@@ -166,7 +166,16 @@ export default function Program() {
                       ? "You already have an alumni application in progress or approved. You can apply again only after it has been rejected."
                       : undefined
                   }
-                  onClick={() => {router.push(`${program.apply}`);}}
+                  onClick={() => {
+                    if (!email) {
+                      router.push(`/auth/signin?next=${encodeURIComponent(
+                        program.apply
+                      )}`);
+                      return;
+                    }
+
+                    router.push(`${program.apply}`);
+                  }}
                 >
                   {hasActiveAlumniApplication ? "Applied" : "Apply"}
                 </button>

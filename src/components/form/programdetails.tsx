@@ -292,7 +292,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         Applicant: {applicantName || "Unnamed user"}
       </p>
 
-      <form ref={formRef} className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); saveDraft(); }} className="bg-white rounded-xl shadow-lg p-6 space-y-6">
         <div className="space-y-4">
           <div>
             <label className="font-semibold" htmlFor="isBusinessOwner">
@@ -461,8 +461,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
 
         <div className="mt-6 text-center">
           <button
-            type="button"
-            onClick={saveDraft}
+            type="submit"
             disabled={isSaving}
             className="px-6 py-2 rounded-md bg-blue-800 text-white hover:bg-blue-700 cursor-pointer disabled:opacity-60"
           >

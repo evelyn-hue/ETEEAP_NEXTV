@@ -23,6 +23,8 @@ function ProfileBody() {
   const [isUploadingPicture, setIsUploadingPicture] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   // Editable fields
   const [fullName, setFullName] = useState(authFullName || "");
@@ -63,6 +65,8 @@ function ProfileBody() {
     const file = event.target.files?.[0];
     if (!file || !email) return;
 
+    const temporaryUrl = URL.createObjectURL(file);
+    setPreview(temporaryUrl);
     setIsUploadingPicture(true);
     setErrorMessage("");
 
@@ -75,10 +79,8 @@ function ProfileBody() {
       if (result.success) {
         const newPictureUrl = result.data.profilePictureUrl;
         console.log("Upload successful. New picture URL:", newPictureUrl);
-        // Update preview immediately with the returned URL
         setPreview(newPictureUrl);
         setSuccessMessage("Profile picture updated successfully!");
-        // Refresh auth to update the context (for header)
         await refreshAuth();
         console.log("Auth refreshed");
         setTimeout(() => setSuccessMessage(""), 3000);
@@ -92,12 +94,19 @@ function ProfileBody() {
       setPreview(authProfilePicture || imgSrc.heroImage);
     } finally {
       setIsUploadingPicture(false);
+      URL.revokeObjectURL(temporaryUrl);
     }
   };
 
   const handleSaveProfile = async () => {
     if (!email) {
       setErrorMessage("Email not found. Please log in again.");
+      return;
+    }
+
+    if (!/^[0-9]{11}$/.test(phone)) {
+      setPhoneError("Phone number must be exactly 11 digits.");
+      setIsSaving(false);
       return;
     }
 
@@ -128,6 +137,10 @@ function ProfileBody() {
     }
   };
 
+  const handleSignOutClick = () => {
+    setShowSignOutConfirm(true);
+  };
+
   const handleSignOut = async () => {
     try {
       const response = await Fetch_to(api_link.jwt.deauth);
@@ -138,6 +151,10 @@ function ProfileBody() {
       console.error("Sign out error:", err);
       setErrorMessage("Failed to sign out");
     }
+  };
+
+  const handleCancelSignOut = () => {
+    setShowSignOutConfirm(false);
   };
 
   if (authLoading) {
@@ -217,13 +234,41 @@ function ProfileBody() {
               </button>
               <button
                 type="button"
-                onClick={handleSignOut}
+                onClick={handleSignOutClick}
                 className="rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
               >
                 Sign Out
               </button>
             </div>
           </div>
+
+          {showSignOutConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+              <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/10">
+                <h2 className="text-lg font-semibold text-slate-900">Confirm Sign Out</h2>
+                <p className="mt-3 text-sm text-slate-600">Are you sure you want to sign out?</p>
+                <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCancelSignOut}
+                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setShowSignOutConfirm(false);
+                      await handleSignOut();
+                    }}
+                    className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                  >
+                    Yes, Sign Out
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className={isEditing ? "rounded-2xl border-2 border-blue-300 bg-blue-50 p-4" : "rounded-2xl bg-slate-50 p-4"}>
@@ -248,13 +293,24 @@ function ProfileBody() {
             <div className={isEditing ? "rounded-2xl border-2 border-blue-300 bg-blue-50 p-4" : "rounded-2xl bg-slate-50 p-4"}>
               <p className="text-xs uppercase tracking-wide text-slate-500">Phone Number</p>
               {isEditing ? (
-                <input
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
-                  placeholder="+63 912 345 6789"
-                />
+                <>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                      const digits = e.target.value.replace(/\D/g, "");
+                      if (digits.length <= 11) {
+                        setPhone(digits);
+                        setPhoneError("");
+                      }
+                    }}
+                    className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
+                    placeholder="09123456789"
+                  />
+                  {phoneError && (
+                    <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                  )}
+                </>
               ) : (
                 <p className="mt-1 text-sm font-medium text-slate-900">{phone || "Not set"}</p>
               )}

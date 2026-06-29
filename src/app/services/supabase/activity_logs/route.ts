@@ -89,6 +89,11 @@ export async function POST(params: NextRequest) {
 			.select("*", { count: "exact" })
 			.order("created_at", { ascending: false });
 
+		const userValue = String(user ?? "").trim();
+		if (userValue) {
+			query = query.eq("user", userValue);
+		}
+
 		const searchValue = String(search).trim();
 		if (searchValue) {
 			const pattern = `%${searchValue}%`;

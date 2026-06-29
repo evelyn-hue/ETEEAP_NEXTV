@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import imgSrc from "@/config/img_src.json";
 import { Myprofile } from "@/components/myprofile";
 import { useAuth } from "@/context/AuthContext";
+import { Fetch_to } from "@/utilities";
 
 import { FaBars, FaEnvelope, FaTimes, FaUserCircle } from "react-icons/fa";
 // import { LiaJenkins } from "react-icons/lia";
@@ -23,6 +24,9 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [isCompactWidth, setIsCompactWidth] = useState(false);
+  const [notifications, setNotifications] = useState<Array<{ id: number; created_at: string; user: string; actions: string; details: string }>>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationError, setNotificationError] = useState("");
 
   useEffect(() => {
     const updateWidth = () => {
@@ -40,6 +44,35 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
       setIsMobileNavOpen(false);
     }
   }, [isCompactWidth]);
+
+  const fetchNotifications = async () => {
+    if (!email) return;
+    setNotificationsLoading(true);
+    setNotificationError("");
+
+    const response = await Fetch_to("/services/supabase/activity_logs", {
+      mode: "list",
+      user: email,
+      page: 1,
+      limit: 5,
+    });
+
+    if (response.success) {
+      const payload = Array.isArray(response.data?.message) ? response.data.message : [];
+      setNotifications(payload);
+    } else {
+      setNotifications([]);
+      setNotificationError(response.message || "Unable to load notifications.");
+    }
+
+    setNotificationsLoading(false);
+  };
+
+  useEffect(() => {
+    if (showProfile && email) {
+      void fetchNotifications();
+    }
+  }, [showProfile, email]);
 
   const handleProfileClick = () => {
     setProfileOpen((prev) => !prev);
@@ -101,15 +134,21 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               <button
                 type="button"
                 onClick={() => {
-                  setNotificationOpen((prev) => !prev);
+                  const nextOpen = !notificationOpen;
+                  setNotificationOpen(nextOpen);
                   setProfileOpen(false);
+                  if (nextOpen && email) {
+                    void fetchNotifications();
+                  }
                 }}
                 className="relative p-2 rounded-full hover:bg-gray-100"
               >
                 <FaEnvelope className="text-gray-600 text-xl cursor-pointer hover:text-blue-600" />
-                <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
-                  3
-                </span>
+                {notifications.length > 0 ? (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center">
+                    {notifications.length}
+                  </span>
+                ) : null}
               </button>
 
               {notificationOpen && (
@@ -119,32 +158,23 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                   </div>
 
                   <div className="max-h-96 overflow-y-auto">
-                    <div className="p-4 border-b hover:bg-gray-50 transition">
-                      <p className="text-sm text-gray-800">
-                        Your application has been received.
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        May 31, 2026, 10:00 AM
-                      </span>
-                    </div>
-
-                    <div className="p-4 border-b hover:bg-gray-50 transition">
-                      <p className="text-sm text-gray-800">
-                        Your submitted documents are ready for review.
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        May 31, 2026, 9:30 AM
-                      </span>
-                    </div>
-
-                    <div className="p-4 hover:bg-gray-50 transition">
-                      <p className="text-sm text-gray-800">
-                        Please check your application status.
-                      </p>
-                      <span className="text-xs text-gray-400">
-                        May 30, 2026, 4:15 PM
-                      </span>
-                    </div>
+                    {notificationsLoading ? (
+                      <div className="p-4 text-sm text-gray-500">Loading notifications...</div>
+                    ) : notificationError ? (
+                      <div className="p-4 text-sm text-red-600">{notificationError}</div>
+                    ) : notifications.length === 0 ? (
+                      <div className="p-4 text-sm text-gray-500">No notifications yet.</div>
+                    ) : (
+                      notifications.map((notification) => (
+                        <div key={notification.id} className="p-4 border-b last:border-b-0 hover:bg-gray-50 transition">
+                          <p className="text-sm font-medium text-gray-800">{notification.actions}</p>
+                          <p className="mt-1 text-sm text-gray-600">{notification.details}</p>
+                          <span className="text-xs text-gray-400">
+                            {new Date(notification.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}

@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
         // Retrieve the newly created user
         const { data: userData, error: selectError } = await supabaseServer
             .from("auth")
-            .select("id, email, phone, civil_status, fullName")
+            .select("id, email, phone, civil_status, fullName, profilePicture")
             .eq("email", cleanEmail)
             .limit(1);
 
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
             name: "token",
             value: token,
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
             path: "/",
             maxAge: 60 * 60 * 24 * 30,

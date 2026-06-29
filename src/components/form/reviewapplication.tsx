@@ -1,6 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
@@ -207,6 +208,16 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
     }
   }, []);
 
+  const notifyApplicant = async (userEmail: string, action: string, details: string) => {
+    if (!userEmail) return;
+    await Fetch_to(api_link.activity_logs, {
+      mode: "insert",
+      user: userEmail,
+      actions: action,
+      details,
+    });
+  };
+
   const handleSubmit = async (nextStatus: string) => {
     if (isDraft || isReject) return router.push("/courses");
     
@@ -278,6 +289,11 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       setProgressLabel("Finalizing...");
       window.localStorage.clear();
       setSubmitSuccess(response.message);
+      await notifyApplicant(
+        submitEmail,
+        "Under Review Applicant",
+        "Your application has been submitted and is now under review.",
+      );
       
       // Navigate to my applications page after successful submission
       setTimeout(() => {
@@ -492,7 +508,16 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
 
           <button
             type="button"
-            onClick={() => {
+            onClick={async () => {
+              const currentDraft = draft ?? getDraft();
+              const saveEmail = currentDraft?.email || email;
+              if (saveEmail) {
+                await notifyApplicant(
+                  saveEmail,
+                  "Draft Applicant",
+                  "Your application draft was saved and can be continued later.",
+                );
+              }
               router.push("/form/draft");
             }}
             disabled={submitting}
