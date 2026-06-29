@@ -161,12 +161,29 @@ export async function POST(params: NextRequest) {
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });
         }
 
-        const enrichedData = await Promise.all(
+        const statusOrder: Record<string, number> = {
+          "Under Review": 0,
+          "under review": 0,
+          "Reject": 1,
+          "reject": 1,
+          "Approve": 2,
+          "approve": 2,
+          "Draft": 3,
+          "draft": 3,
+          "Delete": 4,
+          "delete": 4,
+        };
+
+        const enrichedData = (await Promise.all(
           (data ?? []).map(async (row) => ({
             ...row,
             civil_status: await getApplicantCivilStatus(row.email),
           })),
-        );
+        )).sort((a, b) => {
+          const orderA = statusOrder[String(a.form_status ?? "")] ?? 99;
+          const orderB = statusOrder[String(b.form_status ?? "")] ?? 99;
+          return orderA - orderB;
+        });
 
         return NextResponse.json(
           {

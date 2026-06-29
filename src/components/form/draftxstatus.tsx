@@ -1,6 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { Fetch_to } from "@/utilities";
 
 const ALUMNI_DRAFT_KEY = "eteeap-alumni-draft";
 const APP_DRAFTS_KEY = "eteeap-application-drafts";
@@ -26,6 +28,7 @@ function getDraftName(draft: DraftType): string {
 
 export default function Draft() {
   const router = useRouter();
+  const { email: userEmail } = useAuth();
   const [appDrafts, setAppDrafts] = useState<DraftType[]>([]);
   const [alumniDraft, setAlumniDraft] = useState<DraftType | null>(null);
 
@@ -68,6 +71,7 @@ export default function Draft() {
 
   const handleDeleteApp = (index: number) => {
     if (typeof window === "undefined") return;
+    const deletedDraft = appDrafts[index];
     const updated = appDrafts.filter((_, i) => i !== index);
     setAppDrafts(updated);
     if (updated.length > 0) {
@@ -75,10 +79,29 @@ export default function Draft() {
     } else {
       window.localStorage.removeItem(APP_DRAFTS_KEY);
     }
+    // Notify admin of draft deletion
+    if (userEmail && deletedDraft) {
+      const program = String(deletedDraft.programName || "Unknown Program");
+      Fetch_to("/services/supabase/activity_logs", {
+        mode: "insert",
+        user: userEmail,
+        actions: "Draft Applicant",
+        details: `Deleted draft application for: ${program}`,
+      }).catch(() => {});
+    }
   };
 
   const handleDeleteAlumni = () => {
     if (typeof window === "undefined") return;
+    // Notify before deleting
+    if (userEmail) {
+      Fetch_to("/services/supabase/activity_logs", {
+        mode: "insert",
+        user: userEmail,
+        actions: "Draft Applicant",
+        details: "Deleted alumni draft application",
+      }).catch(() => {});
+    }
     window.localStorage.removeItem(ALUMNI_DRAFT_KEY);
     setAlumniDraft(null);
   };

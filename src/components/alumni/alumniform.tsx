@@ -475,14 +475,24 @@ export default function JoinAlumniPage() {
                   accept="image/*"
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null;
-                    setProfilePictureFile(file);
                     if (file) {
+                      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
+                      if (!allowedTypes.includes(file.type)) {
+                        setErrorMessage("Please upload a JPG or PNG file for your profile picture.");
+                        return;
+                      }
+                      if (file.size > 5 * 1024 * 1024) {
+                        setErrorMessage("Profile picture must be under 5MB.");
+                        return;
+                      }
+                      setErrorMessage("");
                       const reader = new FileReader();
                       reader.onload = () => setProfilePicturePreview(String(reader.result));
                       reader.readAsDataURL(file);
                     } else {
                       setProfilePicturePreview(null);
                     }
+                    setProfilePictureFile(file);
                   }}
                   className="border p-2 rounded w-full text-sm"
                 />

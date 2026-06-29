@@ -228,6 +228,7 @@ export default function AdminAlumni() {
       );
 
       if (result.success) {
+        const profile = alumni.find((a) => a.id === id);
         setAlumni((prev) =>
           prev.map((item) =>
             item.id === id ? { ...item, verification_status: status } : item
@@ -235,6 +236,19 @@ export default function AdminAlumni() {
         );
         if (selectedAlumni?.id === id) {
           setSelectedAlumni({ ...selectedAlumni, verification_status: status });
+        }
+        // Send notification to alumni
+        if (profile?.email) {
+          try {
+            const actionLabel = status === "verified" ? "Verified Alumni" : "Rejected Alumni";
+            const detail = `Your alumni profile has been ${status} by the admin.`;
+            await Fetch_to("/services/supabase/activity_logs", {
+              mode: "insert",
+              user: profile.email,
+              actions: actionLabel,
+              details: detail,
+            });
+          } catch {}
         }
         setToast({
           message: `Alumni profile ${status === "verified" ? "verified" : "rejected"} successfully!`,

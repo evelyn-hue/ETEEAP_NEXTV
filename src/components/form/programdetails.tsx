@@ -137,7 +137,21 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
     const { name, files } = event.target;
     if (!name || !files) return;
 
+    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
     const fileArray = Array.from(files);
+    for (const file of fileArray) {
+      if (!allowedTypes.includes(file.type)) {
+        setError(`"${file.name}" is not an accepted file type. Please upload PDF, JPG, or PNG files only.`);
+        (event.target as HTMLInputElement).value = "";
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        setError(`"${file.name}" exceeds the 10MB file size limit.`);
+        (event.target as HTMLInputElement).value = "";
+        return;
+      }
+    }
+
     const limit = maxFileCount[name as keyof typeof maxFileCount];
     const currentFiles = selectedFiles[name] ?? [];
     const existingSavedFiles = savedFiles[name] ?? [];
