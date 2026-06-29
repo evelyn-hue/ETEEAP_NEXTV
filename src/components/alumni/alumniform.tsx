@@ -102,6 +102,29 @@ export default function JoinAlumniPage() {
     }
   }, [authEmail, authFullName, authLoading, isAutoFilled]);
 
+  // Load saved alumni draft on mount
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = window.localStorage.getItem("eteeap-alumni-draft");
+    if (!raw) return;
+    try {
+      const draft = JSON.parse(raw);
+      if (draft.fullName) setFullName(draft.fullName);
+      if (draft.nickname) setNickname(draft.nickname);
+      if (draft.graduationYear) setGraduationYear(draft.graduationYear);
+      if (draft.birthday) setBirthday(draft.birthday);
+      if (draft.email) setEmail(draft.email);
+      if (draft.educationalAttainment) setEducationalAttainment(draft.educationalAttainment);
+      if (draft.program) setProgram(draft.program);
+      if (Array.isArray(draft.workExperiences)) setWorkExperiences(draft.workExperiences);
+      if (Array.isArray(draft.certificates)) setCertificates(draft.certificates);
+      if (draft.experience) setExperience(draft.experience);
+      if (draft.transformation) setTransformation(draft.transformation);
+      if (draft.visibility) setVisibility(draft.visibility);
+      setIsAutoFilled(true);
+    } catch {}
+  }, []);
+
   const isCurrentWorkComplete =
     currentWork.companyName.trim() !== "" &&
     currentWork.roleOrReason.trim() !== "" &&

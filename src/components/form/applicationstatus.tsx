@@ -212,7 +212,8 @@ export default function ApplicationStatus() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("formId", app.id);
+      formData.append("email", app.email);
+      formData.append("applicantName", app.applicant || "");
       formData.append("documentType", key);
 
       const response = await fetch("/services/supabase/form/submit", {

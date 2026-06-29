@@ -59,7 +59,7 @@ export default function Draft() {
         (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__ = draft;
       }
     }
-    router.push(`/form/civilstatus?program=${encodeURIComponent(String(draft.programName ?? ""))}`);
+    router.push(`/form?program=${encodeURIComponent(String(draft.programName ?? ""))}`);
   };
 
   const handleContinueAlumni = (draft: DraftType) => {
