@@ -124,21 +124,16 @@ export default function SignUp() {
     });
 
     if (response.success) {
-      if (typeof window !== "undefined" && response.data?.token) {
-        localStorage.setItem("authToken", response.data.token);
+      if (response.data?.require_otp) {
+        const signupEmail = response.data?.email || form.email;
+        router.push(`/auth/verify-otp?email=${encodeURIComponent(signupEmail)}`);
+        return;
       }
 
-      // Reset form
-      setForm({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        civilStatus: "Single",
-        password: "",
-        c_password: ""
-      });
-
+      // Fallback: direct JWT (OTP columns not yet migrated)
+      if (response.data?.token && typeof window !== "undefined") {
+        localStorage.setItem("authToken", response.data.token);
+      }
       await refreshAuth();
       router.push("/");
     } else {
