@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { Fetch_to } from "@/utilities";
+import api_link from "@/config/api_link.json";
 
 type ApplyButtonProps = {
   href: string;
@@ -63,7 +65,7 @@ export default function ApplyButton({ href, programName, label = "Apply Now" }: 
             : undefined
       }
       onClick={() => {
-        if (!email) {
+        if (!verifiedEmail) {
           router.push(`/auth/signin?next=${encodeURIComponent(href)}`);
           return;
         }

@@ -76,6 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPhone("");
       setCivilStatus("");
       setProfilePicture("");
+      setApplicantStatus("");
     } finally {
       setLoading(false);
     }
