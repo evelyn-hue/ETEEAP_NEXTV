@@ -9,7 +9,7 @@ type UploadItem = {
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const email = String(formData.get("email") ?? "");
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const applicantName = String(formData.get("applicantName") ?? "");
     const businessName = String(formData.get("businessName") ?? "");
     const isBusinessOwner = String(formData.get("isBusinessOwner") ?? "No");
@@ -108,15 +108,34 @@ export async function POST(req: NextRequest) {
       rowData[documentType] = publicUrlData.publicUrl;
     }
 
-    const { error: insertError } = await supabaseServer
-    .from("form")
-    .insert([rowData]);
+    const { data: existingApplication, error: existingApplicationError } =
+      await supabaseServer
+        .from("form")
+        .select("id")
+        .eq("email", email)
+        .maybeSingle();
 
-    if (insertError) {
-    return NextResponse.json(
-        { success: false, error: insertError.message },
+    if (existingApplicationError) {
+      return NextResponse.json(
+        { success: false, error: existingApplicationError.message },
         { status: 500 },
-    );
+      );
+    }
+
+    const { error: saveError } = existingApplication
+      ? await supabaseServer
+          .from("form")
+          .update(rowData)
+          .eq("id", existingApplication.id)
+      : await supabaseServer
+          .from("form")
+          .insert([rowData]);
+
+    if (saveError) {
+      return NextResponse.json(
+        { success: false, error: saveError.message },
+        { status: 500 },
+      );
     }
 
     const { error: authUpdateError } = await supabaseServer

@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { Fetch_to } from "@/utilities";
+import api_link from "@/config/api_link.json";
 
 type ApplyButtonProps = {
   href: string;
@@ -15,23 +17,63 @@ export default function ApplyButton({ href, programName, label = "Apply Now" }: 
   const { email, loading: authLoading, applicant_status } = useAuth();
   const [checkingApplication, setCheckingApplication] = useState(true);
   const [hasActiveApplication, setHasActiveApplication] = useState(false);
+  const [verifiedEmail, setVerifiedEmail] = useState("");
 
   useEffect(() => {
-    if (authLoading) {
-      return;
-    }
+    let isMounted = true;
 
-    if (!email) {
-      setHasActiveApplication(false);
+    const checkApplicationStatus = async () => {
+      if (authLoading) {
+        return;
+      }
+
+      const blockedStatuses = ["submitted", "under review", "accepted", "approved", "pending", "in progress"];
+      let currentEmail = email;
+      let currentStatus = applicant_status;
+
+      try {
+        let response = await Fetch_to(api_link.jwt.verify);
+
+        if (!response.success && typeof window !== "undefined") {
+          const storedToken = localStorage.getItem("authToken");
+          if (storedToken) {
+            response = await Fetch_to(api_link.jwt.verify, {}, {
+              Authorization: `Bearer ${storedToken}`,
+            });
+          }
+        }
+
+        if (response.success) {
+          const userData = response.data?.message?.final_data?.data?.[0];
+          currentEmail = userData?.email ?? currentEmail;
+          currentStatus = userData?.applicant_status ?? currentStatus;
+        }
+      } catch (error) {
+        console.error("Application status check failed:", error);
+      }
+
+      if (!isMounted) {
+        return;
+      }
+
+      setVerifiedEmail(currentEmail);
+
+      if (!currentEmail) {
+        setHasActiveApplication(false);
+        setCheckingApplication(false);
+        return;
+      }
+
+      const normalizedStatus = String(currentStatus || "").trim().toLowerCase();
+      setHasActiveApplication(blockedStatuses.includes(normalizedStatus));
       setCheckingApplication(false);
-      return;
-    }
+    };
 
-    const normalizedStatus = String(applicant_status || "").trim().toLowerCase();
-    const blockedStatuses = ["submitted", "under review", "accepted", "approved", "pending", "in progress"];
+    void checkApplicationStatus();
 
-    setHasActiveApplication(blockedStatuses.includes(normalizedStatus));
-    setCheckingApplication(false);
+    return () => {
+      isMounted = false;
+    };
   }, [authLoading, email, applicant_status]);
 
   return (
@@ -45,7 +87,7 @@ export default function ApplyButton({ href, programName, label = "Apply Now" }: 
           : undefined
       }
       onClick={() => {
-        if (!email) {
+        if (!verifiedEmail) {
           router.push(`/auth/signin?next=${encodeURIComponent(href)}`);
           return;
         }
