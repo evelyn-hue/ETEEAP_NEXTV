@@ -18,7 +18,7 @@ type Jwt_props = {
 
 export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const router = useRouter();
-  const { profilePicture } = useAuth();
+  const { profilePicture, isLoggedIn } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -128,7 +128,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
         {/* RIGHT SIDE */}
         <div className="relative flex items-center gap-4">
 
-        {showProfile ? (
+        {showProfile && isLoggedIn ? (
           <>
             <div className="relative inline-block">
               <button

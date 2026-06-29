@@ -13,7 +13,7 @@ type WorkExperience = {
 
 export default function JoinAlumniPage() {
   const router = useRouter();
-  const { email: authEmail, fullName: authFullName, loading: authLoading } = useAuth();
+  const { email: authEmail, fullName: authFullName, profilePicture: authProfilePicture, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -232,6 +232,7 @@ export default function JoinAlumniPage() {
 
   const closeSubmissionInfoModal = () => {
     setShowSubmissionInfoModal(false);
+    router.push("/alumni");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -267,6 +268,8 @@ export default function JoinAlumniPage() {
           profilePictureUrl = uploadResult.data.profilePictureUrl;
         }
         setUploadingPicture(false);
+      } else if (authProfilePicture) {
+        profilePictureUrl = authProfilePicture;
       }
 
       const payload = {
@@ -434,6 +437,16 @@ export default function JoinAlumniPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Profile Picture
                 </label>
+                {authProfilePicture && !profilePicturePreview ? (
+                  <div className="flex items-center gap-3 mb-2">
+                    <img
+                      src={authProfilePicture}
+                      alt="Profile"
+                      className="w-16 h-16 rounded-full object-cover border"
+                    />
+                    <span className="text-xs text-gray-500">From account details</span>
+                  </div>
+                ) : null}
                 <input
                   type="file"
                   accept="image/*"

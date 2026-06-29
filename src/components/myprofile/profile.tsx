@@ -16,7 +16,7 @@ type MyprofileProps = {
 
 function ProfileBody() {
   const router = useRouter();
-  const { email, fullName: authFullName, phone: authPhone, civil_status: authCivilStatus, profilePicture: authProfilePicture, loading: authLoading, refreshAuth } = useAuth();
+  const { email, fullName: authFullName, phone: authPhone, civil_status: authCivilStatus, profilePicture: authProfilePicture, loading: authLoading, refreshAuth, logout } = useAuth();
   const [preview, setPreview] = useState<string>("");
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -141,10 +141,8 @@ function ProfileBody() {
 
   const handleSignOut = async () => {
     try {
-      const response = await Fetch_to(api_link.jwt.deauth);
-      if (response.success) {
-        router.push("/auth/signin");
-      }
+      await logout();
+      router.push("/auth/signin");
     } catch (err) {
       console.error("Sign out error:", err);
       setErrorMessage("Failed to sign out");
