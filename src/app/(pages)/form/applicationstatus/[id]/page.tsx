@@ -25,11 +25,11 @@ function ApplicationStatusContent() {
   }, []);
 
   return (
-    <main>
+    <>
       <Header showProfile={showProfile} email={email} />
       <ApplicationStatus />
       <Footer />
-    </main>
+    </>
   );
 }
 

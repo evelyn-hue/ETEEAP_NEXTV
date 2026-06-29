@@ -345,7 +345,7 @@ export default function ApplicationStatus() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center justify-center p-12">
             <Loader className="w-8 h-8 animate-spin text-blue-600" />
@@ -357,7 +357,7 @@ export default function ApplicationStatus() {
 
   if (!app) {
     return (
-      <main className="min-h-screen bg-gray-50">
+      <main className="min-h-screen bg-gray-50 pt-20">
         <div className="max-w-6xl mx-auto px-4 py-12">
           {alumniProfile ? (
             <div className="bg-white rounded-xl shadow-sm p-8">
@@ -411,7 +411,7 @@ export default function ApplicationStatus() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen bg-gray-50 pt-20">
       {/* Toast Notification */}
       {toast && (
         <div
