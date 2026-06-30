@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import { useAuth } from "@/context/AuthContext";
-import api_link from "@/config/api_link.json";
 import imgSrc from "@/config/img_src.json";
 
 type MyprofileProps = {

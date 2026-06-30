@@ -70,7 +70,6 @@ function AlumniStatusCard({ profile }: { profile: Record<string, unknown> }) {
   const statusLower = status.toLowerCase();
   const isVerified = statusLower === "verified";
   const isRejected = statusLower === "rejected";
-  const isPending = statusLower === "pending" || !status;
 
   return (
     <div className="mb-0">
@@ -125,7 +124,6 @@ export default function ApplicationStatus() {
   const [loading, setLoading] = useState(true);
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
   const [alumniProfile, setAlumniProfile] = useState<Record<string, unknown> | null>(null);
-  const [alumniChecking, setAlumniChecking] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
@@ -185,7 +183,6 @@ export default function ApplicationStatus() {
     }
     // Also fetch alumni profile status
     try {
-      setAlumniChecking(true);
       const alumniRes = await fetch("/services/supabase/alumni_profiles/retrieve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,9 +194,7 @@ export default function ApplicationStatus() {
         const active = Array.isArray(profiles) ? profiles[0] : profiles;
         setAlumniProfile(active || null);
       }
-    } catch {} finally {
-      setAlumniChecking(false);
-    }
+    } catch { /* alumni fetch failed — non-critical */ }
   };
 
   useEffect(() => {

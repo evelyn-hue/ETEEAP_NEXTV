@@ -107,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     try {
       await Fetch_to(api_link.jwt.deauth);
-    } catch {}
+    } catch { /* deauth failed — non-critical */ }
   };
 
   return (

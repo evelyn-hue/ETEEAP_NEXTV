@@ -52,12 +52,7 @@ export default function JoinAlumniPage() {
   // Reflection
   const [experience, setExperience] = useState("");
   const [transformation, setTransformation] = useState("");
-
-  // Profile Picture
-  const [profilePictureFile, setProfilePictureFile] = useState<File | null>(null);
-  const [profilePicturePreview, setProfilePicturePreview] = useState<string | null>(null);
-  const [uploadingPicture, setUploadingPicture] = useState(false);
-
+ 
   // Profile Visibility
   const [visibility, setVisibility] = useState("public");
 
@@ -122,7 +117,7 @@ export default function JoinAlumniPage() {
       if (draft.transformation) setTransformation(draft.transformation);
       if (draft.visibility) setVisibility(draft.visibility);
       setIsAutoFilled(true);
-    } catch {}
+        } catch { /* draft load skipped — non-critical */ }
   }, []);
 
   const isCurrentWorkComplete =
@@ -272,28 +267,8 @@ export default function JoinAlumniPage() {
     setSuccessMessage("");
 
     try {
-      let profilePictureUrl = "";
-
-      // Upload profile picture first if selected
-      if (profilePictureFile) {
-        setUploadingPicture(true);
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", profilePictureFile);
-        uploadFormData.append("email", email || authEmail || "");
-
-        const uploadRes = await fetch("/services/supabase/alumni_profiles/upload-picture", {
-          method: "POST",
-          body: uploadFormData,
-        });
-
-        const uploadResult = await uploadRes.json();
-        if (uploadResult.success) {
-          profilePictureUrl = uploadResult.data.profilePictureUrl;
-        }
-        setUploadingPicture(false);
-      } else if (authProfilePicture) {
-        profilePictureUrl = authProfilePicture;
-      }
+      // Use auth profile picture if user has one set in Account Details
+      const profilePictureUrl = authProfilePicture || "";
 
       const payload = {
         full_name: fullName,
