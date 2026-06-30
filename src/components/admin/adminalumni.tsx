@@ -248,7 +248,7 @@ export default function AdminAlumni() {
               actions: actionLabel,
               details: detail,
             });
-          } catch {}
+          } catch { /* activity log insert failed — non-critical */ }
         }
         setToast({
           message: `Alumni profile ${status === "verified" ? "verified" : "rejected"} successfully!`,

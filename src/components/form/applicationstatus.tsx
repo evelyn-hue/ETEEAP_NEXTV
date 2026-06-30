@@ -70,7 +70,6 @@ function AlumniStatusCard({ profile }: { profile: Record<string, unknown> }) {
   const statusLower = status.toLowerCase();
   const isVerified = statusLower === "verified";
   const isRejected = statusLower === "rejected";
-  const isPending = statusLower === "pending" || !status;
 
   return (
     <div className="mb-0">
@@ -125,7 +124,6 @@ export default function ApplicationStatus() {
   const [loading, setLoading] = useState(true);
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
   const [alumniProfile, setAlumniProfile] = useState<Record<string, unknown> | null>(null);
-  const [alumniChecking, setAlumniChecking] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
@@ -185,7 +183,6 @@ export default function ApplicationStatus() {
     }
     // Also fetch alumni profile status
     try {
-      setAlumniChecking(true);
       const alumniRes = await fetch("/services/supabase/alumni_profiles/retrieve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -197,9 +194,7 @@ export default function ApplicationStatus() {
         const active = Array.isArray(profiles) ? profiles[0] : profiles;
         setAlumniProfile(active || null);
       }
-    } catch {} finally {
-      setAlumniChecking(false);
-    }
+    } catch { /* alumni fetch failed — non-critical */ }
   };
 
   useEffect(() => {
@@ -326,7 +321,7 @@ export default function ApplicationStatus() {
       }
 
       showToast("Application deleted successfully", "success");
-      setTimeout(() => router.push("/form"), 2000);
+      setTimeout(() => router.push("/courses"), 2000);
     } catch (err) {
       showToast("Failed to delete application", "error");
       console.error(err);
@@ -585,7 +580,7 @@ export default function ApplicationStatus() {
                       ) : remark ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                           <XCircle className="w-3 h-3" />
-                          Rejected
+                          Needs Revision
                         </span>
                       ) : val ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
@@ -639,7 +634,7 @@ export default function ApplicationStatus() {
                     )}
 
                     {/* Upload Section */}
-                    {!readOnly && !isVerified ? (
+                    {(!readOnly || !!remark) && !isVerified ? (
                       <div
                         onDragOver={(e) => handleDragOver(e, d.key)}
                         onDragLeave={handleDragLeave}

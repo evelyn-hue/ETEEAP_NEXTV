@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ETEEAP NEXTV — Change Summary</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; color: #1e293b; padding: 40px; }
+  .page { max-width: 900px; margin: 0 auto; background: white; padding: 48px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+  h1 { font-size: 28px; color: #1e3a5f; margin-bottom: 4px; }
+  .sub { color: #64748b; font-size: 14px; margin-bottom: 32px; }
+  h2 { font-size: 18px; color: #1e3a5f; margin: 32px 0 12px; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; }
+  h3 { font-size: 15px; color: #1e3a5f; margin: 16px 0 6px; }
+  ul { list-style: none; }
+  li { padding: 4px 0; font-size: 13px; line-height: 1.6; }
+  li::before { content: "• "; color: #3b82f6; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-right: 4px; }
+  .tag-feat { background: #dbeafe; color: #1d4ed8; }
+  .tag-fix { background: #fef3c7; color: #92400e; }
+  .tag-chore { background: #e2e8f0; color: #475569; }
+  .stats { display: flex; gap: 24px; margin: 16px 0 32px; }
+  .stat { background: #f1f5f9; padding: 12px 20px; border-radius: 8px; text-align: center; }
+  .stat b { display: block; font-size: 24px; color: #1e3a5f; }
+  .stat span { font-size: 12px; color: #64748b; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 16px; }
+  th { background: #f1f5f9; padding: 8px 12px; text-align: left; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+  td { padding: 6px 12px; border-bottom: 1px solid #f1f5f9; }
+  .hash { font-family: monospace; color: #64748b; font-size: 12px; }
+  .footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid #e2e8f0; font-size: 12px; color: #94a3b8; text-align: center; }
+  @media print { body { background: white; } .page { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>ETEEAP NEXTV — Change Summary</h1>
+<p class="sub">Repository: tomatocultivator1988/ETEEAP_NEXTV (forked from evelyn-hue/ETEEAP_NEXTV)<br>
+Period: June 29 – 30, 2026 &nbsp;|&nbsp; Branch: main</p>
+
+<div class="stats">
+  <div class="stat"><b>15</b><span>Commits</span></div>
+  <div class="stat"><b>35</b><span>Files Modified</span></div>
+  <div class="stat"><b>21</b><span>Files Created</span></div>
+  <div class="stat"><b>~2,000</b><span>Lines Changed</span></div>
+</div>
+
+<h2>Commit History</h2>
+<table>
+<tr><th>Commit</th><th>Type</th><th>Description</th></tr>
+<tr><td class="hash">244d12a</td><td><span class="tag tag-fix">fix</span></td><td>Google OAuth provider in layout (single instance), remove width 100% warning</td></tr>
+<tr><td class="hash">8d59239</td><td><span class="tag tag-feat">feat</span></td><td>Google OAuth sign-in/sign-up with Continue with Google button</td></tr>
+<tr><td class="hash">4fd1c55</td><td><span class="tag tag-fix">fix</span></td><td>Apply button shows correct state after signout — add isLoggedIn guard</td></tr>
+<tr><td class="hash">79dd713</td><td><span class="tag tag-fix">fix</span></td><td>Header overlap on application status pages — add pt-20, remove nested main</td></tr>
+<tr><td class="hash">5b29d5d</td><td><span class="tag tag-fix">fix</span></td><td>Application status shows alumni + header link + civilstatus pages</td></tr>
+<tr><td class="hash">0deddf9</td><td><span class="tag tag-fix">fix</span></td><td>Case-insensitive email query in my-application route</td></tr>
+<tr><td class="hash">d57dd90</td><td><span class="tag tag-fix">fix</span></td><td>Backfill alumni profile_picture from auth table in retrieve-all</td></tr>
+<tr><td class="hash">7492255</td><td><span class="tag tag-fix">fix</span></td><td>Case-insensitive email match for alumni profile picture fallback</td></tr>
+<tr><td class="hash">3da79cf</td><td><span class="tag tag-fix">fix</span></td><td>Admin sorting, alumni notifications, file validation, draft notifications</td></tr>
+<tr><td class="hash">c8f8903</td><td><span class="tag tag-fix">fix</span></td><td>Edit restriction + rejected document state</td></tr>
+<tr><td class="hash">7811d0f</td><td><span class="tag tag-fix">fix</span></td><td>Alumni draft restore, draft navigation, re-upload email, doc status, app status header</td></tr>
+<tr><td class="hash">b2bd73f</td><td><span class="tag tag-fix">fix</span></td><td>Logout clears header avatar+notifications, alumni form uses auth profile picture</td></tr>
+<tr><td class="hash">4c0eab6</td><td><span class="tag tag-fix">fix</span></td><td>verifiedEmail → email in apply-button.tsx after merge</td></tr>
+<tr><td class="hash">5aebb59</td><td><span class="tag tag-feat">feat</span></td><td>OTP email verification, forgot/reset password, PWA install, nodemailer SMTP</td></tr>
+<tr><td class="hash">fb2f0e9</td><td><span class="tag tag-fix">fix</span></td><td>Admin mobile responsive, draft system, auth remember me, alumni/program apply, password validation, form fixes</td></tr>
+</table>
+
+<h2>1. Auth & Security</h2>
+<ul>
+<li>Password validation: minimum 8 characters, 1 uppercase, 1 lowercase, 1 number</li>
+<li>Remember Me: localStorage (checked) vs sessionStorage (unchecked) — survives browser close</li>
+<li>Logout clears client state, server httpOnly cookie, localStorage drafts</li>
+<li>Header avatar + notifications hide immediately on logout via isLoggedIn guard</li>
+<li>Profile modal signout now calls AuthContext.logout() properly</li>
+<li>Google OAuth "Continue with Google" on both signin and signup pages</li>
+<li>GoogleOAuthProvider single instance in root layout</li>
+<li>Google OAuth backend: verify token, find/create user, issue JWT</li>
+</ul>
+
+<h2>2. Email & OTP</h2>
+<ul>
+<li>nodemailer + Gmail SMTP (replaced Resend SDK)</li>
+<li>OTP code generation on signup + email via nodemailer</li>
+<li>Verify-OTP page: 6-digit code input + resend countdown (60s)</li>
+<li>Forgot password page: email input → reset link via email</li>
+<li>Reset password page: token validation + new password form</li>
+<li>Domain auto-detect via req.nextUrl.origin (no hardcoded URLs)</li>
+<li>Fallback to direct JWT if OTP/reset DB columns not yet migrated</li>
+<li>supabase-migration.sql for DB column creation</li>
+</ul>
+
+<h2>3. Admin Panel</h2>
+<ul>
+<li>Mobile responsive sidebar: md:w-64 wrapper, z-[60] hamburger, dashboard header pl-20</li>
+<li>Dashboard recent activities table gets mobile card view</li>
+<li>Applications sorted by status priority: Under Review → Reject → Approve → Draft → Delete</li>
+<li>Admin accept/reject alumni sends activity log notification to user's email</li>
+<li>Admin delete application notifies user via act_logs</li>
+<li>Civilstatus pages also get Header + Footer + JWT verify + Suspense</li>
+</ul>
+
+<h2>4. Program Applications</h2>
+<ul>
+<li>Apply button disabled for existing applications (Under Review, Accepted, etc.)</li>
+<li>Apply button disabled for alumni members</li>
+<li>Apply button re-enabled when application rejected or admin remarked</li>
+<li>Apply button resets correctly after signout via isLoggedIn guard</li>
+<li>File upload validation: PDF, JPG, PNG only (both client and server)</li>
+<li>File size limit: 10MB per file</li>
+<li>Re-upload now includes email + applicantName in FormData</li>
+<li>Marriage certificate field shown only when civil_status = "Married"</li>
+<li>Delete application API fix: passes {id, email} correctly</li>
+</ul>
+
+<h2>5. Application Status Page</h2>
+<ul>
+<li>Header + Footer + JWT verify + Suspense wrapper added</li>
+<li>Civilstatus pages same treatment</li>
+<li>Header dropdown "Application Status" link fixed: /form/applicationstatus</li>
+<li>Alumni Registration card shown alongside program application</li>
+<li>Per-document status badges: Verified 🟢 / Rejected 🔴 / Uploaded 🟢 / Missing 🔴 / Needs Revision 🟠</li>
+<li>forms_approvals JSON column parsed for per-document verified + remarks data</li>
+<li>Edit restriction: locked for pending/accepted, unlocked for rejected or admin remarked</li>
+<li>Case-insensitive email query in my-application route</li>
+<li>Fixed header overlap with pt-20 top padding</li>
+</ul>
+
+<h2>6. Draft System</h2>
+<ul>
+<li>Multi-program drafts array (eteeap-application-drafts) replaces single key</li>
+<li>Alumni draft (eteeap-alumni-draft) shown on drafts page</li>
+<li>Cross-contamination fix: alumni form no longer clears program drafts</li>
+<li>Alumni draft fully restored on continue: all 12 form fields (name, nickname, year, birthday, email, education, program, work, certificates, experience, transformation, visibility)</li>
+<li>App draft continue navigates to /form (not /form/civilstatus)</li>
+<li>User draft delete sends activity log notification</li>
+</ul>
+
+<h2>7. Alumni</h2>
+<ul>
+<li>Duplicate check prevents re-joining if active profile exists</li>
+<li>Profile picture auto-uses Account Details picture in alumni form</li>
+<li>Profile picture upload as optional override</li>
+<li>Alumni form redirects to /alumni feed after successful submission</li>
+<li>Profile picture backfill: retrieve-all enriches missing profile_picture from auth table</li>
+<li>Case-insensitive email match for current user's own alumni card</li>
+<li>Alumni retrieve route extracts email from JWT when body is empty</li>
+</ul>
+
+<h2>8. PWA / Mobile Install</h2>
+<ul>
+<li>manifest.json with app icons (192x192, 512x512) from ETEEAP_LOGO.png</li>
+<li>Service worker registration in root layout</li>
+<li>Mobile-only install prompt banner (temporary dismiss, re-shows next visit)</li>
+<li>iOS/Android meta tags: apple-mobile-web-app-capable, theme-color, etc.</li>
+</ul>
+
+<h2>9. Data & API Fixes</h2>
+<ul>
+<li>my-application route queries by email instead of nonexistent user_id column</li>
+<li>admin_settings route: GET handler added (was empty)</li>
+<li>alumni_profiles/retrieve: POST handler for email-based lookup</li>
+<li>profile_picture column conditionally included in alumni submit</li>
+<li>upload-picture route created for alumni profile picture uploads</li>
+<li>activity_logs route: added "Verified Alumni" and "Rejected Alumni" action types</li>
+<li>apply-button.tsx: verifiedEmail → email fix after merge conflict</li>
+</ul>
+
+<h2>New Files Created</h2>
+<table>
+<tr><th>File</th><th>Purpose</th></tr>
+<tr><td>src/lib/resend.ts</td><td>nodemailer SMTP email sender (replaced Resend)</td></tr>
+<tr><td>src/components/common/InstallPrompt.tsx</td><td>PWA mobile install banner</td></tr>
+<tr><td>src/app/services/supabase/auth/send-otp/route.ts</td><td>Generate + email OTP</td></tr>
+<tr><td>src/app/services/supabase/auth/verify-otp/route.ts</td><td>Verify OTP → issue JWT</td></tr>
+<tr><td>src/app/services/supabase/auth/google-auth/route.ts</td><td>Google credential → JWT</td></tr>
+<tr><td>src/app/services/supabase/auth/forgot-password/route.ts</td><td>Gen reset token + email</td></tr>
+<tr><td>src/app/services/supabase/auth/reset-password/route.ts</td><td>Verify reset → update password</td></tr>
+<tr><td>src/app/services/supabase/alumni_profiles/upload-picture/route.ts</td><td>Upload alumni picture to storage</td></tr>
+<tr><td>src/app/(pages)/auth/verify-otp/page.tsx</td><td>OTP input page</td></tr>
+<tr><td>src/app/(pages)/auth/forgot-password/page.tsx</td><td>Forgot password page</td></tr>
+<tr><td>src/app/(pages)/auth/reset-password/page.tsx</td><td>Reset password page</td></tr>
+<tr><td>public/manifest.json</td><td>PWA manifest</td></tr>
+<tr><td>public/icons/icon-192.png</td><td>PWA small icon</td></tr>
+<tr><td>public/icons/icon-512.png</td><td>PWA large icon</td></tr>
+<tr><td>supabase-migration.sql</td><td>DB migration for OTP/reset columns</td></tr>
+</table>
+
+<div class="footer">
+Generated: June 30, 2026 &nbsp;|&nbsp; ETEEAP NEXTV &nbsp;|&nbsp; tomatocultivator1988/ETEEAP_NEXTV
+</div>
+</div>
+</body>
+</html>

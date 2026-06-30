@@ -33,7 +33,7 @@ export async function POST() {
           if (authUser?.profilePicture) {
             return { ...profile, profile_picture: authUser.profilePicture };
           }
-        } catch {}
+        } catch { /* auth lookup failed — skip enrichment */ }
 
         return profile;
       })

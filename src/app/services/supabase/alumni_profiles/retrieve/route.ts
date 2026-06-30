@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
         try {
           const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as { final_data?: { data?: Array<{ email?: string }> } };
           lookupEmail = decoded.final_data?.data?.[0]?.email;
-        } catch {}
+        } catch { /* JWT decode failed — use cookie token */ }
       }
     }
 

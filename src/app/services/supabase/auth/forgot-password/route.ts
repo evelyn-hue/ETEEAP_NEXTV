@@ -33,20 +33,21 @@ export async function POST(req: NextRequest) {
       .update({ reset_token: resetToken, reset_token_expires_at: expiresAt })
       .eq("email", cleanEmail);
 
-    const origin = req.nextUrl.origin;
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host") || "";
+    const origin = process.env.NEXT_PUBLIC_URL || `https://${host}` || req.nextUrl.origin || "http://localhost:3000";
     const resetLink = `${origin}/auth/reset-password?token=${resetToken}`;
 
     try {
       await sendResetEmail(cleanEmail, resetLink);
     } catch {
-      console.log(`Reset link for ${cleanEmail}: ${resetLink}`);
+      // email send failed — non-critical
     }
 
     return NextResponse.json(
       { success: true, message: "If the email exists, a reset link has been sent." },
       { status: 200 }
     );
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Something went wrong" }, { status: 500 });
   }
 }

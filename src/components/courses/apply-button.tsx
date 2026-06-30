@@ -3,8 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { Fetch_to } from "@/utilities";
-import api_link from "@/config/api_link.json";
 
 type ApplyButtonProps = {
   href: string;

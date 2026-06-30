@@ -9,7 +9,6 @@ import api_link from "@/config/api_link.json";
 export default function LandPage() {
   const [showProfile, setShowProfile] = useState(false);
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     const Verify = async() => {
@@ -19,7 +18,6 @@ export default function LandPage() {
         const response_data = response.data.message.final_data.data[0];
         setShowProfile(true);
         setEmail(response_data.email);
-        setPhone(response_data.phone);
         return;
       }
       setShowProfile(false);

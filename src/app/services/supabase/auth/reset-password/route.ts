@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
       .eq("email", cleanEmail);
 
     return NextResponse.json({ success: true, message: "Password has been reset" }, { status: 200 });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ success: false, error: "Something went wrong" }, { status: 500 });
   }
 }

@@ -40,14 +40,14 @@ export default function Draft() {
       try {
         const parsed = JSON.parse(rawApps);
         if (Array.isArray(parsed)) setAppDrafts(parsed);
-      } catch {}
+      } catch { /* localStorage write failed — skip */ }
     }
 
     const rawAlumni = window.localStorage.getItem(ALUMNI_DRAFT_KEY);
     if (rawAlumni) {
       try {
         setAlumniDraft(JSON.parse(rawAlumni));
-      } catch {}
+      } catch { /* localStorage write failed — skip */ }
     }
   }, []);
 
@@ -65,7 +65,7 @@ export default function Draft() {
     router.push(`/form?program=${encodeURIComponent(String(draft.programName ?? ""))}`);
   };
 
-  const handleContinueAlumni = (draft: DraftType) => {
+  const handleContinueAlumni = () => {
     router.push("/alumni/alumniform");
   };
 
