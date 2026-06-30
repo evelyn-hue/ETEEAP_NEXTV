@@ -326,7 +326,7 @@ export default function ApplicationStatus() {
       }
 
       showToast("Application deleted successfully", "success");
-      setTimeout(() => router.push("/form"), 2000);
+      setTimeout(() => router.push("/courses"), 2000);
     } catch (err) {
       showToast("Failed to delete application", "error");
       console.error(err);
@@ -639,7 +639,7 @@ export default function ApplicationStatus() {
                     )}
 
                     {/* Upload Section */}
-                    {!readOnly && !isVerified ? (
+                    {(!readOnly || !!remark) && !isVerified ? (
                       <div
                         onDragOver={(e) => handleDragOver(e, d.key)}
                         onDragLeave={handleDragLeave}

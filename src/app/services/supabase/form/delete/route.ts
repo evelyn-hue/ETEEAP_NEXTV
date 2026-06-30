@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Reset applicant_status so Apply buttons become active again
+    await supabaseServer
+      .from("auth")
+      .update({ applicant_status: "draft" })
+      .eq("email", email);
+
     return NextResponse.json(
       { success: true, message: "Form deleted successfully" },
       { status: 200 },
