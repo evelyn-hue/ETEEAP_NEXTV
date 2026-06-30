@@ -585,7 +585,7 @@ export default function ApplicationStatus() {
                       ) : remark ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
                           <XCircle className="w-3 h-3" />
-                          Rejected
+                          Needs Revision
                         </span>
                       ) : val ? (
                         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
