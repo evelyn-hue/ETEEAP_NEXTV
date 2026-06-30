@@ -48,12 +48,12 @@ export default function AlumniFeedPage() {
     "Bachelor of Science in Hospitality Management"
   ];
 
-  // Generate all academic years from 1990 to current year
+  // Generate all academic year ranges from current year to 1990
   const allYears = useMemo(() => {
     const currentYear = new Date().getFullYear();
-    const years = [];
-    for (let year = currentYear; year >= 1990; year--) {
-      years.push(year.toString());
+    const years: string[] = [];
+    for (let year = currentYear; year >= 1926; year--) {
+      years.push(`${year}-${year + 1}`);
     }
     return years;
   }, []);

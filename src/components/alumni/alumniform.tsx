@@ -456,66 +456,6 @@ export default function JoinAlumniPage() {
                 className="border p-3 rounded w-full"
                 required
               />
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Profile Picture
-                </label>
-                {authProfilePicture && !profilePicturePreview ? (
-                  <div className="flex items-center gap-3 mb-2">
-                    <img
-                      src={authProfilePicture}
-                      alt="Profile"
-                      className="w-16 h-16 rounded-full object-cover border"
-                    />
-                    <span className="text-xs text-gray-500">From account details</span>
-                  </div>
-                ) : null}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    if (file) {
-                      const allowedTypes = ["image/jpeg", "image/jpg", "image/png"];
-                      if (!allowedTypes.includes(file.type)) {
-                        setErrorMessage("Please upload a JPG or PNG file for your profile picture.");
-                        return;
-                      }
-                      if (file.size > 5 * 1024 * 1024) {
-                        setErrorMessage("Profile picture must be under 5MB.");
-                        return;
-                      }
-                      setErrorMessage("");
-                      const reader = new FileReader();
-                      reader.onload = () => setProfilePicturePreview(String(reader.result));
-                      reader.readAsDataURL(file);
-                    } else {
-                      setProfilePicturePreview(null);
-                    }
-                    setProfilePictureFile(file);
-                  }}
-                  className="border p-2 rounded w-full text-sm"
-                />
-                {profilePicturePreview && (
-                  <div className="mt-2 flex items-center gap-3">
-                    <img
-                      src={profilePicturePreview}
-                      alt="Preview"
-                      className="w-16 h-16 rounded-full object-cover border"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setProfilePictureFile(null);
-                        setProfilePicturePreview(null);
-                      }}
-                      className="text-red-600 text-sm hover:text-red-800"
-                    >
-                      Remove
-                    </button>
-                  </div>
-                )}
-              </div>
             </div>
           </div>
 
@@ -637,6 +577,7 @@ export default function JoinAlumniPage() {
                 className="border p-2 rounded w-full"
               >
                 <option value="">Select Certificate</option>
+                <option>Not on the list</option>
                 <option>TESDA NC II</option>
                 <option>TESDA NC III</option>
                 <option>Professional License (PRC)</option>
