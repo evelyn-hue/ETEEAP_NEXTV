@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import Fetch_to from "@/utilities/Fetch_to";
 import { useAuth } from "@/context/AuthContext";
 import Reveal from "@/components/shared/Reveal";
@@ -14,6 +14,7 @@ type WorkExperience = {
 };
 
 export default function JoinAlumniPage() {
+  const reduced = useReducedMotion();
   const router = useRouter();
   const { email: authEmail, fullName: authFullName, profilePicture: authProfilePicture, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -583,8 +584,8 @@ export default function JoinAlumniPage() {
                 <motion.span
                   key={item}
                   className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={reduced ? undefined : { scale: 1.05 }}
+                  whileTap={reduced ? undefined : { scale: 0.95 }}
                 >
                   {item}
                   <button

@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import { Pencil } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 
 export default function AdminSettings() {
+  const reduced = useReducedMotion();
   const { email } = useAuth();
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -83,7 +84,6 @@ export default function AdminSettings() {
         { file, fields: {} },
         {
           onProgress: (progress) => {
-            console.log(`Upload progress: ${progress}%`);
           },
         }
       );
@@ -128,7 +128,7 @@ export default function AdminSettings() {
         </div>
       ) : (
         <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
-          <motion.div className="flex items-center gap-6 mb-8" whileHover={{ scale: 1.05 }}>
+          <motion.div className="flex items-center gap-6 mb-8" whileHover={reduced ? undefined : { scale: 1.05 }}>
             <Image
               src={avatarUrl || "/bruma.jpg"}
               alt="Profile"

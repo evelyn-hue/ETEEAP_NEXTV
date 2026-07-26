@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { useEffect, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -15,6 +15,7 @@ type MyprofileProps = {
 };
 
 function ProfileBody() {
+  const reduced = useReducedMotion();
   const router = useRouter();
   const { email, fullName: authFullName, phone: authPhone, civil_status: authCivilStatus, profilePicture: authProfilePicture, loading: authLoading, refreshAuth, logout } = useAuth();
   const [preview, setPreview] = useState<string>("");
@@ -76,11 +77,9 @@ function ProfileBody() {
 
       if (result.success) {
         const newPictureUrl = result.data.profilePictureUrl;
-        console.log("Upload successful. New picture URL:", newPictureUrl);
         setPreview(newPictureUrl);
         setSuccessMessage("Profile picture updated successfully!");
         await refreshAuth();
-        console.log("Auth refreshed");
         setTimeout(() => setSuccessMessage(""), 3000);
       } else {
         setErrorMessage(result.message || "Failed to upload profile picture");
@@ -178,7 +177,7 @@ function ProfileBody() {
       )}
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
-        <motion.section whileHover={{ scale: 1.03 }} className="shrink-0">
+        <motion.section whileHover={reduced ? undefined : { scale: 1.03 }} className="shrink-0">
           <div className="h-36 w-36 overflow-hidden rounded-3xl border-4 border-white bg-slate-200 shadow-lg">
             {preview ? (
               <Image
@@ -275,7 +274,7 @@ function ProfileBody() {
               <p className="text-xs uppercase tracking-wide text-slate-500">Full Name</p>
               <AnimatePresence mode="wait">
                 {isEditing ? (
-                  <motion.div key="edit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                  <motion.div key="edit" initial={reduced ? undefined : { opacity: 0, height: 0 }} animate={reduced ? undefined : { opacity: 1, height: "auto" }} exit={reduced ? undefined : { opacity: 0, height: 0 }}>
                     <input
                       type="text"
                       value={fullName}
@@ -284,7 +283,7 @@ function ProfileBody() {
                     />
                   </motion.div>
                 ) : (
-                  <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <motion.div key="view" initial={reduced ? undefined : { opacity: 0 }} animate={reduced ? undefined : { opacity: 1 }}>
                     <p className="mt-1 text-sm font-medium text-slate-900">{fullName || "Not set"}</p>
                   </motion.div>
                 )}
@@ -300,7 +299,7 @@ function ProfileBody() {
               <p className="text-xs uppercase tracking-wide text-slate-500">Phone Number</p>
               <AnimatePresence mode="wait">
                 {isEditing ? (
-                  <motion.div key="edit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                  <motion.div key="edit" initial={reduced ? undefined : { opacity: 0, height: 0 }} animate={reduced ? undefined : { opacity: 1, height: "auto" }} exit={reduced ? undefined : { opacity: 0, height: 0 }}>
                     <input
                       type="tel"
                       value={phone}
@@ -319,7 +318,7 @@ function ProfileBody() {
                     )}
                   </motion.div>
                 ) : (
-                  <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <motion.div key="view" initial={reduced ? undefined : { opacity: 0 }} animate={reduced ? undefined : { opacity: 1 }}>
                     <p className="mt-1 text-sm font-medium text-slate-900">{phone || "Not set"}</p>
                   </motion.div>
                 )}
@@ -330,7 +329,7 @@ function ProfileBody() {
               <p className="text-xs uppercase tracking-wide text-slate-500">Civil Status</p>
               <AnimatePresence mode="wait">
                 {isEditing ? (
-                  <motion.div key="edit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                  <motion.div key="edit" initial={reduced ? undefined : { opacity: 0, height: 0 }} animate={reduced ? undefined : { opacity: 1, height: "auto" }} exit={reduced ? undefined : { opacity: 0, height: 0 }}>
                     <select
                       value={civilStatus}
                       onChange={(e) => setCivilStatus(e.target.value)}
@@ -344,7 +343,7 @@ function ProfileBody() {
                     </select>
                   </motion.div>
                 ) : (
-                  <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                  <motion.div key="view" initial={reduced ? undefined : { opacity: 0 }} animate={reduced ? undefined : { opacity: 1 }}>
                     <p className="mt-1 text-sm font-medium text-slate-900">{civilStatus || "Not set"}</p>
                   </motion.div>
                 )}

@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react";
 import apiLinks from "@/config/api_link.json";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
@@ -277,8 +277,9 @@ function DocumentCard({
   isSaving?: boolean;
   disabled?: boolean;
 }) {
+  const reduced = useReducedMotion();
   return (
-    <motion.div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" whileHover={{ y: -2 }}>
+    <motion.div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" whileHover={reduced ? undefined : { y: -2 }}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900">{document.label}</p>
@@ -368,6 +369,7 @@ function DocumentCard({
 }
 
 export default function Application() {
+  const reduced = useReducedMotion();
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [query, setQuery] = useState("");
   const [programFilter, setProgramFilter] = useState("All Programs");
@@ -908,10 +910,10 @@ export default function Application() {
         <AnimatePresence>
           {selectedApplication ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
+              initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+              exit={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              transition={reduced ? undefined : { duration: 0.2 }}
               className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
               onClick={(event) => {
                 if (event.target === event.currentTarget) {
@@ -1008,10 +1010,10 @@ export default function Application() {
         <AnimatePresence>
           {pendingAction ? (
             <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
+              initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+              exit={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              transition={reduced ? undefined : { duration: 0.2 }}
               className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4"
               onClick={(event) => {
                 if (event.target === event.currentTarget) {

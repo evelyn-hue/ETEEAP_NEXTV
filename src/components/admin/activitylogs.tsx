@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import apiLink from "@/config/api_link.json";
 import { Fetch_to } from "@/utilities";
@@ -52,6 +52,7 @@ const actionOptions = [
 ];
 
 export default function AdminActivityLog() {
+  const reduced = useReducedMotion();
   const [logs, setLogs] = useState<ActivityRow[]>([]);
   const [search, setSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("All Actions");
@@ -175,9 +176,9 @@ export default function AdminActivityLog() {
               <th className="p-3">Details</th>
             </tr>
           </thead>
-          <motion.tbody className="bg-white" variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
+          <motion.tbody className="bg-white" variants={reduced ? undefined : containerVariants} initial={reduced ? undefined : "hidden"} whileInView={reduced ? undefined : "visible"} viewport={reduced ? undefined : { once: true, margin: "-60px" }}>
             {filteredLogs.map((log) => (
-              <motion.tr key={log.id} className="border-b hover:bg-gray-50 transition" variants={itemVariants}>
+              <motion.tr key={log.id} className="border-b hover:bg-gray-50 transition" variants={reduced ? undefined : itemVariants}>
                 <td className="p-3">{formatDate(log.created_at)}</td>
                 <td className="p-3">{log.user || "-"}</td>
                 <td className="p-3 font-semibold text-blue-700">{log.actions || "-"}</td>

@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { FiFileText, FiHome, FiLogOut, FiMenu, FiUsers, FiX } from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 import { useAuth } from "@/context/AuthContext";
 import api_link from "@/config/api_link.json";
@@ -110,6 +110,7 @@ function SidebarShell({ onNavigate, counts, onLogoutConfirm }: { onNavigate?: ()
 }
 
 export default function Sidenav() {
+  const reduced = useReducedMotion();
   const router = useRouter();
   const { logout } = useAuth();
   const [open, setOpen] = useState(false);
@@ -164,10 +165,10 @@ export default function Sidenav() {
               onClick={() => setOpen(false)}
             />
             <motion.div
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              initial={reduced ? undefined : { x: "-100%" }}
+              animate={reduced ? undefined : { x: 0 }}
+              exit={reduced ? undefined : { x: "-100%" }}
+              transition={reduced ? undefined : { type: "spring", damping: 25, stiffness: 200 }}
               className="absolute left-0 top-0 h-full"
             >
               <SidebarShell onNavigate={() => setOpen(false)} counts={counts} onLogoutConfirm={() => setShowLogoutConfirm(true)} />

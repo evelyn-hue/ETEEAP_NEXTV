@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api_links from "@/config/api_link.json";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   FileText,
   File,
@@ -113,6 +113,7 @@ function AlumniStatusCard({ profile }: { profile: Record<string, unknown> }) {
 }
 
 export default function ApplicationStatus() {
+  const reduced = useReducedMotion();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -452,8 +453,8 @@ export default function ApplicationStatus() {
                       className={`inline-flex px-4 py-2 rounded-full font-semibold text-sm ${getStatusBadgeClass()}`}
                     >
                       <motion.span
-                        animate={isUnderReview ? { opacity: [1, 0.6, 1] } : {}}
-                        transition={{ duration: 2, repeat: Infinity }}
+                        animate={reduced ? {} : (isUnderReview ? { opacity: [1, 0.6, 1] } : {})}
+                        transition={reduced ? undefined : { duration: 2, repeat: Infinity }}
                       >
                         {app.form_status || "Pending"}
                       </motion.span>
@@ -481,9 +482,9 @@ export default function ApplicationStatus() {
               </div>
               <div className="h-3 w-full rounded-full bg-gray-200 overflow-hidden">
                 <motion.div
-                  initial={{ width: 0 }}
+                  initial={reduced ? undefined : { width: 0 }}
                   animate={{ width: `${progressPercentage}%` }}
-                  transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+                  transition={reduced ? undefined : { duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
                   className="h-full bg-linear-to-r from-blue-500 to-blue-600"
                 />
               </div>

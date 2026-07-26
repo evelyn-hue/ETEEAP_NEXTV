@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
 
@@ -83,6 +83,7 @@ type ProgramDetailsProps = {
 };
 
 function ProgramDetails({ programName, applicantName, email, statusMarital, isBusinessOwner }: ProgramDetailsProps) {
+  const reduced = useReducedMotion();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [isBus, setIsBus] = useState(isBusinessOwner ?? "No");
@@ -390,7 +391,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
             <motion.div
               key={field.id}
               style={{ display: field.show ? "block" : "none" }}
-              whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+              whileHover={reduced ? undefined : { y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
               className="border-dashed border-2 rounded-md p-4 text-left flex flex-col border-gray-300 bg-white"
             >
               <label className="font-medium block mb-2" htmlFor={field.id}>

@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 import {
   FileText,
@@ -68,6 +68,7 @@ function Detail({ label, value }: { label: string; value: string | null | undefi
 }
 
 export default function AdminApplications() {
+  const reduced = useReducedMotion();
   const [applications, setApplications] = useState<Application[]>([]);
   const [fetching, setFetching] = useState(true);
   const [query, setQuery] = useState("");
@@ -270,7 +271,7 @@ export default function AdminApplications() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {sortedApplications.map((item) => (
-                      <motion.tr key={item.id} whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }} className="transition-colors">
+                      <motion.tr key={item.id} whileHover={reduced ? undefined : { backgroundColor: "rgba(0,0,0,0.02)" }} className="transition-colors">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
                           {item.applicantName}
                         </td>
