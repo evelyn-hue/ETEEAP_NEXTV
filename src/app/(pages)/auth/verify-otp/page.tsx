@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Fetch_to from "@/utilities/Fetch_to";
 import { useAuth } from "@/context/AuthContext";
+import PageTransition from "@/components/shared/PageTransition";
 
 function VerifyOtpContent() {
   const router = useRouter();
@@ -142,7 +143,9 @@ function VerifyOtpContent() {
 export default function VerifyOtpPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <VerifyOtpContent />
+      <PageTransition>
+        <VerifyOtpContent />
+      </PageTransition>
     </Suspense>
   );
 }

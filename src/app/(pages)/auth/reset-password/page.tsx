@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Fetch_to from "@/utilities/Fetch_to";
 import { Lock } from "lucide-react";
 import Link from "next/link";
+import PageTransition from "@/components/shared/PageTransition";
 
 function ResetPasswordContent() {
   const router = useRouter();
@@ -125,7 +126,9 @@ function ResetPasswordContent() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <ResetPasswordContent />
+      <PageTransition>
+        <ResetPasswordContent />
+      </PageTransition>
     </Suspense>
   );
 }

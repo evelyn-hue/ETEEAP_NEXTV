@@ -4,6 +4,7 @@ import { useState } from "react";
 import Fetch_to from "@/utilities/Fetch_to";
 import { ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
+import PageTransition from "@/components/shared/PageTransition";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -35,6 +36,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
+    <PageTransition>
     <section className="min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16 px-4">
       <div className="bg-white/90 p-8 rounded-lg shadow-lg w-full max-w-md">
         <div className="text-center mb-6">
@@ -83,5 +85,6 @@ export default function ForgotPasswordPage() {
         )}
       </div>
     </section>
+    </PageTransition>
   );
 }
