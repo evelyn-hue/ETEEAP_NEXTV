@@ -7,6 +7,7 @@ import { Fetch_to } from "@/utilities";
 import StaggerContainer from "@/components/shared/StaggerContainer";
 import StaggerItem from "@/components/shared/StaggerItem";
 import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 type ActivityRow = {
   id: number;
@@ -165,6 +166,7 @@ export default function AdminActivityLog() {
         <div className="mb-4 rounded-lg bg-red-50 p-4 text-sm font-semibold text-red-700">{error}</div>
       ) : null}
 
+      <Reveal>
       <div className="hidden md:block overflow-x-auto rounded-lg border">
         <table className="w-full min-w-175 text-left">
           <thead className="bg-blue-800 text-white">
@@ -194,7 +196,9 @@ export default function AdminActivityLog() {
           </motion.tbody>
         </table>
       </div>
+      </Reveal>
 
+      <Reveal>
       <StaggerContainer className="md:hidden space-y-3">
         {filteredLogs.map((log) => (
           <StaggerItem key={log.id} className="border rounded-lg p-4 shadow-sm bg-white">
@@ -222,6 +226,7 @@ export default function AdminActivityLog() {
           </div>
         ) : null}
       </StaggerContainer>
+      </Reveal>
 
       <div className="mt-5 flex items-center justify-center gap-2 flex-wrap">
         <button

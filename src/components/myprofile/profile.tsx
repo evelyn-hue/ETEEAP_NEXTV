@@ -8,6 +8,7 @@ import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import { useAuth } from "@/context/AuthContext";
 import imgSrc from "@/config/img_src.json";
+import Reveal from "@/components/shared/Reveal";
 
 type MyprofileProps = {
   modal?: boolean;
@@ -163,6 +164,7 @@ function ProfileBody() {
   }
 
   return (
+    <Reveal>
     <div className="mx-auto max-w-4xl rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200 md:p-8">
       {successMessage && (
         <div className="mb-4 rounded-lg bg-green-50 p-4 text-sm text-green-700 ring-1 ring-green-200">
@@ -363,6 +365,7 @@ function ProfileBody() {
         </section>
       </div>
     </div>
+    </Reveal>
   );
 }
 

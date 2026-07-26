@@ -19,6 +19,7 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
+import Reveal from "@/components/shared/Reveal";
 
 const DOCUMENTS = [
   { key: "letterOfIntent", label: "Letter of Intent", required: true },
@@ -427,6 +428,7 @@ export default function ApplicationStatus() {
 
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header Section */}
+        <Reveal>
         <div className="mb-8">
           <div className="bg-white rounded-2xl shadow-sm p-8">
             <div className="grid md:grid-cols-3 gap-8">
@@ -465,8 +467,10 @@ export default function ApplicationStatus() {
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Progress Overview */}
+        <Reveal>
         <div className="mb-8">
           <div className="bg-white rounded-2xl shadow-sm p-8">
             <div className="flex items-center gap-3 mb-6">
@@ -510,6 +514,7 @@ export default function ApplicationStatus() {
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Read-only Mode Banner */}
         {readOnly && (
@@ -525,6 +530,7 @@ export default function ApplicationStatus() {
         )}
 
         {/* Documents Section */}
+        <Reveal>
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Documents & Status</h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -709,8 +715,10 @@ export default function ApplicationStatus() {
             })}
           </div>
         </div>
+        </Reveal>
 
         {/* Action Buttons */}
+        <Reveal>
         <div className="flex justify-between items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}
@@ -732,12 +740,15 @@ export default function ApplicationStatus() {
             )}
           </div>
         </div>
+        </Reveal>
 
         {/* Alumni registration status */}
         {alumniProfile ? (
+          <Reveal>
           <div className="mt-8 bg-white rounded-xl shadow-sm p-8">
             <AlumniStatusCard profile={alumniProfile} />
           </div>
+          </Reveal>
         ) : null}
       </div>
     </main>

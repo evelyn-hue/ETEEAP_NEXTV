@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 export default function AdminSettings() {
   const reduced = useReducedMotion();
@@ -126,6 +127,7 @@ export default function AdminSettings() {
           <p className="text-gray-600">Loading settings...</p>
         </div>
       ) : (
+        <Reveal>
         <div className="bg-white shadow-sm ring-1 ring-slate-200/30 rounded-2xl p-6 border border-gray-200">
           <motion.div className="flex items-center gap-6 mb-8" whileHover={reduced ? undefined : { scale: 1.05 }}>
             <Image
@@ -185,6 +187,7 @@ export default function AdminSettings() {
             </button>
           </div>
         </div>
+        </Reveal>
       )}
     </div>
   );

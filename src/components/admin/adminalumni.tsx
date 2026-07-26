@@ -10,6 +10,7 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import Fetch_to from "@/utilities/Fetch_to";
+import Reveal from "@/components/shared/Reveal";
 
 type AlumniStatus = "pending" | "verified" | "rejected";
 
@@ -329,6 +330,7 @@ export default function AdminAlumni() {
         </div>
       )}
       <div className="mx-auto max-w-7xl space-y-6">
+        <Reveal>
         <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
@@ -386,6 +388,7 @@ export default function AdminAlumni() {
             />
           </div>
         </section>
+        </Reveal>
 
         {fetching ? (
           <div className="text-center py-12">
@@ -394,6 +397,7 @@ export default function AdminAlumni() {
           </div>
         ) : (
           <>
+            <Reveal>
             <section className="space-y-4 md:hidden">
               {sortedAlumni.map((item) => (
                 <article
@@ -450,7 +454,9 @@ export default function AdminAlumni() {
                 </article>
               ))}
             </section>
+            </Reveal>
 
+            <Reveal>
             <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
               <div className="border-b border-slate-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-slate-900">
@@ -520,6 +526,7 @@ export default function AdminAlumni() {
                 </table>
               </div>
             </section>
+            </Reveal>
           </>
         )}
 

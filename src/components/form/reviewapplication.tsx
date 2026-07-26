@@ -6,6 +6,7 @@ import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 const DRAFTS_KEY = "eteeap-application-drafts";
 
@@ -348,6 +349,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
     <main className="min-h-screen mt-16">
       <div className="max-w-5xl mx-auto px-4 md:px-6 py-10 md:py-16">
         {/* Application Summary Section */}
+        <Reveal>
         <div className="mb-8">
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-6 md:p-8">
             <div className="grid md:grid-cols-2 gap-4 md:gap-6 items-center">
@@ -364,8 +366,10 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Personal Information Section */}
+        <Reveal>
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-blue-900 mb-4">Personal Information</h2>
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-6 md:p-8">
@@ -397,8 +401,10 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Uploaded Documents Section */}
+        <Reveal>
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-blue-900 mb-4">Uploaded Documents</h2>
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-6 md:p-8">
@@ -466,8 +472,10 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Review Notice Section */}
+        <Reveal>
         <div className="mb-8">
           <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 md:p-8 flex gap-4">
             <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-1" />
@@ -479,6 +487,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
             </div>
           </div>
         </div>
+        </Reveal>
 
         {/* Progress Indicator */}
         {submitting ? (
@@ -528,6 +537,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
         ) : null}
 
         {/* Action Buttons */}
+        <Reveal>
         <div className="sticky bottom-0 md:sticky md:bottom-auto bg-white md:bg-transparent rounded-t-2xl md:rounded-none shadow-2xl md:shadow-none p-6 md:p-0 flex flex-col-reverse md:flex-row md:justify-end gap-3 md:gap-4">
           <button
             type="button"
@@ -570,6 +580,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
             <span>{submitting ? "Submitting Application..." : "Submit"}</span>
           </button>
         </div>
+        </Reveal>
         
       </div>
     </main>
