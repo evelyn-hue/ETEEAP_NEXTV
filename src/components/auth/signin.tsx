@@ -10,19 +10,6 @@ import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
 import { useAuth } from "@/context/AuthContext";
 
-function FieldError({ message }: { message: string }) {
-  return (
-    <motion.p
-      initial={{ opacity: 0, y: -4 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-sm text-red-500 mt-1"
-      role="alert"
-    >
-      {message}
-    </motion.p>
-  );
-}
-
 export default function SignIn() {
   const router = useRouter();
   const { refreshAuth } = useAuth();
