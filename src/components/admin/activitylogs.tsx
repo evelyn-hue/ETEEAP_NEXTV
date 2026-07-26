@@ -7,7 +7,6 @@ import { Fetch_to } from "@/utilities";
 import StaggerContainer from "@/components/shared/StaggerContainer";
 import StaggerItem from "@/components/shared/StaggerItem";
 import SectionHeading from "@/components/shared/SectionHeading";
-import Reveal from "@/components/shared/Reveal";
 
 type ActivityRow = {
   id: number;

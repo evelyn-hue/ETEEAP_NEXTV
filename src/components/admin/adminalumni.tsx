@@ -10,8 +10,6 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import Fetch_to from "@/utilities/Fetch_to";
-import Reveal from "@/components/shared/Reveal";
-import SectionHeading from "@/components/shared/SectionHeading";
 
 type AlumniStatus = "pending" | "verified" | "rejected";
 

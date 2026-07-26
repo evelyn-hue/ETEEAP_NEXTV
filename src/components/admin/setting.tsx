@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import SectionHeading from "@/components/shared/SectionHeading";
-import Reveal from "@/components/shared/Reveal";
 
 export default function AdminSettings() {
   const reduced = useReducedMotion();
