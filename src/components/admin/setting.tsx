@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { Pencil } from "lucide-react";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Fetch_to from "@/utilities/Fetch_to";
@@ -127,7 +128,7 @@ export default function AdminSettings() {
         </div>
       ) : (
         <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
-          <div className="flex items-center gap-6 mb-8">
+          <motion.div className="flex items-center gap-6 mb-8" whileHover={{ scale: 1.05 }}>
             <Image
               src={avatarUrl || "/bruma.jpg"}
               alt="Profile"
@@ -147,7 +148,7 @@ export default function AdminSettings() {
                 disabled={uploading}
               />
             </label>
-          </div>
+          </motion.div>
 
           <div className="mb-6 relative">
             <label className="block text-gray-700 font-semibold mb-1">

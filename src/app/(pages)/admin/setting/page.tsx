@@ -5,6 +5,7 @@ import { Fetch_to } from "@/utilities";
 import { useEffect } from "react";
 import api_link from "@/config/api_link.json";
 import { useRouter } from "next/navigation";
+import PageTransition from "@/components/shared/PageTransition";
 
 export default function ApplicationPage() {
   const router = useRouter();
@@ -28,7 +29,7 @@ export default function ApplicationPage() {
       Verify();
     }, []);
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <PageTransition className="flex min-h-screen bg-gray-100">
       
       {/* Sidebar */}
       <div className="md:w-64 shrink-0">
@@ -39,6 +40,6 @@ export default function ApplicationPage() {
         <Setting />
       </div>
 
-    </div>
+    </PageTransition>
   );
 }

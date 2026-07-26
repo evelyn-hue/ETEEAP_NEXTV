@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 import {
   FileText,
@@ -269,7 +270,7 @@ export default function AdminApplications() {
                   </thead>
                   <tbody className="divide-y divide-slate-200">
                     {sortedApplications.map((item) => (
-                      <tr key={item.id} className="hover:bg-slate-50 transition">
+                      <motion.tr key={item.id} whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }} className="transition-colors">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
                           {item.applicantName}
                         </td>
@@ -290,7 +291,7 @@ export default function AdminApplications() {
                             View
                           </button>
                         </td>
-                      </tr>
+                      </motion.tr>
                     ))}
                   </tbody>
                 </table>

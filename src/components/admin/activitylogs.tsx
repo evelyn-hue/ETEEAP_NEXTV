@@ -1,8 +1,11 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import apiLink from "@/config/api_link.json";
 import { Fetch_to } from "@/utilities";
+import StaggerContainer from "@/components/shared/StaggerContainer";
+import StaggerItem from "@/components/shared/StaggerItem";
 
 type ActivityRow = {
   id: number;
@@ -17,6 +20,19 @@ function formatDate(value: string) {
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleString();
 }
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.08, delayChildren: 0.1 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] } },
+};
 
 const actionOptions = [
   "All Actions",
@@ -159,14 +175,14 @@ export default function AdminActivityLog() {
               <th className="p-3">Details</th>
             </tr>
           </thead>
-          <tbody className="bg-white">
+          <motion.tbody className="bg-white" variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-60px" }}>
             {filteredLogs.map((log) => (
-              <tr key={log.id} className="border-b hover:bg-gray-50 transition">
+              <motion.tr key={log.id} className="border-b hover:bg-gray-50 transition" variants={itemVariants}>
                 <td className="p-3">{formatDate(log.created_at)}</td>
                 <td className="p-3">{log.user || "-"}</td>
                 <td className="p-3 font-semibold text-blue-700">{log.actions || "-"}</td>
                 <td className="p-3">{log.details || "-"}</td>
-              </tr>
+              </motion.tr>
             ))}
             {!loading && filteredLogs.length === 0 ? (
               <tr>
@@ -175,13 +191,13 @@ export default function AdminActivityLog() {
                 </td>
               </tr>
             ) : null}
-          </tbody>
+          </motion.tbody>
         </table>
       </div>
 
-      <div className="md:hidden space-y-3">
+      <StaggerContainer className="md:hidden space-y-3">
         {filteredLogs.map((log) => (
-          <div key={log.id} className="border rounded-lg p-4 shadow-sm bg-white">
+          <StaggerItem key={log.id} className="border rounded-lg p-4 shadow-sm bg-white">
             <div className="flex justify-between mb-2 gap-3">
               <span className="font-semibold text-gray-600">Date:</span>
               <span className="text-right">{formatDate(log.created_at)}</span>
@@ -198,14 +214,14 @@ export default function AdminActivityLog() {
               <span className="font-semibold text-gray-600">Details:</span>
               <span className="text-right">{log.details || "-"}</span>
             </div>
-          </div>
+          </StaggerItem>
         ))}
         {!loading && filteredLogs.length === 0 ? (
           <div className="border rounded-lg p-4 shadow-sm bg-white text-sm text-gray-500">
             No activity logs found.
           </div>
         ) : null}
-      </div>
+      </StaggerContainer>
 
       <div className="mt-5 flex items-center justify-center gap-2 flex-wrap">
         <button

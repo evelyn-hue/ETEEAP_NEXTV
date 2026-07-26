@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import apiLinks from "@/config/api_link.json";
+import { motion, AnimatePresence } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
@@ -277,7 +278,7 @@ function DocumentCard({
   disabled?: boolean;
 }) {
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <motion.div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" whileHover={{ y: -2 }}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900">{document.label}</p>
@@ -362,7 +363,7 @@ function DocumentCard({
           )}
         </button>
       </label>
-    </div>
+    </motion.div>
   );
 }
 
@@ -904,15 +905,20 @@ export default function Application() {
           </div>
         </section>
 
-        {selectedApplication ? (
-          <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                setSelectedApplication(null);
-              }
-            }}
-          >
+        <AnimatePresence>
+          {selectedApplication ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  setSelectedApplication(null);
+                }
+              }}
+            >
             <div className="w-full h-full rounded-none bg-white shadow-2xl overflow-auto">
               <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4 sticky top-0 bg-white z-10">
                 <button
@@ -995,18 +1001,24 @@ export default function Application() {
                 </section>
               </div>
             </div>
-          </div>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
 
-        {pendingAction ? (
-          <div
-            className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4"
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                closeConfirmation();
-              }
-            }}
-          >
+        <AnimatePresence>
+          {pendingAction ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+              className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  closeConfirmation();
+                }
+              }}
+            >
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
               <h3 className="text-lg font-semibold text-slate-900">{pendingAction.title}</h3>
               <p className="mt-2 text-sm text-slate-600">{pendingAction.message}</p>
@@ -1031,8 +1043,9 @@ export default function Application() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
       </div>
       {toast ? (
         <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border p-4 shadow-2xl ring-1 ring-slate-200 bg-white">
