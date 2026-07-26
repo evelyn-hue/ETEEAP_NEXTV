@@ -8,7 +8,6 @@ import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
 import imgSrc from "@/config/img_src.json";
 
-import { motion } from "framer-motion";
 import { FaBars, FaEnvelope, FaTimes, FaUserCircle } from "react-icons/fa";
 // import { LiaJenkins } from "react-icons/lia";
 
@@ -124,15 +123,12 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               { label: "FAQ's", path: "/question" },
             ].map((item) => (
               <li key={item.path} className="relative group cursor-pointer" onClick={() => { router.push(item.path); }}>
-                <span className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
                   {item.label}
                 </span>
-                <motion.span
-                  className="absolute -bottom-0.5 left-0 h-0.5 bg-blue-600 rounded-full"
-                  initial={{ scaleX: 0 }}
-                  whileHover={{ scaleX: 1 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ originX: 0, width: "100%" }}
+                <span
+                  className="absolute -bottom-0.5 left-0 h-0.5 bg-blue-600 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200 origin-left"
+                  style={{ width: "100%" }}
                 />
               </li>
             ))}
