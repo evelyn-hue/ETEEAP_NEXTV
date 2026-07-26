@@ -111,12 +111,15 @@ export default function SignUp() {
     return Object.keys(validationErrors).length === 0;
   };
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!validateForm()) {
-      return;
+    if (!validateForm()) return;
+    setSubmitting(true);
+    try {
+      await submitForm();
+    } finally {
+      setSubmitting(false);
     }
-    await submitForm();
   };
 
   const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
@@ -322,7 +325,7 @@ export default function SignUp() {
               <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={!agreed || submitting}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-50"
                 >
                   {submitting ? "Creating Account..." : "Sign Up"}
