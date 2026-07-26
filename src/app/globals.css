@@ -11,6 +11,7 @@
   --muted: #64748b;
   --success: #16a34a;
   --error: #dc2626;
+  --bg-interior: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 58, 95, 0.04) 0%, transparent 60%);
 }
 
 @theme inline {
