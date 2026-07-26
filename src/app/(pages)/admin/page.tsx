@@ -1,22 +1,11 @@
 "use client";
+import { Admin } from "@/components/admin";
+import AdminPage from "@/components/shared/AdminPage";
 
-import { Admin, SideNav } from "@/components/admin";
-import PageTransition from "@/components/shared/PageTransition";
-
-export default function AdminPage() {
+export default function AdminDashboard() {
   return (
-    <PageTransition className="flex min-h-screen bg-gray-100">
-      
-      {/* Sidebar */}
-      <div className="md:w-64 shrink-0">
-        <SideNav />
-      </div>
-
-      {/* Dashboard */}
-      <div className="flex-1 overflow-hidden">
-        <Admin />
-      </div>
-
-    </PageTransition>
+    <AdminPage>
+      <Admin />
+    </AdminPage>
   );
 }
