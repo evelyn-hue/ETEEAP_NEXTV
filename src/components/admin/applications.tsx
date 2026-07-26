@@ -10,6 +10,7 @@ import {
   Search,
   AlertCircle,
 } from "lucide-react";
+import Reveal from "@/components/shared/Reveal";
 
 type ApplicationStatus =
   | "draft"
@@ -147,13 +148,14 @@ export default function AdminApplications() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen p-6">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Header Section */}
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <Reveal>
+        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
                 Application Management
               </p>
               <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
@@ -167,7 +169,7 @@ export default function AdminApplications() {
             <button
               onClick={fetchApplications}
               disabled={fetching}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
             >
               <RefreshCw className={fetching ? "animate-spin" : ""} size={16} />
               Refresh
@@ -180,7 +182,7 @@ export default function AdminApplications() {
               </div>
               <div className="rounded-2xl bg-blue-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-blue-800">{totals.underReview}</p>
-                <p className="text-xs uppercase tracking-wide text-blue-700">Under Review</p>
+                <p className="text-xs uppercase tracking-wide text-blue-600">Under Review</p>
               </div>
               <div className="rounded-2xl bg-green-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-green-800">{totals.accepted}</p>
@@ -204,6 +206,7 @@ export default function AdminApplications() {
             />
           </div>
         </section>
+        </Reveal>
 
         {/* Loading State */}
         {fetching ? (
@@ -214,11 +217,12 @@ export default function AdminApplications() {
         ) : (
           <>
             {/* Mobile View */}
+            <Reveal>
             <section className="space-y-4 md:hidden">
               {sortedApplications.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                  className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -240,7 +244,7 @@ export default function AdminApplications() {
 
                   <button
                     onClick={() => setSelectedApp(item)}
-                    className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    className="mt-4 w-full inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
                   >
                     <Eye size={16} />
                     View Details
@@ -248,9 +252,11 @@ export default function AdminApplications() {
                 </article>
               ))}
             </section>
+            </Reveal>
 
             {/* Desktop Table View */}
-            <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
+            <Reveal>
+            <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
               <div className="border-b border-slate-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-slate-900">
                   Applications ({filteredApplications.length})
@@ -286,7 +292,7 @@ export default function AdminApplications() {
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => setSelectedApp(item)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-100 transition"
+                            className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 transition"
                           >
                             <Eye size={16} />
                             View
@@ -298,6 +304,7 @@ export default function AdminApplications() {
                 </table>
               </div>
             </section>
+            </Reveal>
           </>
         )}
 
@@ -313,7 +320,7 @@ export default function AdminApplications() {
               {/* Modal Header */}
               <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4 sticky top-0 bg-white z-10">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
                     Application Details
                   </p>
                   <h2 className="mt-1 text-2xl font-bold text-slate-900">
@@ -374,7 +381,7 @@ export default function AdminApplications() {
                           className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
                         >
                           <FileText className="w-4 h-4 text-blue-600" />
-                          <span className="text-sm font-medium text-blue-700 truncate">
+                          <span className="text-sm font-medium text-blue-600 truncate">
                             {key}
                           </span>
                         </a>
@@ -410,7 +417,7 @@ export default function AdminApplications() {
                   href={`/form/civilstatus/${selectedApp.id}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition flex items-center gap-2"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-600 transition flex items-center gap-2"
                 >
                   <Eye size={16} />
                   Full Review

@@ -10,6 +10,8 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import Fetch_to from "@/utilities/Fetch_to";
+import Reveal from "@/components/shared/Reveal";
+import SectionHeading from "@/components/shared/SectionHeading";
 
 type AlumniStatus = "pending" | "verified" | "rejected";
 
@@ -316,7 +318,7 @@ export default function AdminAlumni() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen p-6">
       {toast && (
         <div
           className={`fixed top-6 right-6 z-60 px-6 py-4 rounded-xl shadow-lg text-white font-semibold ${
@@ -329,7 +331,7 @@ export default function AdminAlumni() {
         </div>
       )}
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
@@ -347,7 +349,7 @@ export default function AdminAlumni() {
               <button
                 onClick={fetchAlumni}
                 disabled={fetching}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
               >
                 <FiRefreshCw className={fetching ? "animate-spin" : ""} />
                 Refresh
@@ -398,7 +400,7 @@ export default function AdminAlumni() {
               {sortedAlumni.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                  className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -451,7 +453,7 @@ export default function AdminAlumni() {
               ))}
             </section>
 
-            <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
+            <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
               <div className="border-b border-slate-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-slate-900">
                   Alumni Profiles ({sortedAlumni.length})
@@ -749,7 +751,7 @@ export default function AdminAlumni() {
               <button
                 type="button"
                 onClick={confirmModalYes}
-                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
               >
                 Yes
               </button>

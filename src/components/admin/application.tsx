@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import apiLinks from "@/config/api_link.json";
+import Reveal from "@/components/shared/Reveal";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 
@@ -213,7 +214,7 @@ function ApplicationActions({
       <button
         type="button"
         onClick={onView}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 sm:w-auto"
       >
         <Eye size={16} />
         View
@@ -352,7 +353,7 @@ function DocumentCard({
           type="button"
           onClick={() => onRemarkSave(document.remark)}
           disabled={disabled || isSaving}
-          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed"
         >
           {isSaving ? (
             <>
@@ -713,9 +714,10 @@ export default function Application() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen p-6">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
+        <Reveal>
+        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-6">
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
@@ -776,10 +778,12 @@ export default function Application() {
             </div>
           </div>
         </section>
+        </Reveal>
 
+        <Reveal>
         <section className="space-y-4 md:hidden">
           {loading ? (
-            <div className="flex items-center justify-center rounded-3xl bg-white p-8 text-slate-600 shadow-sm ring-1 ring-slate-200">
+            <div className="flex items-center justify-center rounded-3xl bg-white p-8 text-slate-600 shadow-sm ring-1 ring-slate-200/30">
               <Loader2 className="mr-2 animate-spin" size={18} />
               Loading applications...
             </div>
@@ -790,14 +794,14 @@ export default function Application() {
             </div>
           ) : null}
           {!loading && !error && filteredApplications.length === 0 ? (
-            <div className="rounded-3xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-3xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200/30">
               No applications found.
             </div>
           ) : null}
           {filteredApplications.map((item) => (
             <article
               key={item.id}
-              className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+              className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -848,8 +852,10 @@ export default function Application() {
             </article>
           ))}
         </section>
+        </Reveal>
 
-        <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
+        <Reveal>
+        <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
           {loading ? (
             <div className="flex items-center justify-center p-8 text-slate-600">
               <Loader2 className="mr-2 animate-spin" size={18} />
@@ -906,6 +912,7 @@ export default function Application() {
             </table>
           </div>
         </section>
+        </Reveal>
 
         <AnimatePresence>
           {selectedApplication ? (
@@ -1039,7 +1046,7 @@ export default function Application() {
                     pendingAction.execute();
                     closeConfirmation();
                   }}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                 >
                   {pendingAction.confirmLabel}
                 </button>
@@ -1050,7 +1057,7 @@ export default function Application() {
         </AnimatePresence>
       </div>
       {toast ? (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border p-4 shadow-2xl ring-1 ring-slate-200 bg-white">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border p-4 shadow-2xl ring-1 ring-slate-200/30 bg-white">
           <div className={`flex items-start gap-3 ${toast.type === "success" ? "text-green-900" : toast.type === "error" ? "text-red-900" : "text-slate-900"}`}>
             <div className={`mt-1 h-2.5 w-2.5 rounded-full ${toast.type === "success" ? "bg-green-500" : toast.type === "error" ? "bg-red-500" : "bg-slate-400"}`} />
             <div>
@@ -1066,7 +1073,7 @@ export default function Application() {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
+    <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200/30">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 font-medium text-slate-900">{value}</p>
     </div>

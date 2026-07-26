@@ -12,6 +12,8 @@ import {
 
 import StaggerContainer from "@/components/shared/StaggerContainer";
 import StaggerItem from "@/components/shared/StaggerItem";
+import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 import {
   Bar,
@@ -128,13 +130,13 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen">
 
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b bg-white shadow-sm">
         <div className="flex items-center justify-between pl-20 pr-6 py-4 md:px-6">
           <div>
-            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <SectionHeading level="h1">Dashboard</SectionHeading>
             <p className="text-sm text-gray-600">
               Enrollment and Reports Overview
             </p>
@@ -157,6 +159,7 @@ export default function Dashboard() {
         )}
 
         {/* STATS */}
+        <Reveal>
         <div className="mb-8 grid gap-6 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6">
 
           <StatCard
@@ -201,6 +204,7 @@ export default function Dashboard() {
             color="teal"
           />
         </div>
+        </Reveal>
 
         {/* CHARTS */}
         <div className="mb-8 grid gap-6 xl:grid-cols-2">
@@ -395,7 +399,7 @@ function StatCard({
   };
 
   return (
-    <div className="rounded-xl bg-white p-6 shadow-sm">
+    <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200/30">
       <div className={`inline-block p-3 rounded ${colors[color]}`}>
         {icon}
       </div>

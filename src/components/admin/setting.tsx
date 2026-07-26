@@ -7,6 +7,8 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
+import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 export default function AdminSettings() {
   const reduced = useReducedMotion();
@@ -106,9 +108,7 @@ export default function AdminSettings() {
   };
   return (
     <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-blue-700 mb-8">
-        Admin Settings
-      </h1>
+      <SectionHeading level="h1">Admin Settings</SectionHeading>
 
       {successMessage && (
         <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-800 rounded-lg">
@@ -127,7 +127,7 @@ export default function AdminSettings() {
           <p className="text-gray-600">Loading settings...</p>
         </div>
       ) : (
-        <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
+        <div className="bg-white shadow-sm ring-1 ring-slate-200/30 rounded-2xl p-6 border border-gray-200">
           <motion.div className="flex items-center gap-6 mb-8" whileHover={reduced ? undefined : { scale: 1.05 }}>
             <Image
               src={avatarUrl || "/bruma.jpg"}
@@ -137,7 +137,7 @@ export default function AdminSettings() {
               className="w-28 h-28 rounded-full border-4 border-blue-500 object-cover shadow-md"
             />
 
-            <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md transition disabled:opacity-60"
+            <label className="cursor-pointer bg-blue-600 hover:bg-blue-600 text-white px-4 py-2 rounded-xl shadow-md transition disabled:opacity-60"
               style={{ pointerEvents: uploading ? "none" : "auto" }}>
               {uploading ? "Uploading..." : "Change Photo"}
               <input 
@@ -181,7 +181,7 @@ export default function AdminSettings() {
             <button 
               onClick={handleSaveChanges}
               disabled={saving || uploading}
-              className="bg-blue-700 hover:bg-blue-600 text-white px-10 py-4 rounded-xl shadow-xl font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed">
+              className="bg-blue-600 hover:bg-blue-600 text-white px-10 py-4 rounded-xl shadow-xl font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed">
               {saving ? "Saving..." : "Save Changes"}
             </button>
           </div>

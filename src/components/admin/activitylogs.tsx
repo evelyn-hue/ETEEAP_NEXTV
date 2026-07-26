@@ -6,6 +6,8 @@ import apiLink from "@/config/api_link.json";
 import { Fetch_to } from "@/utilities";
 import StaggerContainer from "@/components/shared/StaggerContainer";
 import StaggerItem from "@/components/shared/StaggerItem";
+import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 type ActivityRow = {
   id: number;
@@ -108,10 +110,8 @@ export default function AdminActivityLog() {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow p-4 sm:p-6">
-      <h2 className="text-2xl font-bold text-blue-800 mb-5">
-        Admin Activity Log
-      </h2>
+    <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-4 sm:p-6">
+      <SectionHeading>Admin Activity Log</SectionHeading>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:gap-3 gap-2 mb-5 flex-wrap">
         <input
@@ -128,7 +128,7 @@ export default function AdminActivityLog() {
         <button
           type="button"
           onClick={onSearchSubmit}
-          className="px-4 py-2 rounded-lg bg-blue-700 text-white hover:bg-blue-800"
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-800"
         >
           Search
         </button>
@@ -241,7 +241,7 @@ export default function AdminActivityLog() {
             onClick={() => setPage(pageNumber)}
             className={`px-4 py-2 rounded-md border ${
               pageNumber === page
-                ? "bg-blue-700 text-white border-blue-700"
+                ? "bg-blue-600 text-white border-blue-700"
                 : "bg-white text-gray-700"
             }`}
           >
