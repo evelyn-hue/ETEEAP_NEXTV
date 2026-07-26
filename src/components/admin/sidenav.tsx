@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { FiFileText, FiHome, FiLogOut, FiMenu, FiUsers, FiX } from "react-icons/fi";
+import { motion, AnimatePresence } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 import { useAuth } from "@/context/AuthContext";
 import api_link from "@/config/api_link.json";
@@ -16,6 +17,8 @@ type NavItem = {
   badge?: number;
 };
 
+const MotionLink = motion(Link);
+
 function SidenavNavItems({
   counts,
   onNavigate,
@@ -23,6 +26,7 @@ function SidenavNavItems({
   counts: { pendingApplications: number; pendingAlumni: number };
   onNavigate?: () => void;
 }) {
+  const pathname = usePathname();
   const navItems: NavItem[] = [
     { href: "/admin", label: "Dashboard", icon: FiHome },
     { href: "/admin/application", label: "Applications", icon: FiFileText, badge: counts.pendingApplications },
@@ -34,19 +38,26 @@ function SidenavNavItems({
     <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-6">
       {navItems.map((item) => {
         const Icon = item.icon;
+        const isActive = pathname === item.href;
         return (
-          <Link
+          <MotionLink
             key={item.href}
             href={item.href}
             onClick={onNavigate}
-            className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200 hover:bg-blue-700"
+            whileHover={{ scale: 1.02 }}
+            className="relative flex items-center rounded-xl px-4 py-3 transition-all duration-200 hover:bg-blue-700"
           >
-            <Icon size={20} />
-            <span className="flex-1 font-medium">{item.label}</span>
-            {item.badge && item.badge > 0 ? (
-              <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>
-            ) : null}
-          </Link>
+            {isActive && (
+              <motion.div data-layout-id="activeNav" className="absolute inset-0 rounded-xl bg-blue-700" />
+            )}
+            <span className="relative z-10 flex items-center gap-3 min-w-0">
+              <Icon size={20} />
+              <span className="flex-1 font-medium">{item.label}</span>
+              {item.badge && item.badge > 0 ? (
+                <span className="h-2.5 w-2.5 rounded-full bg-red-500"></span>
+              ) : null}
+            </span>
+          </MotionLink>
         );
       })}
     </nav>
@@ -145,17 +156,25 @@ export default function Sidenav() {
         <SidebarShell counts={counts} onLogoutConfirm={() => setShowLogoutConfirm(true)} />
       </div>
 
-      {open ? (
-        <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setOpen(false)}
-          />
-          <div className="absolute left-0 top-0 h-full">
-            <SidebarShell onNavigate={() => setOpen(false)} counts={counts} onLogoutConfirm={() => setShowLogoutConfirm(true)} />
+      <AnimatePresence>
+        {open ? (
+          <div className="fixed inset-0 z-[60] md:hidden" role="dialog" aria-modal="true">
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => setOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute left-0 top-0 h-full"
+            >
+              <SidebarShell onNavigate={() => setOpen(false)} counts={counts} onLogoutConfirm={() => setShowLogoutConfirm(true)} />
+            </motion.div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </AnimatePresence>
 
       {showLogoutConfirm ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
