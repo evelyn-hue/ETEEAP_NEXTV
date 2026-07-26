@@ -1,3 +1,5 @@
+"use client";
+
 import imgSrc from "@/config/img_src.json";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +10,9 @@ import {
   GraduationCap,
   Briefcase,
 } from "lucide-react";
+import Reveal from "@/components/shared/Reveal";
+import StaggerContainer from "@/components/shared/StaggerContainer";
+import StaggerItem from "@/components/shared/StaggerItem";
 
 export default function Banner() {
   return (
@@ -16,13 +21,13 @@ export default function Banner() {
       <section className="bg-blue-800 text-white relative overflow-hidden mt-16">
         <div className="max-w-10xl mx-auto px-10 py-39 flex flex-col lg:flex-row items-center relative z-10">
           <div className="lg:w-1/2">
-            <h1 className="text-4xl lg:text-5xl font-bold mb-4">
+            <h1 className="text-4xl lg:text-5xl font-bold mb-4 font-display">
               Welcome to LCCB ETEEAP
               <br />
               Online Application
             </h1>
-            <p className="text-lg mb-2 italic">
-              Achieve Your Degree, Recognize Your Experience
+            <p className="text-lg mb-2 italic font-display">
+              Achieve Your Degree, <span className="text-[#d97706]">Recognize Your Experience</span>
             </p>
             <p className="mb-6 text-lg">
               Streamline your application process and submit your requirements
@@ -56,6 +61,7 @@ export default function Banner() {
       </section>
 
       {/* About Section */}
+      <Reveal>
       <section className="py-20 bg-blue-50">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-6">About ETEEAP</h2>
@@ -74,13 +80,15 @@ export default function Banner() {
           </p>
         </div>
       </section>
+      </Reveal>
 
       {/* Why Choose ETEEAP */}
       <section className="py-20 max-w-7xl mx-auto px-6">
         <h2 className="text-3xl font-bold text-center mb-12">
           Why Choose ETEEAP?
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+        <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
+          <StaggerItem>
           <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
             <Clock className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">
@@ -88,6 +96,8 @@ export default function Banner() {
             </h3>
             <p>Earn your baccalaureate degree within a 10-month period.</p>
           </div>
+          </StaggerItem>
+          <StaggerItem>
           <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
             <Award className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">
@@ -98,11 +108,15 @@ export default function Banner() {
               evaluations.
             </p>
           </div>
+          </StaggerItem>
+          <StaggerItem>
           <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
             <Users className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Flexible Schedule</h3>
             <p>Saturday classes make it convenient for working adults.</p>
           </div>
+          </StaggerItem>
+          <StaggerItem>
           <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
             <GraduationCap className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Recognized Programs</h3>
@@ -111,6 +125,8 @@ export default function Banner() {
               CHED.
             </p>
           </div>
+          </StaggerItem>
+          <StaggerItem>
           <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
             <Briefcase className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Career Advancement</h3>
@@ -119,10 +135,12 @@ export default function Banner() {
               recognized degree.
             </p>
           </div>
-        </div>
+          </StaggerItem>
+        </StaggerContainer>
       </section>
 
       {/* Admission Highlights */}
+      <Reveal>
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-8">Admission Qualification</h2>
@@ -142,8 +160,10 @@ export default function Banner() {
           </div>
         </div>
       </section>
+      </Reveal>
 
       {/* Call-to-Action */}
+      <Reveal>
       <section className="py-20 bg-blue-600 text-white text-center">
         <h2 className="text-3xl font-bold mb-6">
           Ready to Start Your ETEEAP Journey at LCCB?
@@ -167,6 +187,7 @@ export default function Banner() {
           </Link>
         </div>
       </section>
+      </Reveal>
 
     </div>
   );
