@@ -1,5 +1,6 @@
 "use client";
 
+import PageTransition from "@/components/shared/PageTransition";
 import { AlumniForm } from "@/components/alumni";
 import {Footer, Header} from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
@@ -26,10 +27,10 @@ export default function LandPage() {
   }, []);
 
   return (
-    <main> 
+    <PageTransition>
       <Header showProfile={showProfile} email={email} />
       <AlumniForm />
       <Footer />
-    </main>
+    </PageTransition>
   );
 }

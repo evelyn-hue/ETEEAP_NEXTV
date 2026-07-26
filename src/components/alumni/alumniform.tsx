@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import Fetch_to from "@/utilities/Fetch_to";
 import { useAuth } from "@/context/AuthContext";
+import Reveal from "@/components/shared/Reveal";
 
 type WorkExperience = {
   companyName: string;
@@ -387,6 +389,7 @@ export default function JoinAlumniPage() {
 
         <form className="space-y-10" onSubmit={handleSubmit}>
           {/* Personal Information */}
+          <Reveal>
           <div>
             <h2 className="text-lg font-bold mb-4">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -433,8 +436,10 @@ export default function JoinAlumniPage() {
               />
             </div>
           </div>
+          </Reveal>
 
           {/* Educational Attainment */}
+          <Reveal delay={0.1}>
           <div>
             <h2 className="text-lg font-bold mb-4">Educational Attainment</h2>
             <select
@@ -450,8 +455,10 @@ export default function JoinAlumniPage() {
               <option value="Doctoral">Doctoral Degree</option>
             </select>
           </div>
+          </Reveal>
 
           {/* Program Information */}
+          <Reveal delay={0.2}>
           <div>
             <h2 className="text-lg font-bold mb-4">Program Information</h2>
             <select
@@ -475,8 +482,10 @@ export default function JoinAlumniPage() {
               </option>
             </select>
           </div>
+          </Reveal>
 
           {/* Work Experience */}
+          <Reveal delay={0.3}>
           <div>
             <h2 className="text-lg font-bold mb-4">Work Experience</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -541,8 +550,10 @@ export default function JoinAlumniPage() {
               ))}
             </div>
           </div>
+          </Reveal>
 
           {/* Certificates & Licenses */}
+          <Reveal delay={0.4}>
           <div>
             <h2 className="text-lg font-bold mb-4">Certificates & Licenses</h2>
             <div className="flex gap-2 mb-4">
@@ -569,9 +580,11 @@ export default function JoinAlumniPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {certificates.map((item) => (
-                <span
+                <motion.span
                   key={item}
                   className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
                   {item}
                   <button
@@ -581,12 +594,14 @@ export default function JoinAlumniPage() {
                   >
                     ×
                   </button>
-                </span>
+                </motion.span>
               ))}
             </div>
           </div>
+          </Reveal>
 
           {/* Reflection */}
+          <Reveal delay={0.5}>
           <div>
             <h2 className="text-lg font-bold mb-4">Reflection</h2>
             <textarea
@@ -608,8 +623,10 @@ export default function JoinAlumniPage() {
               required
             />
           </div>
+          </Reveal>
 
           {/* Profile Visibility */}
+          <Reveal delay={0.6}>
           <div>
             <h2 className="text-lg font-bold mb-4">Profile Visibility</h2>
             <select
@@ -623,6 +640,7 @@ export default function JoinAlumniPage() {
               <option value="private">Private</option>
             </select>
           </div>
+          </Reveal>
 
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <button

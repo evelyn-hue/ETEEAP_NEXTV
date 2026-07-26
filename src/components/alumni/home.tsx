@@ -5,6 +5,8 @@ import { useAuth } from "@/context/AuthContext";
 import Link from "next/link";
 import Image from "next/image";
 import Fetch_to from "@/utilities/Fetch_to";
+import StaggerContainer from "@/components/shared/StaggerContainer";
+import StaggerItem from "@/components/shared/StaggerItem";
 
 type WorkExperience = {
   companyName: string;
@@ -233,13 +235,13 @@ export default function AlumniFeedPage() {
           <p className="text-gray-600">No alumni profiles found matching your criteria.</p>
         </div>
       ) : (
-        <div className="max-w-5xl mx-auto space-y-6">
+        <StaggerContainer className="max-w-5xl mx-auto space-y-6">
           <div className="text-sm text-gray-600 mb-4">
             Showing {filteredAlumni.length} of {alumni.length} verified alumni
           </div>
 
           {filteredAlumni.map((person) => (
-            <div key={person.id} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+            <StaggerItem key={person.id} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
               <div className="flex items-center gap-3 mb-4">
                 {(() => {
                   const entryPic = person.profile_picture;
@@ -376,9 +378,9 @@ export default function AlumniFeedPage() {
                   </div>
                 </div>
               )}
-            </div>
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerContainer>
       )}
     </main>
   );
