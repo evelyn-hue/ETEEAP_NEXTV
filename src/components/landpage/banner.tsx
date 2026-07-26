@@ -11,6 +11,7 @@ import {
   Briefcase,
 } from "lucide-react";
 import Reveal from "@/components/shared/Reveal";
+import SectionHeading from "@/components/shared/SectionHeading";
 import StaggerContainer from "@/components/shared/StaggerContainer";
 import StaggerItem from "@/components/shared/StaggerItem";
 
@@ -42,7 +43,7 @@ export default function Banner() {
               </Link>
               <Link
                 href="/overview"
-                className="bg-blue-500 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition inline-block"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition inline-block"
               >
                 Learn More
               </Link>
@@ -62,9 +63,9 @@ export default function Banner() {
 
       {/* About Section */}
       <Reveal>
-      <section className="py-20 bg-blue-50">
+      <section className="py-20">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-6">About ETEEAP</h2>
+          <SectionHeading>About ETEEAP</SectionHeading>
           <p className="text-lg mb-4">
             The Expanded Tertiary Education Equivalency and Accreditation
             Program (ETEEAP) provides an opportunity for working adults to earn
@@ -83,13 +84,12 @@ export default function Banner() {
       </Reveal>
 
       {/* Why Choose ETEEAP */}
+      <Reveal>
       <section className="py-20 max-w-7xl mx-auto px-6">
-        <h2 className="text-3xl font-bold text-center mb-12">
-          Why Choose ETEEAP?
-        </h2>
+        <SectionHeading className="text-center">Why Choose ETEEAP?</SectionHeading>
         <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8">
           <StaggerItem>
-          <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
+          <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition text-center">
             <Clock className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">
               Fast Degree Completion
@@ -98,7 +98,7 @@ export default function Banner() {
           </div>
           </StaggerItem>
           <StaggerItem>
-          <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
+          <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition text-center">
             <Award className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">
               Competency-Based Assessment
@@ -110,14 +110,14 @@ export default function Banner() {
           </div>
           </StaggerItem>
           <StaggerItem>
-          <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
+          <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition text-center">
             <Users className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Flexible Schedule</h3>
             <p>Saturday classes make it convenient for working adults.</p>
           </div>
           </StaggerItem>
           <StaggerItem>
-          <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
+          <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition text-center">
             <GraduationCap className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Recognized Programs</h3>
             <p>
@@ -127,7 +127,7 @@ export default function Banner() {
           </div>
           </StaggerItem>
           <StaggerItem>
-          <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition text-center">
+          <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition text-center">
             <Briefcase className="text-blue-600 w-8 h-8 mx-auto mb-4" />
             <h3 className="text-xl font-semibold mb-2">Career Advancement</h3>
             <p>
@@ -138,22 +138,23 @@ export default function Banner() {
           </StaggerItem>
         </StaggerContainer>
       </section>
+      </Reveal>
 
       {/* Admission Highlights */}
       <Reveal>
       <section className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-8">Admission Qualification</h2>
+          <SectionHeading>Admission Qualification</SectionHeading>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition">
+            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition">
               <h3 className="font-semibold mb-2">Age Requirement</h3>
               <p>At least 23 years old</p>
             </div>
-            <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition">
+            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition">
               <h3 className="font-semibold mb-2">Education</h3>
               <p>High school graduate or PEPT equivalent to 1st-year college</p>
             </div>
-            <div className="bg-blue-50 p-6 rounded-xl shadow hover:shadow-lg transition">
+            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 hover:shadow-lg transition">
               <h3 className="font-semibold mb-2">Experience</h3>
               <p>At least 5 years relevant work experience</p>
             </div>
@@ -181,7 +182,7 @@ export default function Banner() {
           </Link>
           <Link
             href="/overview"
-            className="bg-blue-500 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition inline-block"
+            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-3 rounded-lg transition inline-block"
           >
             Learn More
           </Link>
