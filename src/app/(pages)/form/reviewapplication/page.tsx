@@ -1,44 +1,35 @@
 "use client";
-
-import PageTransition from "@/components/shared/PageTransition";
-import { ReviewApplication} from "@/components/form";
-import {Footer, Header} from "@/components/landpage";
-import { Fetch_to } from "@/utilities";
 import { useEffect, useState } from "react";
+import InteriorPage from "@/components/shared/InteriorPage";
+import { ReviewApplication } from "@/components/form";
+import { Fetch_to } from "@/utilities";
 import api_link from "@/config/api_link.json";
 
 export default function LandPage() {
-  const [showProfile, setShowProfile] = useState(false);
-  const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
   const [phone, setPhone] = useState("");
   const [isBusinessOwner, setIsBusinessOwner] = useState("No");
 
   useEffect(() => {
-    const Verify = async() => {
+    const fetchExtra = async() => {
       const response = await Fetch_to(api_link.jwt.verify);
-
       if (response.success) {
-        const response_data = response.data.message.final_data.data[0];
-        setShowProfile(true);
-        setEmail(response_data.email);
-        setFullName(response_data.fullName);
-        setStatus(response_data.civil_status || response_data.status || "");
-        setPhone(response_data.phone);
-        setIsBusinessOwner(response_data.isBusinessOwner ?? "No");
-        return;
+        const d = response.data.message.final_data.data[0];
+        setEmail(d.email);
+        setFullName(d.fullName);
+        setStatus(d.civil_status || d.status || "");
+        setPhone(d.phone);
+        setIsBusinessOwner(d.isBusinessOwner ?? "No");
       }
-      setShowProfile(false);
     };
-    Verify();
+    fetchExtra();
   }, []);
 
   return (
-    <PageTransition> 
-      <Header showProfile={showProfile} email={email} />
+    <InteriorPage>
       <ReviewApplication fullname={fullName} phone={phone} status={status} email={email} isBusinessOwner={isBusinessOwner} />
-      <Footer />
-    </PageTransition>
+    </InteriorPage>
   );
 }
