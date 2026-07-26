@@ -19,7 +19,6 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
-import Reveal from "@/components/shared/Reveal";
 
 const DOCUMENTS = [
   { key: "letterOfIntent", label: "Letter of Intent", required: true },

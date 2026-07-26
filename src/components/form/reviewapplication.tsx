@@ -5,7 +5,6 @@ import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
-import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
 
 const DRAFTS_KEY = "eteeap-application-drafts";
