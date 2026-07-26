@@ -1,5 +1,6 @@
 "use client";
 
+import { animate, motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   FiCheckCircle,
@@ -8,6 +9,9 @@ import {
   FiFileText,
   FiUsers,
 } from "react-icons/fi";
+
+import StaggerContainer from "@/components/shared/StaggerContainer";
+import StaggerItem from "@/components/shared/StaggerItem";
 
 import {
   Bar,
@@ -298,49 +302,55 @@ export default function Dashboard() {
             <p className="mt-4 text-gray-500 text-sm">No recent activities.</p>
           ) : (
             <>
-              {/* Mobile card view */}
-              <div className="md:hidden space-y-3 mt-4">
-                {activities.map((a) => (
-                  <div key={a.id} className="bg-gray-50 rounded-lg border p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-blue-700">{a.actions || "-"}</span>
-                      <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
-                    </div>
-                    <p className="text-xs mt-1 text-gray-600">{a.details || "-"}</p>
-                    <p className="text-xs mt-1 text-gray-400">{a.user || "-"}</p>
-                  </div>
-                ))}
-              </div>
+              <StaggerContainer>
+                {/* Mobile card view */}
+                <div className="md:hidden space-y-3 mt-4">
+                  {activities.map((a) => (
+                    <StaggerItem key={a.id}>
+                      <div className="bg-gray-50 rounded-lg border p-3">
+                        <div className="flex items-center justify-between">
+                          <span className="font-semibold text-xs text-blue-700">{a.actions || "-"}</span>
+                          <span className="text-xs text-gray-500">{new Date(a.created_at).toLocaleString()}</span>
+                        </div>
+                        <p className="text-xs mt-1 text-gray-600">{a.details || "-"}</p>
+                        <p className="text-xs mt-1 text-gray-400">{a.user || "-"}</p>
+                      </div>
+                    </StaggerItem>
+                  ))}
+                </div>
 
-              {/* Desktop table */}
-              <div className="hidden md:block overflow-x-auto mt-4">
-                <table className="w-full min-w-[600px]">
-                  <thead>
-                    <tr className="text-left text-gray-600">
-                      <th className="pb-2">User</th>
-                      <th className="pb-2">Action</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2">Time</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activities.map((a) => (
-                      <tr key={a.id} className="border-t">
-                        <td className="py-3 pr-4 text-sm">{a.user}</td>
-                        <td className="py-3 pr-4 text-sm">{a.actions}</td>
-                        <td className="py-3 pr-4">
-                          <span className="text-xs px-2 py-1 rounded bg-gray-200 whitespace-nowrap">
-                            {a.details || "-"}
-                          </span>
-                        </td>
-                        <td className="py-3 text-gray-500 text-sm whitespace-nowrap">
-                          {new Date(a.created_at).toLocaleString()}
-                        </td>
+                {/* Desktop table */}
+                <div className="hidden md:block overflow-x-auto mt-4">
+                  <table className="w-full min-w-[600px]">
+                    <thead>
+                      <tr className="text-left text-gray-600">
+                        <th className="pb-2">User</th>
+                        <th className="pb-2">Action</th>
+                        <th className="pb-2">Status</th>
+                        <th className="pb-2">Time</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody>
+                      {activities.map((a) => (
+                        <StaggerItem key={a.id}>
+                          <tr className="border-t">
+                            <td className="py-3 pr-4 text-sm">{a.user}</td>
+                            <td className="py-3 pr-4 text-sm">{a.actions}</td>
+                            <td className="py-3 pr-4">
+                              <span className="text-xs px-2 py-1 rounded bg-gray-200 whitespace-nowrap">
+                                {a.details || "-"}
+                              </span>
+                            </td>
+                            <td className="py-3 text-gray-500 text-sm whitespace-nowrap">
+                              {new Date(a.created_at).toLocaleString()}
+                            </td>
+                          </tr>
+                        </StaggerItem>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </StaggerContainer>
             </>
           )}
 
@@ -350,7 +360,19 @@ export default function Dashboard() {
   );
 }
 
-/* SMALL COMPONENT */
+/* SMALL COMPONENTS */
+function AnimatedStat({ value }: { value: number }) {
+  const count = useMotionValue(0);
+  const rounded = useTransform(() => Math.round(count.get()));
+
+  useEffect(() => {
+    const controls = animate(count, value, { duration: 1, ease: [0.25, 0.1, 0.25, 1] });
+    return controls.stop;
+  }, [value]);
+
+  return <motion.span>{rounded}</motion.span>;
+}
+
 type StatCardProps = {
   icon: React.ReactNode;
   label: string;
@@ -379,7 +401,7 @@ function StatCard({
       </div>
 
       <h3 className="text-gray-600 text-sm mt-3">{label}</h3>
-      <p className="text-3xl font-bold">{value}</p>
+      <p className="text-3xl font-bold"><AnimatedStat value={value} /></p>
     </div>
   );
 }
