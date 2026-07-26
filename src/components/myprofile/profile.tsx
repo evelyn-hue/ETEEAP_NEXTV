@@ -393,7 +393,7 @@ export default function Myprofile({ modal = false, onClose }: MyprofileProps) {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-8">
+    <main className="min-h-screen px-4 py-8">
       <ProfileBody />
     </main>
   );

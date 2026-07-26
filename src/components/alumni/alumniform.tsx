@@ -6,6 +6,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import Fetch_to from "@/utilities/Fetch_to";
 import { useAuth } from "@/context/AuthContext";
 import Reveal from "@/components/shared/Reveal";
+import SectionHeading from "@/components/shared/SectionHeading";
 
 type WorkExperience = {
   companyName: string;
@@ -337,8 +338,8 @@ export default function JoinAlumniPage() {
 
   if (existingProfile === "checking") {
     return (
-      <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
-        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
+      <main className="min-h-screen py-10 px-4 mt-12">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8 text-center">
           <p className="text-gray-600">Checking your alumni status...</p>
         </div>
       </main>
@@ -347,8 +348,8 @@ export default function JoinAlumniPage() {
 
   if (existingProfile === "exists") {
     return (
-      <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
-        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8 text-center">
+      <main className="min-h-screen py-10 px-4 mt-12">
+        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8 text-center">
           <h1 className="text-2xl font-bold text-blue-800 mb-4">Already Submitted</h1>
           <p className="text-gray-600 mb-4">
             You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.
@@ -365,12 +366,10 @@ export default function JoinAlumniPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 py-10 px-4 mt-12">
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+    <main className="min-h-screen py-10 px-4 mt-12">
+      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8">
         <div className="mb-8 border-b pb-5">
-          <h1 className="text-3xl font-bold text-blue-800">
-            Alumni Slambook Registration
-          </h1>
+          <SectionHeading>Alumni Slambook Registration</SectionHeading>
           <p className="text-gray-500 mt-2">
             Build your verified alumni profile for the LCCB ETEEAP community.
           </p>

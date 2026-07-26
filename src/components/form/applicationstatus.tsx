@@ -19,6 +19,7 @@ import {
   Clock,
   XCircle,
 } from "lucide-react";
+import Reveal from "@/components/shared/Reveal";
 
 const DOCUMENTS = [
   { key: "letterOfIntent", label: "Letter of Intent", required: true },
@@ -342,7 +343,7 @@ export default function ApplicationStatus() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 pt-20">
+      <main className="min-h-screen pt-20">
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="flex items-center justify-center p-12">
             <Loader className="w-8 h-8 animate-spin text-blue-600" />
@@ -354,10 +355,10 @@ export default function ApplicationStatus() {
 
   if (!app) {
     return (
-      <main className="min-h-screen bg-gray-50 pt-20">
+      <main className="min-h-screen pt-20">
         <div className="max-w-6xl mx-auto px-4 py-12">
           {alumniProfile ? (
-            <div className="bg-white rounded-xl shadow-sm p-8">
+            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-8">
               <AlumniStatusCard profile={alumniProfile} />
               <div className="text-center mt-6 text-gray-500 text-sm">
                 No program application found.{" "}
@@ -367,7 +368,7 @@ export default function ApplicationStatus() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-8 text-center">
               <p className="text-gray-600 mb-4">No applications or alumni registrations found.</p>
               <div className="flex gap-3 justify-center">
                 <button
@@ -409,7 +410,7 @@ export default function ApplicationStatus() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 pt-20">
+    <main className="min-h-screen pt-20">
       {/* Toast Notification */}
       {toast && (
         <div

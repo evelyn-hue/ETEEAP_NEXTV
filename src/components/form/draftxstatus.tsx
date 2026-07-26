@@ -4,6 +4,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
+import Reveal from "@/components/shared/Reveal";
+import SectionHeading from "@/components/shared/SectionHeading";
 
 const ALUMNI_DRAFT_KEY = "eteeap-alumni-draft";
 const APP_DRAFTS_KEY = "eteeap-application-drafts";
@@ -112,16 +114,19 @@ export default function Draft() {
 
   return (
     <div className="p-6 mt-24 mb-20">
-      <h1 className="mb-4 text-2xl font-bold">My Drafts</h1>
+      <SectionHeading>My Drafts</SectionHeading>
 
       {!hasAny ? (
-        <div className="rounded-md bg-white shadow-sm p-8 text-center text-slate-500">
+        <Reveal>
+        <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200/30 p-8 text-center text-slate-500">
           No saved drafts. Start filling out an application form and save it as a draft to see it here.
         </div>
+        </Reveal>
       ) : (
+        <Reveal>
         <div className="space-y-3">
           {appDrafts.map((draft, i) => (
-            <motion.div key={`app-${i}`} className="rounded-md bg-white shadow-sm" whileHover={reduced ? undefined : { y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
+            <motion.div key={`app-${i}`} className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200/30" whileHover={reduced ? undefined : { y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <div className="text-md font-semibold text-slate-900">{getDraftLabel(draft)}</div>
@@ -147,7 +152,7 @@ export default function Draft() {
             </motion.div>
           ))}
           {alumniDraft && (
-            <motion.div className="rounded-md bg-white shadow-sm" whileHover={reduced ? undefined : { y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
+            <motion.div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200/30" whileHover={reduced ? undefined : { y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <div className="text-md font-semibold text-slate-900">
@@ -178,6 +183,7 @@ export default function Draft() {
             </motion.div>
           )}
         </div>
+        </Reveal>
       )}
     </div>
   );

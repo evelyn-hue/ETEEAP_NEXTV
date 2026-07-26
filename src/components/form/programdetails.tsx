@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, useReducedMotion } from "framer-motion";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
+import SectionHeading from "@/components/shared/SectionHeading";
 
 const eteeapFormId = [
   "1FAIpQLScTWK7hH2",
@@ -308,19 +309,17 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
     <main className="max-w-5xl mx-auto px-6 py-20 mt-10">
       <Link
         href="/courses"
-        className="inline-block mb-8 px-4 py-2 rounded-md bg-blue-800 text-white hover:bg-blue-700"
+        className="inline-block mb-8 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
       >
         Back to Programs
       </Link>
 
-      <h1 className="text-3xl font-bold text-blue-800 mb-8 text-center">
-        Apply for {programName}
-      </h1>
+      <SectionHeading>Apply for {programName}</SectionHeading>
       <p className="text-center text-sm text-gray-600 mb-6">
         Applicant: {applicantName || "Unnamed user"}
       </p>
 
-      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); saveDraft(); }} className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); saveDraft(); }} className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 space-y-6">
         <div className="space-y-4">
           <div>
             <label className="font-semibold" htmlFor="isBusinessOwner">
