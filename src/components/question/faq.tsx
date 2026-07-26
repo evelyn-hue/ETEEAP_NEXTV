@@ -2,6 +2,8 @@
 
 import React, { useState } from "react";
 import { FiSearch, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 const FAQ = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -119,19 +121,18 @@ const FAQ = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-28 pb-16 px-4 md:px-8">
+    <div className="min-h-screen pt-28 pb-16 px-4 md:px-8">
       <div className="max-w-4xl mx-auto">
 
-        <h1 className="text-4xl font-bold text-gray-800 text-center mb-4">
-          ETEEAP & Alumni System FAQ
-        </h1>
+        <SectionHeading level="h1" className="text-center">ETEEAP & Alumni System FAQ</SectionHeading>
 
         <p className="text-center text-gray-600 mb-10">
           Find answers to the most common questions about applications and alumni system.
         </p>
 
         {/* Search */}
-        <div className="flex items-center bg-white shadow-md rounded-full px-5 py-3 mb-8">
+        <Reveal>
+        <div className="flex items-center bg-white rounded-full shadow-sm ring-1 ring-slate-200/30 px-5 py-3 mb-8">
           <FiSearch className="text-gray-500 text-xl mr-3" />
           <input
             type="text"
@@ -141,14 +142,16 @@ const FAQ = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+        </Reveal>
 
         {/* FAQ List */}
+        <Reveal>
         <div className="space-y-4">
           {filteredFAQs.length > 0 ? (
             filteredFAQs.map((faq, index) => (
               <div
                 key={index}
-                className="bg-white shadow-md rounded-xl p-5 cursor-pointer"
+                className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-5 cursor-pointer"
                 onClick={() => toggleFAQ(index)}
               >
                 <div className="flex justify-between items-center">
@@ -179,6 +182,7 @@ const FAQ = () => {
             </p>
           )}
         </div>
+        </Reveal>
       </div>
     </div>
   );

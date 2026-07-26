@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import imgSrc from "@/config/img_src.json";
 import Image from "next/image";
 import { useAuth } from "@/context/AuthContext";
+import SectionHeading from "@/components/shared/SectionHeading";
+import Reveal from "@/components/shared/Reveal";
 
 // Map programs to their images from config
 const programImages: { [key: string]: string } = {
@@ -99,10 +101,9 @@ export default function Program() {
 
   return (
     <main className="max-w-7xl mx-auto px-6 py-20 mt-12">
-      <h1 className="text-4xl font-bold text-center mb-12 text-blue-800">
-        Program Offerings
-      </h1>
+      <SectionHeading level="h1" className="text-center">Program Offerings</SectionHeading>
 
+      <Reveal>
       <div className="grid md:grid-cols-2 gap-10">
         {programs.map((program, index) => (
           <div
@@ -183,10 +184,11 @@ export default function Program() {
         ))}
       </div>
 
+      </Reveal>
+
       {/* Coordinators */}
-      <h2 className="text-3xl font-bold text-center mt-12 mb-8 text-blue-800">
-        Coordinators
-      </h2>
+      <Reveal>
+      <SectionHeading level="h2" className="text-center">Coordinators</SectionHeading>
       <div className="flex flex-col md:flex-row justify-center gap-12 mt-4">
         {staff.map((member, index) => (
           <div
@@ -207,6 +209,7 @@ export default function Program() {
           </div>
         ))}
       </div>
+      </Reveal>
     </main>
   );
 }
