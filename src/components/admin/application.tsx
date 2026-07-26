@@ -630,8 +630,6 @@ export default function Application() {
       setSavingRemark(remarkKey);
 
       try {
-        console.log("Saving remark:", { applicationId, documentId, remark, adminEmail });
-
         const response = await fetch(apiLinks.retrieve_data, {
           method: "PATCH",
           headers: {
@@ -645,13 +643,9 @@ export default function Application() {
           }),
         });
 
-        console.log("Response status:", response.status, response.ok);
-        
         const payload = (await response.json().catch(() => null)) as
           | { success?: boolean; message?: FormRow; error?: string }
           | null;
-
-        console.log("Response payload:", payload);
 
         if (!response.ok || !payload?.success || !payload.message) {
           const errorMsg = payload?.error || "Failed to save remark.";

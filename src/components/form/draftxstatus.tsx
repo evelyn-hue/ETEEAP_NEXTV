@@ -109,7 +109,7 @@ export default function Draft() {
   const hasAny = appDrafts.length > 0 || alumniDraft !== null;
 
   return (
-    <div className="p-6 mt-25 mb-20">
+    <div className="p-6 mt-24 mb-20">
       <h1 className="mb-4 text-2xl font-bold">My Drafts</h1>
 
       {!hasAny ? (
