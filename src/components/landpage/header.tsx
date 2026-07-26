@@ -3,11 +3,11 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import imgSrc from "@/config/img_src.json";
 import { Myprofile } from "@/components/myprofile";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
 
+import { motion } from "framer-motion";
 import { FaBars, FaEnvelope, FaTimes, FaUserCircle } from "react-icons/fa";
 // import { LiaJenkins } from "react-icons/lia";
 
@@ -80,7 +80,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
   };
 
   return (
-    <header className="w-full bg-white shadow-md fixed top-0 left-0 z-50">
+    <header className="w-full bg-white/85 backdrop-blur-md border-b border-white/20 fixed top-0 left-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-3">
 
         {/* LEFT LOGOS */}
@@ -95,31 +95,35 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               {isMobileNavOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
             </button>
           ) : null}
-          <Image
-            src={imgSrc.lccblogo}
-            alt="LCCB Logo"
-            width={65}
-            height={65}
-            className="object-contain"
-          />
-
-          <Image
-            src={imgSrc.eteeapLogo}
-            alt="ETEEAP Logo"
-            width={65}
-            height={65}
-            className="object-contain"
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-[#1e3a5f]">LCCB</span>
+            <span className="text-sm font-semibold text-[#2d4f7a] border-l border-blue-300 pl-2">ETEEAP</span>
+          </div>
         </div>
 
         {/* CENTER NAVIGATION */}
         <nav className={`${isCompactWidth ? "hidden" : "block"} text-sm font-medium text-gray-700`}>
           <ul className="flex gap-8">
-            <li onClick={() => { router.push("/"); }} className="cursor-pointer hover:text-blue-600">Home</li>
-            <li onClick={() => { router.push("/overview"); }} className="cursor-pointer hover:text-blue-600">About</li>
-            <li onClick={() => { router.push("/courses"); }} className="cursor-pointer hover:text-blue-600">Programs</li>
-            <li onClick={() => { router.push("/alumni"); }} className="cursor-pointer hover:text-blue-600">Alumni</li>
-            <li onClick={() => { router.push("/question"); }} className="cursor-pointer hover:text-blue-600">FAQ{"'"}s</li>
+            {[
+              { label: "Home", path: "/" },
+              { label: "About", path: "/overview" },
+              { label: "Programs", path: "/courses" },
+              { label: "Alumni", path: "/alumni" },
+              { label: "FAQ's", path: "/question" },
+            ].map((item) => (
+              <li key={item.path} className="relative group cursor-pointer" onClick={() => { router.push(item.path); }}>
+                <span className="text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors">
+                  {item.label}
+                </span>
+                <motion.span
+                  className="absolute -bottom-0.5 left-0 h-0.5 bg-blue-600 rounded-full"
+                  initial={{ scaleX: 0 }}
+                  whileHover={{ scaleX: 1 }}
+                  transition={{ duration: 0.2 }}
+                  style={{ originX: 0, width: "100%" }}
+                />
+              </li>
+            ))}
           </ul>
         </nav>
 
@@ -272,7 +276,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
             className="fixed inset-0 z-40 bg-black/30"
             onClick={() => setIsMobileNavOpen(false)}
           />
-          <aside className="fixed left-0 top-0 z-50 h-dvh w-[30dvw] min-w-55 bg-white shadow-2xl">
+          <aside className="fixed left-0 top-0 z-50 h-dvw w-[30dvw] min-w-55 bg-white/90 backdrop-blur-lg shadow-2xl">
             <div className="flex h-full flex-col p-6 pt-24 text-sm font-medium text-gray-700">
               <button
                 type="button"
