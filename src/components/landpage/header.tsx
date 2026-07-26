@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Myprofile } from "@/components/myprofile";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
+import imgSrc from "@/config/img_src.json";
 
 import { motion } from "framer-motion";
 import { FaBars, FaEnvelope, FaTimes, FaUserCircle } from "react-icons/fa";
@@ -95,10 +96,21 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               {isMobileNavOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
             </button>
           ) : null}
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-[#1e3a5f]">LCCB</span>
-            <span className="text-sm font-semibold text-[#2d4f7a] border-l border-blue-300 pl-2">ETEEAP</span>
-          </div>
+          <Image
+            src={imgSrc.lccblogo}
+            alt="LCCB Logo"
+            width={65}
+            height={65}
+            className="object-contain"
+          />
+
+          <Image
+            src={imgSrc.eteeapLogo}
+            alt="ETEEAP Logo"
+            width={65}
+            height={65}
+            className="object-contain"
+          />
         </div>
 
         {/* CENTER NAVIGATION */}
@@ -276,7 +288,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
             className="fixed inset-0 z-40 bg-black/30"
             onClick={() => setIsMobileNavOpen(false)}
           />
-          <aside className="fixed left-0 top-0 z-50 h-dvw w-[30dvw] min-w-55 bg-white/90 backdrop-blur-lg shadow-2xl">
+          <aside className="fixed left-0 top-0 z-50 h-dvh w-[30dvw] min-w-55 bg-white/90 backdrop-blur-lg shadow-2xl">
             <div className="flex h-full flex-col p-6 pt-24 text-sm font-medium text-gray-700">
               <button
                 type="button"
