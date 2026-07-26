@@ -1,5 +1,6 @@
 "use client";
 
+import PageTransition from "@/components/shared/PageTransition";
 import { ReviewApplication} from "@/components/form";
 import {Footer, Header} from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
@@ -34,10 +35,10 @@ export default function LandPage() {
   }, []);
 
   return (
-    <main> 
+    <PageTransition> 
       <Header showProfile={showProfile} email={email} />
       <ReviewApplication fullname={fullName} phone={phone} status={status} email={email} isBusinessOwner={isBusinessOwner} />
       <Footer />
-    </main>
+    </PageTransition>
   );
 }

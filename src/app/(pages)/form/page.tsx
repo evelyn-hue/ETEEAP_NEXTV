@@ -1,5 +1,6 @@
 "use client";
 
+import PageTransition from "@/components/shared/PageTransition";
 import ProgramDetails from "@/components/form/programdetails";
 import {Footer, Header} from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
@@ -35,7 +36,7 @@ function LandContent() {
   }, []);
 
   return (
-    <main> 
+    <PageTransition> 
       <Header showProfile={showProfile} email={email} />
       <ProgramDetails
         programName={`${params}`}
@@ -45,7 +46,7 @@ function LandContent() {
         isBusinessOwner={isBusinessOwner}
       />
       <Footer />
-    </main>
+    </PageTransition>
   );
 
 }

@@ -2,6 +2,7 @@
 
 export const dynamic = "force-dynamic";
 import { Suspense, useEffect, useState } from "react";
+import PageTransition from "@/components/shared/PageTransition";
 import { ApplicationStatus } from "@/components/form";
 import { Footer, Header } from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
@@ -26,11 +27,11 @@ function ApplicationStatusContent() {
   }, []);
 
   return (
-    <>
+    <PageTransition>
       <Header showProfile={showProfile} email={email} />
       <ApplicationStatus />
       <Footer />
-    </>
+    </PageTransition>
   );
 }
 

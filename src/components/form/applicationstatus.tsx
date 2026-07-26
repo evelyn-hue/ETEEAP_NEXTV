@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import api_links from "@/config/api_link.json";
+import { motion } from "framer-motion";
 import {
   FileText,
   File,
@@ -391,6 +392,7 @@ export default function ApplicationStatus() {
   const statusLower = String(app.form_status || "").toLowerCase();
   const hasRemarks = Object.keys(remarks).length > 0;
   const readOnly = !statusLower.includes("reject") && !hasRemarks;
+  const isUnderReview = statusLower === "under review";
 
   const getStatusBadgeClass = () => {
     switch (statusLower) {
@@ -449,7 +451,12 @@ export default function ApplicationStatus() {
                     <div
                       className={`inline-flex px-4 py-2 rounded-full font-semibold text-sm ${getStatusBadgeClass()}`}
                     >
-                      {app.form_status || "Pending"}
+                      <motion.span
+                        animate={isUnderReview ? { opacity: [1, 0.6, 1] } : {}}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      >
+                        {app.form_status || "Pending"}
+                      </motion.span>
                     </div>
                   </div>
                 </div>
@@ -473,9 +480,11 @@ export default function ApplicationStatus() {
                 <p className="text-sm font-semibold text-blue-600">{progressPercentage}%</p>
               </div>
               <div className="h-3 w-full rounded-full bg-gray-200 overflow-hidden">
-                <div
-                  className="h-full bg-linear-to-r from-blue-500 to-blue-600 transition-all duration-500"
-                  style={{ width: `${progressPercentage}%` }}
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progressPercentage}%` }}
+                  transition={{ duration: 0.8, ease: [0.25, 0.1, 0.25, 1] }}
+                  className="h-full bg-linear-to-r from-blue-500 to-blue-600"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-2">

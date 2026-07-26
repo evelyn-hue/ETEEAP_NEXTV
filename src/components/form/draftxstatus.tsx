@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
@@ -119,7 +120,7 @@ export default function Draft() {
       ) : (
         <div className="space-y-3">
           {appDrafts.map((draft, i) => (
-            <div key={`app-${i}`} className="rounded-md bg-white shadow-sm">
+            <motion.div key={`app-${i}`} className="rounded-md bg-white shadow-sm" whileHover={{ y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <div className="text-md font-semibold text-slate-900">{getDraftLabel(draft)}</div>
@@ -142,10 +143,10 @@ export default function Draft() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
           {alumniDraft && (
-            <div className="rounded-md bg-white shadow-sm">
+            <motion.div className="rounded-md bg-white shadow-sm" whileHover={{ y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
               <div className="flex items-center justify-between border-b px-4 py-3">
                 <div>
                   <div className="text-md font-semibold text-slate-900">
@@ -173,7 +174,7 @@ export default function Draft() {
                   </button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       )}
