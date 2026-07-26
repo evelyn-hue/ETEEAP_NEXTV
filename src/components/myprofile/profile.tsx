@@ -1,5 +1,6 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState, type ChangeEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -177,7 +178,7 @@ function ProfileBody() {
       )}
 
       <div className="flex flex-col gap-6 md:flex-row md:items-start md:gap-8">
-        <section className="shrink-0">
+        <motion.section whileHover={{ scale: 1.03 }} className="shrink-0">
           <div className="h-36 w-36 overflow-hidden rounded-3xl border-4 border-white bg-slate-200 shadow-lg">
             {preview ? (
               <Image
@@ -206,7 +207,7 @@ function ProfileBody() {
               className="block w-full text-sm text-slate-700 file:mr-4 file:rounded-lg file:border-0 file:bg-blue-700 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-white hover:file:bg-blue-800 disabled:file:bg-slate-400"
             />
           </label>
-        </section>
+        </motion.section>
 
         <section className="min-w-0 flex-1">
           <div className="flex items-center justify-between">
@@ -272,16 +273,22 @@ function ProfileBody() {
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             <div className={isEditing ? "rounded-2xl border-2 border-blue-300 bg-blue-50 p-4" : "rounded-2xl bg-slate-50 p-4"}>
               <p className="text-xs uppercase tracking-wide text-slate-500">Full Name</p>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
-                />
-              ) : (
-                <p className="mt-1 text-sm font-medium text-slate-900">{fullName || "Not set"}</p>
-              )}
+              <AnimatePresence mode="wait">
+                {isEditing ? (
+                  <motion.div key="edit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                    <input
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
+                    />
+                  </motion.div>
+                ) : (
+                  <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{fullName || "Not set"}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className="rounded-2xl bg-slate-50 p-4">
@@ -291,47 +298,57 @@ function ProfileBody() {
 
             <div className={isEditing ? "rounded-2xl border-2 border-blue-300 bg-blue-50 p-4" : "rounded-2xl bg-slate-50 p-4"}>
               <p className="text-xs uppercase tracking-wide text-slate-500">Phone Number</p>
-              {isEditing ? (
-                <>
-                  <input
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => {
-                      const digits = e.target.value.replace(/\D/g, "");
-                      if (digits.length <= 11) {
-                        setPhone(digits);
-                        setPhoneError("");
-                      }
-                    }}
-                    className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
-                    placeholder="09123456789"
-                  />
-                  {phoneError && (
-                    <p className="text-red-500 text-xs mt-1">{phoneError}</p>
-                  )}
-                </>
-              ) : (
-                <p className="mt-1 text-sm font-medium text-slate-900">{phone || "Not set"}</p>
-              )}
+              <AnimatePresence mode="wait">
+                {isEditing ? (
+                  <motion.div key="edit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => {
+                        const digits = e.target.value.replace(/\D/g, "");
+                        if (digits.length <= 11) {
+                          setPhone(digits);
+                          setPhoneError("");
+                        }
+                      }}
+                      className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
+                      placeholder="09123456789"
+                    />
+                    {phoneError && (
+                      <p className="text-red-500 text-xs mt-1">{phoneError}</p>
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{phone || "Not set"}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             <div className={isEditing ? "rounded-2xl border-2 border-blue-300 bg-blue-50 p-4" : "rounded-2xl bg-slate-50 p-4"}>
               <p className="text-xs uppercase tracking-wide text-slate-500">Civil Status</p>
-              {isEditing ? (
-                <select
-                  value={civilStatus}
-                  onChange={(e) => setCivilStatus(e.target.value)}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
-                >
-                  <option value="">Select Status</option>
-                  <option value="Single">Single</option>
-                  <option value="Married">Married</option>
-                  <option value="Divorced">Divorced</option>
-                  <option value="Widowed">Widowed</option>
-                </select>
-              ) : (
-                <p className="mt-1 text-sm font-medium text-slate-900">{civilStatus || "Not set"}</p>
-              )}
+              <AnimatePresence mode="wait">
+                {isEditing ? (
+                  <motion.div key="edit" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
+                    <select
+                      value={civilStatus}
+                      onChange={(e) => setCivilStatus(e.target.value)}
+                      className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm font-medium text-slate-900 focus:border-blue-500 focus:outline-none"
+                    >
+                      <option value="">Select Status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                    </select>
+                  </motion.div>
+                ) : (
+                  <motion.div key="view" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                    <p className="mt-1 text-sm font-medium text-slate-900">{civilStatus || "Not set"}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
