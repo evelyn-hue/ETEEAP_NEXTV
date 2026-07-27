@@ -1,42 +1,35 @@
 "use client";
-
-import ProgramDetails from "@/components/form/programdetails";
-import {Footer, Header} from "@/components/landpage";
-import { Fetch_to } from "@/utilities";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, Suspense } from "react";
+import InteriorPage from "@/components/shared/InteriorPage";
+import ProgramDetails from "@/components/form/programdetails";
+import { Fetch_to } from "@/utilities";
 import api_link from "@/config/api_link.json";
 
 function LandContent() {
-  const [showProfile, setShowProfile] = useState(false);
-  const [email, setEmail] = useState("");
   const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [isBusinessOwner, setIsBusinessOwner] = useState("No");
+  const [status, setStatus] = useState(true);
   const searchParams = useSearchParams();
   const params = searchParams.get('program');
-  const [status, setStatus] = useState(true);
 
   useEffect(() => {
-    const Verify = async() => {
+    const fetchData = async() => {
       const response = await Fetch_to(api_link.jwt.verify);
-
       if (response.success) {
-        const response_data = response.data.message.final_data.data[0];
-        setShowProfile(true);
-        setEmail(response_data.email);
-        setFullName(response_data.fullName ?? "");
-        setIsBusinessOwner(response_data.isBusinessOwner ?? "No");
-        setStatus(response_data.civil_status === "Married");
-        return;
+        const d = response.data.message.final_data.data[0];
+        setEmail(d.email);
+        setFullName(d.fullName ?? "");
+        setIsBusinessOwner(d.isBusinessOwner ?? "No");
+        setStatus(d.civil_status === "Married");
       }
-      setShowProfile(false);
     };
-    Verify();
+    fetchData();
   }, []);
 
   return (
-    <main> 
-      <Header showProfile={showProfile} email={email} />
+    <InteriorPage>
       <ProgramDetails
         programName={`${params}`}
         applicantName={fullName}
@@ -44,16 +37,14 @@ function LandContent() {
         statusMarital={status}
         isBusinessOwner={isBusinessOwner}
       />
-      <Footer />
-    </main>
+    </InteriorPage>
   );
-
 }
 
 export default function LandPage() {
-    return (
-        <Suspense fallback={null}>
-            <LandContent />
-        </Suspense>
-    );
+  return (
+    <Suspense fallback={null}>
+      <LandContent />
+    </Suspense>
+  );
 }

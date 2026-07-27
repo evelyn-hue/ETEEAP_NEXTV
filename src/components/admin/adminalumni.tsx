@@ -10,6 +10,8 @@ import {
   FiRefreshCw,
 } from "react-icons/fi";
 import Fetch_to from "@/utilities/Fetch_to";
+import Reveal from "@/components/shared/Reveal";
+import Skeleton from "@/components/shared/Skeleton";
 
 type AlumniStatus = "pending" | "verified" | "rejected";
 
@@ -316,7 +318,7 @@ export default function AdminAlumni() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
+    <main className="min-h-screen bg-section-warm p-4 sm:p-6">
       {toast && (
         <div
           className={`fixed top-6 right-6 z-60 px-6 py-4 rounded-xl shadow-lg text-white font-semibold ${
@@ -328,56 +330,53 @@ export default function AdminAlumni() {
           {toast.message}
         </div>
       )}
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                Alumni Verification
-              </p>
-              <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
-                Verify Alumni Profiles
-              </h1>
-              <p className="mt-2 text-sm text-slate-600">
-                Review and verify alumni profile submissions from Supabase.
-              </p>
-            </div>
+      <div className="mx-auto max-w-7xl">
+        {/* Page Header */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Alumni</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Verify Alumni Profiles</h1>
+          <p className="mt-1 text-sm text-slate-500">Review and verify alumni profile submissions from Supabase.</p>
+        </div>
 
-            <div className="flex gap-3 lg:flex-col">
-              <button
-                onClick={fetchAlumni}
-                disabled={fetching}
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60"
-              >
-                <FiRefreshCw className={fetching ? "animate-spin" : ""} />
-                Refresh
-              </button>
-            </div>
-
+        {/* Stats + Actions */}
+        <Reveal>
+        <div className="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-2xl bg-yellow-50 px-4 py-3 text-center">
+              <div className="rounded-xl bg-yellow-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-yellow-800">{totals.pending}</p>
-                <p className="text-xs uppercase tracking-wide text-yellow-700">
+                <p className="text-xs uppercase tracking-wide text-yellow-600">
                   Pending
                 </p>
               </div>
-              <div className="rounded-2xl bg-green-50 px-4 py-3 text-center">
+              <div className="rounded-xl bg-green-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-green-800">{totals.verified}</p>
                 <p className="text-xs uppercase tracking-wide text-green-700">
                   Verified
                 </p>
               </div>
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-center">
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-red-800">{totals.rejected}</p>
-                <p className="text-xs uppercase tracking-wide text-red-700">
-                  Rejected
-                </p>
+                <p className="text-xs uppercase tracking-wide text-red-600">Rejected</p>
               </div>
             </div>
-          </div>
 
-          <div className="mt-6 flex max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <FiSearch className="shrink-0 text-slate-500" />
+            <button
+              onClick={fetchAlumni}
+              disabled={fetching}
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60 shadow-sm"
+            >
+              <FiRefreshCw className={fetching ? "animate-spin" : ""} size={16} />
+              Refresh
+            </button>
+          </div>
+        </div>
+        </Reveal>
+
+        {/* Search */}
+        <div className="mb-6">
+          <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm ring-1 ring-transparent focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500 transition-all">
+            <FiSearch className="shrink-0 text-slate-400" size={18} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -385,20 +384,51 @@ export default function AdminAlumni() {
               className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
           </div>
-        </section>
+        </div>
 
         {fetching ? (
-          <div className="text-center py-12">
-            <FiRefreshCw className="animate-spin mx-auto mb-3 text-blue-600" size={32} />
-            <p className="text-slate-600">Loading alumni profiles...</p>
-          </div>
+          <>
+            {/* Mobile skeleton */}
+            <section className="space-y-4 md:hidden">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30">
+                  <div className="flex items-start gap-3">
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <Skeleton className="h-5 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </section>
+            {/* Desktop skeleton */}
+            <section className="hidden md:block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30">
+              <div className="border-b border-slate-200 px-6 py-4">
+                <Skeleton className="h-6 w-48" />
+              </div>
+              <div className="p-6 space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex gap-6">
+                    <Skeleton className="h-5 w-44" />
+                    <Skeleton className="h-5 w-36" />
+                    <Skeleton className="h-5 w-20" />
+                    <Skeleton className="h-5 w-36" />
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-20 ml-auto" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
         ) : (
           <>
+            <Reveal>
             <section className="space-y-4 md:hidden">
               {sortedAlumni.map((item) => (
                 <article
                   key={item.id}
-                  className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+                  className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -450,8 +480,10 @@ export default function AdminAlumni() {
                 </article>
               ))}
             </section>
+            </Reveal>
 
-            <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
+            <Reveal>
+            <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
               <div className="border-b border-slate-200 px-6 py-4">
                 <h2 className="text-lg font-semibold text-slate-900">
                   Alumni Profiles ({sortedAlumni.length})
@@ -460,7 +492,7 @@ export default function AdminAlumni() {
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-230">
-                  <thead className="bg-slate-50 text-left text-sm text-slate-600">
+                  <thead className="bg-blue-800 text-left text-sm text-white">
                     <tr>
                       <th className="px-6 py-4 font-semibold">Alumni</th>
                       <th className="px-6 py-4 font-semibold">Program</th>
@@ -520,6 +552,7 @@ export default function AdminAlumni() {
                 </table>
               </div>
             </section>
+            </Reveal>
           </>
         )}
 
@@ -749,7 +782,7 @@ export default function AdminAlumni() {
               <button
                 type="button"
                 onClick={confirmModalYes}
-                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
               >
                 Yes
               </button>

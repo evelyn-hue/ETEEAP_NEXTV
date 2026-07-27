@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import { FaExternalLinkAlt } from "react-icons/fa";
+import Reveal from "@/components/shared/Reveal";
+import SectionHeading from "@/components/shared/SectionHeading";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 const eteeapFormId = [
   "1FAIpQLScTWK7hH2",
@@ -81,6 +85,7 @@ type ProgramDetailsProps = {
 };
 
 function ProgramDetails({ programName, applicantName, email, statusMarital, isBusinessOwner }: ProgramDetailsProps) {
+  const reduced = useReducedMotion();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [isBus, setIsBus] = useState(isBusinessOwner ?? "No");
@@ -305,19 +310,18 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
     <main className="max-w-5xl mx-auto px-6 py-20 mt-10">
       <Link
         href="/courses"
-        className="inline-block mb-8 px-4 py-2 rounded-md bg-blue-800 text-white hover:bg-blue-700"
+        className="inline-block mb-8 px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
       >
         Back to Programs
       </Link>
 
-      <h1 className="text-3xl font-bold text-blue-800 mb-8 text-center">
-        Apply for {programName}
-      </h1>
+      <SectionEyebrow className="text-center">Application</SectionEyebrow>
+      <SectionHeading>Apply for {programName}</SectionHeading>
       <p className="text-center text-sm text-gray-600 mb-6">
         Applicant: {applicantName || "Unnamed user"}
       </p>
 
-      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); saveDraft(); }} className="bg-white rounded-xl shadow-lg p-6 space-y-6">
+      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); saveDraft(); }} className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6 space-y-6">
         <div className="space-y-4">
           <div>
             <label className="font-semibold" htmlFor="isBusinessOwner">
@@ -348,23 +352,27 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         </div>
 
         <div className="mt-6 mb-4">
+          <SectionEyebrow>Documents</SectionEyebrow>
           <h2 className="text-xl font-semibold text-blue-800">
             Upload Documents
           </h2>
-          <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <p className="font-semibold text-blue-900 mb-2">Requirements:</p>
-            <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
-              <li>All required documents must be submitted</li>
-              <li>Accepted file formats: PDF, JPG, PNG</li>
-              <li>Maximum file size: 5MB per file</li>
-              <li>Before uploading documents, rename them so the admin can review them properly.</li>
-              {statusMarital && <li>Marriage certificate required (you are married)</li>}
-              {!statusMarital && <li>Marriage certificate NOT required (you are not married)</li>}
-              {isBusStatus && <li>Business registration required (you are a business owner)</li>}
-              {!isBusStatus && <li>Business registration NOT required (you are not a business owner)</li>}
-            </ul>
-          </div>
+          <Reveal>
+            <div className="mt-3 p-4 bg-blue-50 border border-blue-200 rounded-md">
+              <p className="font-semibold text-blue-900 mb-2">Requirements:</p>
+              <ul className="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                <li>All required documents must be submitted</li>
+                <li>Accepted file formats: PDF, JPG, PNG</li>
+                <li>Maximum file size: 5MB per file</li>
+                <li>Before uploading documents, rename them so the admin can review them properly.</li>
+                {statusMarital && <li>Marriage certificate required (you are married)</li>}
+                {!statusMarital && <li>Marriage certificate NOT required (you are not married)</li>}
+                {isBusStatus && <li>Business registration required (you are a business owner)</li>}
+                {!isBusStatus && <li>Business registration NOT required (you are not a business owner)</li>}
+              </ul>
+            </div>
+          </Reveal>
         </div>
+        <Reveal delay={0.1}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[
             { id: "letterOfIntent", multiple: false, note: "Click to select file", show: true },
@@ -382,9 +390,10 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
             { id: "businessRegistration", multiple: false, note: "Click to select file", show: isBusStatus },
             { id: "certificates", multiple: true, note: "10 files maximum", show: true },
           ].map((field) => (
-            <div
+            <motion.div
               key={field.id}
               style={{ display: field.show ? "block" : "none" }}
+              whileHover={reduced ? undefined : { y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
               className="border-dashed border-2 rounded-md p-4 text-left flex flex-col border-gray-300 bg-white"
             >
               <label className="font-medium block mb-2" htmlFor={field.id}>
@@ -478,9 +487,10 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
                   Fill ETEEAP Form Online <FaExternalLinkAlt size={12} />
                 </Link>
               ) : null}
-            </div>
+            </motion.div>
           ))}
         </div>
+        </Reveal>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

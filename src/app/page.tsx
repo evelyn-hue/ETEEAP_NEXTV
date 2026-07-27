@@ -4,6 +4,7 @@ import { Banner, Footer, Header } from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
 import { useEffect, useState } from "react";
 import api_link from "@/config/api_link.json";
+import PageTransition from "@/components/shared/PageTransition";
 
 export default function LandPage() {
   const [showProfile, setShowProfile] = useState(false);
@@ -26,10 +27,10 @@ export default function LandPage() {
   }, []);
 
   return (
-    <main> 
+    <PageTransition>
       <Header showProfile={showProfile} email={email} />
       <Banner />
       <Footer />
-    </main>
+    </PageTransition>
   );
 }

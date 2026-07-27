@@ -38,7 +38,7 @@ export default async function Fetch_to(
 				return { success: true, data }; // success
 			} else {
 				console.log(data?.error);
-				return { success: false, message: data?.error || `Request failed: ${response.status}` };
+				return { success: false, message: data?.error || data?.message || `Request failed: ${response.status}` };
 			}
 		} catch (err: unknown) {
 			let message = "Unknown fetch error";

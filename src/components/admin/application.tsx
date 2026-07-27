@@ -13,7 +13,10 @@ import {
   X,
 } from "lucide-react";
 import apiLinks from "@/config/api_link.json";
+import Reveal from "@/components/shared/Reveal";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
+import Skeleton from "@/components/shared/Skeleton";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
 type FormStatus = "Under Review" | "Approve" | "Reject" | "Draft" | "Delete";
@@ -212,7 +215,7 @@ function ApplicationActions({
       <button
         type="button"
         onClick={onView}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 sm:w-auto"
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 sm:w-auto"
       >
         <Eye size={16} />
         View
@@ -276,8 +279,9 @@ function DocumentCard({
   isSaving?: boolean;
   disabled?: boolean;
 }) {
+  const reduced = useReducedMotion();
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <motion.div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" whileHover={reduced ? undefined : { y: -2 }}>
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold text-slate-900">{document.label}</p>
@@ -350,7 +354,7 @@ function DocumentCard({
           type="button"
           onClick={() => onRemarkSave(document.remark)}
           disabled={disabled || isSaving}
-          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+          className="mt-2 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:bg-blue-400 disabled:cursor-not-allowed"
         >
           {isSaving ? (
             <>
@@ -362,11 +366,12 @@ function DocumentCard({
           )}
         </button>
       </label>
-    </div>
+    </motion.div>
   );
 }
 
 export default function Application() {
+  const reduced = useReducedMotion();
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [query, setQuery] = useState("");
   const [programFilter, setProgramFilter] = useState("All Programs");
@@ -630,8 +635,6 @@ export default function Application() {
       setSavingRemark(remarkKey);
 
       try {
-        console.log("Saving remark:", { applicationId, documentId, remark, adminEmail });
-
         const response = await fetch(apiLinks.retrieve_data, {
           method: "PATCH",
           headers: {
@@ -645,13 +648,9 @@ export default function Application() {
           }),
         });
 
-        console.log("Response status:", response.status, response.ok);
-        
         const payload = (await response.json().catch(() => null)) as
           | { success?: boolean; message?: FormRow; error?: string }
           | null;
-
-        console.log("Response payload:", payload);
 
         if (!response.ok || !payload?.success || !payload.message) {
           const errorMsg = payload?.error || "Failed to save remark.";
@@ -716,53 +715,51 @@ export default function Application() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200 sm:p-6">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                Applications
-              </p>
-              <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
-                Review submitted applications
-              </h1>
-              <p className="mt-2 text-sm text-slate-600">
-                Open a record to verify, reject, and remark each uploaded document.
-              </p>
-            </div>
+    <main className="min-h-screen bg-section-warm">
+      <div className="p-4 sm:p-6 mx-auto max-w-7xl space-y-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Applications</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Review Applications</h1>
+          <p className="mt-1 text-sm text-slate-500">Open a record to verify, reject, and remark each uploaded document.</p>
+        </div>
 
-            <div className="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 lg:flex-row lg:flex-wrap lg:items-center">
-              <Search className="text-slate-500" size={18} />
+        {/* Search & Filters */}
+        <Reveal>
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 flex-1">
+              <Search className="text-slate-400" size={18} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search applicant..."
-                className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 lg:w-64"
+                className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
-              <select
-                value={programFilter}
-                onChange={(e) => setProgramFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none sm:w-auto"
-              >
-                {programOptions.map((program) => (
-                  <option key={program} value={program}>
-                    {program}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none sm:w-auto"
-              >
-                <option value="All Status">All Status</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Approve">Approve</option>
-                <option value="Reject">Reject</option>
-                <option value="Delete">Delete</option>
-              </select>
+            </div>
+            <select
+              value={programFilter}
+              onChange={(e) => setProgramFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              {programOptions.map((program) => (
+                <option key={program} value={program}>
+                  {program}
+                </option>
+              ))}
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              <option value="All Status">All Status</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Approve">Approve</option>
+              <option value="Reject">Reject</option>
+              <option value="Delete">Delete</option>
+            </select>
               <input
                 type="date"
                 value={dateFilter}
@@ -778,13 +775,19 @@ export default function Application() {
               </button>
             </div>
           </div>
-        </section>
+        </Reveal>
 
+        <Reveal>
         <section className="space-y-4 md:hidden">
           {loading ? (
-            <div className="flex items-center justify-center rounded-3xl bg-white p-8 text-slate-600 shadow-sm ring-1 ring-slate-200">
-              <Loader2 className="mr-2 animate-spin" size={18} />
-              Loading applications...
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30">
+                  <Skeleton className="h-5 w-3/4 mb-3" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              ))}
             </div>
           ) : null}
           {!loading && error ? (
@@ -793,14 +796,14 @@ export default function Application() {
             </div>
           ) : null}
           {!loading && !error && filteredApplications.length === 0 ? (
-            <div className="rounded-3xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200">
+            <div className="rounded-3xl bg-white p-6 text-sm text-slate-500 shadow-sm ring-1 ring-slate-200/30">
               No applications found.
             </div>
           ) : null}
           {filteredApplications.map((item) => (
             <article
               key={item.id}
-              className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"
+              className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
@@ -851,12 +854,21 @@ export default function Application() {
             </article>
           ))}
         </section>
+        </Reveal>
 
-        <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:block">
+        <Reveal>
+        <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
           {loading ? (
-            <div className="flex items-center justify-center p-8 text-slate-600">
-              <Loader2 className="mr-2 animate-spin" size={18} />
-              Loading applications...
+            <div className="p-6 space-y-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-6">
+                  <Skeleton className="h-5 w-44" />
+                  <Skeleton className="h-5 w-60" />
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-5 w-20 ml-auto" />
+                </div>
+              ))}
             </div>
           ) : null}
           {!loading && error ? (
@@ -864,7 +876,7 @@ export default function Application() {
           ) : null}
           <div className="overflow-x-auto">
             <table className="w-full min-w-245 text-left">
-              <thead className="bg-slate-50 text-sm text-slate-600">
+              <thead className="bg-blue-800 text-sm text-white">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Applicant</th>
                   <th className="px-6 py-4 font-semibold">Program</th>
@@ -909,16 +921,22 @@ export default function Application() {
             </table>
           </div>
         </section>
+        </Reveal>
 
-        {selectedApplication ? (
-          <div
-            className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                setSelectedApplication(null);
-              }
-            }}
-          >
+        <AnimatePresence>
+          {selectedApplication ? (
+            <motion.div
+              initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+              exit={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              transition={reduced ? undefined : { duration: 0.2 }}
+              className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 px-0 py-0"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  setSelectedApplication(null);
+                }
+              }}
+            >
             <div className="w-full h-full rounded-none bg-white shadow-2xl overflow-auto">
               <div className="flex items-start justify-between border-b border-slate-200 px-6 py-4 sticky top-0 bg-white z-10">
                 <button
@@ -1001,18 +1019,24 @@ export default function Application() {
                 </section>
               </div>
             </div>
-          </div>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
 
-        {pendingAction ? (
-          <div
-            className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4"
-            onClick={(event) => {
-              if (event.target === event.currentTarget) {
-                closeConfirmation();
-              }
-            }}
-          >
+        <AnimatePresence>
+          {pendingAction ? (
+            <motion.div
+              initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+              exit={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              transition={reduced ? undefined : { duration: 0.2 }}
+              className="fixed inset-0 z-70 flex items-center justify-center bg-black/50 px-4"
+              onClick={(event) => {
+                if (event.target === event.currentTarget) {
+                  closeConfirmation();
+                }
+              }}
+            >
             <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
               <h3 className="text-lg font-semibold text-slate-900">{pendingAction.title}</h3>
               <p className="mt-2 text-sm text-slate-600">{pendingAction.message}</p>
@@ -1031,17 +1055,18 @@ export default function Application() {
                     pendingAction.execute();
                     closeConfirmation();
                   }}
-                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
                 >
                   {pendingAction.confirmLabel}
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
         ) : null}
+        </AnimatePresence>
       </div>
       {toast ? (
-        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border p-4 shadow-2xl ring-1 ring-slate-200 bg-white">
+        <div className="fixed bottom-6 right-6 z-50 w-full max-w-sm rounded-2xl border p-4 shadow-2xl ring-1 ring-slate-200/30 bg-white">
           <div className={`flex items-start gap-3 ${toast.type === "success" ? "text-green-900" : toast.type === "error" ? "text-red-900" : "text-slate-900"}`}>
             <div className={`mt-1 h-2.5 w-2.5 rounded-full ${toast.type === "success" ? "bg-green-500" : toast.type === "error" ? "bg-red-500" : "bg-slate-400"}`} />
             <div>
@@ -1057,7 +1082,7 @@ export default function Application() {
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200">
+    <div className="rounded-xl bg-white px-4 py-3 ring-1 ring-slate-200/30">
       <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
       <p className="mt-1 font-medium text-slate-900">{value}</p>
     </div>

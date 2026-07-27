@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { motion, useReducedMotion } from "framer-motion";
 import { FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { GraduationCap } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import Link from "next/link";
 import { Fetch_to } from "@/utilities";
@@ -36,7 +38,7 @@ function Input({ icon, placeholder, value, onChange, error }: InputProps) {
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full pl-10 pr-3 py-2 border rounded"
+        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
       />
       {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
     </div>
@@ -58,7 +60,10 @@ export default function SignUp() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [modalType, setModalType] = useState<"terms" | "privacy" | null>(null);
+  const reduced = useReducedMotion();
+  const fadeUp = reduced ? {} : { initial: { opacity: 0, y: 10 }, animate: { opacity: 1, y: 0 } };
 
   const handleChange = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -108,10 +113,13 @@ export default function SignUp() {
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!validateForm()) {
-      return;
+    if (!validateForm()) return;
+    setSubmitting(true);
+    try {
+      await submitForm();
+    } finally {
+      setSubmitting(false);
     }
-    await submitForm();
   };
 
   const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
@@ -163,14 +171,29 @@ export default function SignUp() {
   };
 
   return (
-    <section className="min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16">
-      <div className="bg-white/90 p-8 rounded-lg shadow-lg">
-
-      <h2 className="text-2xl font-bold text-center text-blue-600 mb-6">
-        Create Account
-      </h2>
-
-      <form onSubmit={handleSubmit}>
+    <section className="relative min-h-screen bg-[url('/lccbBG.jpg')] bg-cover bg-center flex items-center justify-center mt-16 overflow-hidden">
+      <div className="absolute inset-0 bg-black/40" />
+      <motion.div
+        initial={reduced ? {} : { opacity: 0, y: 24 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+        className="relative w-full max-w-lg mx-4"
+      >
+        <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl overflow-hidden">
+          <div className="h-1.5 bg-blue-600" />
+          <div className="p-8 sm:p-10">
+            <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-4">
+                <GraduationCap className="w-6 h-6 text-white" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-display font-bold text-primary">
+                Create Account
+              </h1>
+              <p className="text-muted mt-1.5 text-sm">
+                Join the LCCB ETEEAP community
+              </p>
+            </motion.div>
+            <form onSubmit={handleSubmit}>
 
         {/* First Name */}
         <Input
@@ -230,7 +253,7 @@ export default function SignUp() {
             placeholder="Password"
             value={form.password}
             onChange={(e) => handleChange("password", e.target.value)}
-            className="w-full pl-10 pr-10 py-2 border rounded"
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
           />
           <button
             type="button"
@@ -252,7 +275,7 @@ export default function SignUp() {
             placeholder="Confirm Password"
             value={form.c_password}
             onChange={(e) => handleChange("c_password", e.target.value)}
-            className="w-full pl-10 pr-10 py-2 border rounded"
+            className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition"
           />
           <button
             type="button"
@@ -299,15 +322,15 @@ export default function SignUp() {
         </div>
 
         {/* Submit */}
-        <button
-          type="submit"
-          disabled={!agreed}
-          className={`w-full py-2 rounded text-white ${
-            agreed ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400"
-          }`}
-        >
-          Sign Up
-        </button>
+              <motion.div {...fadeUp} transition={{ delay: 0.3 }}>
+                <button
+                  type="submit"
+                  disabled={!agreed || submitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-xl transition disabled:opacity-50"
+                >
+                  {submitting ? "Creating Account..." : "Sign Up"}
+                </button>
+              </motion.div>
 
         {/* Divider */}
         <div className="relative my-4">
@@ -331,13 +354,12 @@ export default function SignUp() {
           />
         </div>
 
-        <p className="text-center text-sm text-gray-600 mt-4">
-            Already have an account?{" "}
-            <Link href="/auth/signin" className="text-blue-600 hover:underline font-medium"
-              >
-              Sign In
-            </Link>
-          </p>
+              <motion.p {...fadeUp} transition={{ delay: 0.35 }} className="text-center text-sm text-muted mt-6">
+                Already have an account?{" "}
+                <Link href="/auth/signin" className="text-blue-600 hover:text-blue-700 font-semibold transition">
+                  Sign In
+                </Link>
+              </motion.p>
 
       </form>
       {modalType && (
@@ -488,7 +510,9 @@ export default function SignUp() {
           </div>
         </div>
       )}
-      </div>
-      </section>
+          </div>
+        </div>
+      </motion.div>
+    </section>
   );
 }

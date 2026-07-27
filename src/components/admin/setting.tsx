@@ -2,12 +2,16 @@
 
 import Image from "next/image";
 import { Pencil } from "lucide-react";
+import { motion, useReducedMotion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
+import Reveal from "@/components/shared/Reveal";
+import Skeleton from "@/components/shared/Skeleton";
 
 export default function AdminSettings() {
+  const reduced = useReducedMotion();
   const { email } = useAuth();
   const [fullName, setFullName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string>("");
@@ -82,7 +86,6 @@ export default function AdminSettings() {
         { file, fields: {} },
         {
           onProgress: (progress) => {
-            console.log(`Upload progress: ${progress}%`);
           },
         }
       );
@@ -104,88 +107,101 @@ export default function AdminSettings() {
     }
   };
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-blue-700 mb-8">
-        Admin Settings
-      </h1>
-
-      {successMessage && (
-        <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-800 rounded-lg">
-          {successMessage}
+    <div className="min-h-screen bg-section-warm p-4 sm:p-6">
+      <div className="mx-auto max-w-3xl">
+        {/* Page Header */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Configuration</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Admin Settings</h1>
+          <p className="mt-1 text-sm text-slate-500">Manage your admin profile and preferences.</p>
         </div>
-      )}
 
-      {errorMessage && (
-        <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-800 rounded-lg">
-          {errorMessage}
-        </div>
-      )}
+        {successMessage && (
+          <div className="mb-6 rounded-xl bg-green-50 p-4 text-sm font-medium text-green-800 ring-1 ring-green-200">{successMessage}</div>
+        )}
 
-      {loading ? (
-        <div className="text-center py-12">
-          <p className="text-gray-600">Loading settings...</p>
-        </div>
-      ) : (
-        <div className="bg-white shadow-lg rounded-2xl p-6 border border-gray-200">
-          <div className="flex items-center gap-6 mb-8">
-            <Image
-              src={avatarUrl || "/bruma.jpg"}
-              alt="Profile"
-              width={112}
-              height={112}
-              className="w-28 h-28 rounded-full border-4 border-blue-500 object-cover shadow-md"
-            />
+        {errorMessage && (
+          <div className="mb-6 rounded-xl bg-red-50 p-4 text-sm font-medium text-red-800 ring-1 ring-red-200">{errorMessage}</div>
+        )}
 
-            <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl shadow-md transition disabled:opacity-60"
-              style={{ pointerEvents: uploading ? "none" : "auto" }}>
-              {uploading ? "Uploading..." : "Change Photo"}
-              <input 
-                type="file" 
-                className="hidden" 
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                disabled={uploading}
+        {loading ? (
+          <div className="rounded-xl bg-white p-8 shadow-sm ring-1 ring-slate-200/30">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8">
+              <Skeleton className="h-16 w-16 rounded-full shrink-0" />
+              <div className="flex-1 space-y-3">
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-40" />
+            </div>
+          </div>
+        ) : (
+          <Reveal>
+          <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-slate-200/30 sm:p-8">
+            <motion.div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8" whileHover={reduced ? undefined : { scale: 1.05 }}>
+              <Image
+                src={avatarUrl || "/bruma.jpg"}
+                alt="Profile"
+                width={100}
+                height={100}
+                className="w-24 h-24 rounded-full border-4 border-blue-500 object-cover shadow-md"
               />
-            </label>
-          </div>
 
-          <div className="mb-6 relative">
-            <label className="block text-gray-700 font-semibold mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              name="fullname"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              className="w-full border px-4 py-3 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 transition"
-            />
-            <Pencil className="absolute right-3 top-9 w-5 h-5 text-gray-500" />
-          </div>
+              <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs disabled:opacity-60"
+                style={{ pointerEvents: uploading ? "none" : "auto" }}>
+                {uploading ? "Uploading..." : "Change Photo"}
+                <input 
+                  type="file" 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                  disabled={uploading}
+                />
+              </label>
+            </motion.div>
 
-          <div className="mb-6 relative">
-            <label className="block text-gray-700 font-semibold mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={email || ""}
-              disabled
-              className="w-full border px-4 py-3 rounded-xl bg-gray-100 text-gray-600 cursor-not-allowed"
-            />
-          </div>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Full Name</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  name="fullname"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition outline-none"
+                />
+                <Pencil className="absolute right-3 top-3 w-4 h-4 text-slate-400" />
+              </div>
+            </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4">
-            <button 
-              onClick={handleSaveChanges}
-              disabled={saving || uploading}
-              className="bg-blue-700 hover:bg-blue-600 text-white px-10 py-4 rounded-xl shadow-xl font-semibold transition disabled:opacity-60 disabled:cursor-not-allowed">
-              {saving ? "Saving..." : "Save Changes"}
-            </button>
+            <div className="mb-6">
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={email || ""}
+                disabled
+                className="w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-500 cursor-not-allowed outline-none"
+              />
+            </div>
+
+            <div className="flex justify-end pt-2">
+              <button 
+                onClick={handleSaveChanges}
+                disabled={saving || uploading}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs disabled:opacity-60 disabled:cursor-not-allowed">
+                {saving ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
           </div>
-        </div>
-      )}
+          </Reveal>
+        )}
+      </div>
     </div>
   );
 }
