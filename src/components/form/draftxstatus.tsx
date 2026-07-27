@@ -6,6 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 const ALUMNI_DRAFT_KEY = "eteeap-alumni-draft";
 const APP_DRAFTS_KEY = "eteeap-application-drafts";
@@ -38,20 +39,18 @@ export default function Draft() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-
     const rawApps = window.localStorage.getItem(APP_DRAFTS_KEY);
     if (rawApps) {
       try {
         const parsed = JSON.parse(rawApps);
         if (Array.isArray(parsed)) setAppDrafts(parsed);
-      } catch { /* localStorage write failed — skip */ }
+      } catch { }
     }
-
     const rawAlumni = window.localStorage.getItem(ALUMNI_DRAFT_KEY);
     if (rawAlumni) {
       try {
         setAlumniDraft(JSON.parse(rawAlumni));
-      } catch { /* localStorage write failed — skip */ }
+      } catch { }
     }
   }, []);
 
@@ -83,7 +82,6 @@ export default function Draft() {
     } else {
       window.localStorage.removeItem(APP_DRAFTS_KEY);
     }
-    // Notify admin of draft deletion
     if (userEmail && deletedDraft) {
       const program = String(deletedDraft.programName || "Unknown Program");
       Fetch_to("/services/supabase/activity_logs", {
@@ -97,7 +95,6 @@ export default function Draft() {
 
   const handleDeleteAlumni = () => {
     if (typeof window === "undefined") return;
-    // Notify before deleting
     if (userEmail) {
       Fetch_to("/services/supabase/activity_logs", {
         mode: "insert",
@@ -113,78 +110,78 @@ export default function Draft() {
   const hasAny = appDrafts.length > 0 || alumniDraft !== null;
 
   return (
-    <div className="p-6 mt-24 mb-20">
-      <SectionHeading>My Drafts</SectionHeading>
+    <main>
+      {/* Hero */}
+      <section className="relative w-full h-64 md:h-72 flex items-center justify-center overflow-hidden bg-primary">
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="relative z-10 text-center px-6">
+          <SectionEyebrow className="text-white/80">Saved Work</SectionEyebrow>
+          <h1 className="text-4xl md:text-5xl font-bold text-white font-display">
+            My Drafts
+          </h1>
+          <p className="text-white/70 mt-4 max-w-xl mx-auto">
+            Continue where you left off or review your saved applications.
+          </p>
+        </div>
+      </section>
 
-      {!hasAny ? (
-        <Reveal>
-        <div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200/30 p-8 text-center text-slate-500">
-          No saved drafts. Start filling out an application form and save it as a draft to see it here.
-        </div>
-        </Reveal>
-      ) : (
-        <Reveal>
-        <div className="space-y-3">
-          {appDrafts.map((draft, i) => (
-            <motion.div key={`app-${i}`} className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200/30" whileHover={reduced ? undefined : { y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <div>
-                  <div className="text-md font-semibold text-slate-900">{getDraftLabel(draft)}</div>
-                  <div className="mt-1 text-sm text-slate-600">
-                    {getDraftName(draft)} &bull; {formatCreatedAt(String(draft.created_at ?? draft.createdAt ?? ""))}
+      <div className="max-w-5xl mx-auto px-6 py-20">
+        {!hasAny ? (
+          <Reveal>
+            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-12 text-center text-slate-500">
+              <p className="text-lg">No saved drafts yet.</p>
+              <p className="text-sm mt-2">Start filling out an application form and save it as a draft to see it here.</p>
+            </div>
+          </Reveal>
+        ) : (
+          <Reveal>
+            <div className="space-y-4">
+              {appDrafts.map((draft, i) => (
+                <motion.div
+                  key={`app-${i}`}
+                  className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-5"
+                  whileHover={reduced ? undefined : { y: -2, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <div className="text-md font-semibold text-slate-900">{getDraftLabel(draft)}</div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        {getDraftName(draft)} &bull; {formatCreatedAt(String(draft.created_at ?? draft.createdAt ?? ""))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleContinueApp(draft)} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Continue</button>
+                      <button onClick={() => handleDeleteApp(i)} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors">Delete</button>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleContinueApp(draft)}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Continue
-                  </button>
-                  <button
-                    onClick={() => handleDeleteApp(i)}
-                    className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-          {alumniDraft && (
-            <motion.div className="rounded-xl bg-white shadow-sm ring-1 ring-slate-200/30" whileHover={reduced ? undefined : { y: -4, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}>
-              <div className="flex items-center justify-between border-b px-4 py-3">
-                <div>
-                  <div className="text-md font-semibold text-slate-900">
-                    {getDraftLabel(alumniDraft)}
-                    <span className="ml-2 inline-flex items-center rounded-full bg-purple-100 px-2 py-0.5 text-xs font-medium text-purple-700">
-                      Alumni
-                    </span>
+                </motion.div>
+              ))}
+              {alumniDraft && (
+                <motion.div
+                  className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-5"
+                  whileHover={reduced ? undefined : { y: -2, boxShadow: "0 8px 30px rgba(0,0,0,0.08)" }}
+                >
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div>
+                      <div className="text-md font-semibold text-slate-900">
+                        {getDraftLabel(alumniDraft)}
+                        <span className="ml-2 inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-700">Alumni</span>
+                      </div>
+                      <div className="mt-1 text-sm text-slate-600">
+                        {getDraftName(alumniDraft)} &bull; {formatCreatedAt(String(alumniDraft.created_at ?? alumniDraft.createdAt ?? ""))}
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => handleContinueAlumni()} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors">Continue</button>
+                      <button onClick={handleDeleteAlumni} className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors">Delete</button>
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm text-slate-600">
-                    {getDraftName(alumniDraft)} &bull; {formatCreatedAt(String(alumniDraft.created_at ?? alumniDraft.createdAt ?? ""))}
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleContinueAlumni()}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-                  >
-                    Continue
-                  </button>
-                  <button
-                    onClick={handleDeleteAlumni}
-                    className="rounded-md bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </div>
-        </Reveal>
-      )}
-    </div>
+                </motion.div>
+              )}
+            </div>
+          </Reveal>
+        )}
+      </div>
+    </main>
   );
 }

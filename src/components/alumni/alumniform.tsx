@@ -7,6 +7,7 @@ import Fetch_to from "@/utilities/Fetch_to";
 import { useAuth } from "@/context/AuthContext";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 type WorkExperience = {
   companyName: string;
@@ -336,11 +337,27 @@ export default function JoinAlumniPage() {
     }
   };
 
+  const heroSection = (
+    <section className="relative w-full h-72 flex items-center justify-center overflow-hidden bg-primary">
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 text-center px-6">
+        <SectionEyebrow className="text-white/80">Community</SectionEyebrow>
+        <h1 className="text-4xl md:text-5xl font-bold text-white font-display">Alumni Registration</h1>
+        <p className="text-white/70 mt-4 max-w-xl mx-auto">
+          Build your verified alumni profile for the LCCB ETEEAP community.
+        </p>
+      </div>
+    </section>
+  );
+
   if (existingProfile === "checking") {
     return (
-      <main className="min-h-screen py-10 px-4 mt-12">
-        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8 text-center">
-          <p className="text-gray-600">Checking your alumni status...</p>
+      <main>
+        {heroSection}
+        <div className="max-w-5xl mx-auto px-6 py-20">
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-12 text-center">
+            <p className="text-slate-500">Checking your alumni status...</p>
+          </div>
         </div>
       </main>
     );
@@ -348,32 +365,34 @@ export default function JoinAlumniPage() {
 
   if (existingProfile === "exists") {
     return (
-      <main className="min-h-screen py-10 px-4 mt-12">
-        <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8 text-center">
-          <h1 className="text-2xl font-bold text-blue-800 mb-4">Already Submitted</h1>
-          <p className="text-gray-600 mb-4">
-            You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.
-          </p>
-          <button
-            onClick={() => router.push("/alumni")}
-            className="px-6 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800"
-          >
-            Back to Alumni
-          </button>
+      <main>
+        {heroSection}
+        <div className="max-w-5xl mx-auto px-6 py-20">
+          <div className="max-w-lg mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-12 text-center">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileText className="w-8 h-8 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3 font-display">Already Submitted</h2>
+            <p className="text-slate-500 mb-8">
+              You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.
+            </p>
+            <button
+              onClick={() => router.push("/alumni")}
+              className="rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              Back to Alumni
+            </button>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen py-10 px-4 mt-12">
-      <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8">
-        <div className="mb-8 border-b pb-5">
-          <SectionHeading>Alumni Slambook Registration</SectionHeading>
-          <p className="text-gray-500 mt-2">
-            Build your verified alumni profile for the LCCB ETEEAP community.
-          </p>
-        </div>
+    <main>
+      {heroSection}
+      <div className="max-w-5xl mx-auto px-6 py-20">
+        <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8 md:p-12">
 
         {successMessage && (
           <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-800 rounded-lg">
@@ -391,6 +410,7 @@ export default function JoinAlumniPage() {
           {/* Personal Information */}
           <Reveal>
           <div>
+            <SectionEyebrow>Your Information</SectionEyebrow>
             <h2 className="text-lg font-bold mb-4">Personal Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <input
@@ -398,7 +418,7 @@ export default function JoinAlumniPage() {
                 placeholder="Full Name"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
                 required
               />
               <input
@@ -406,7 +426,7 @@ export default function JoinAlumniPage() {
                 placeholder="Nickname"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
                 required
               />
               <input
@@ -414,7 +434,7 @@ export default function JoinAlumniPage() {
                 placeholder="Academic Year (ETEEAP 2024-2025)"
                 value={graduationYear}
                 onChange={(e) => setGraduationYear(e.target.value)}
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
                 required
               />
               <input
@@ -422,7 +442,7 @@ export default function JoinAlumniPage() {
                 name="birthday"
                 value={birthday}
                 onChange={(e) => setBirthday(e.target.value)}
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
                 required
               />
               <input
@@ -431,7 +451,7 @@ export default function JoinAlumniPage() {
                 placeholder="Email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
                 required
               />
             </div>
@@ -441,11 +461,12 @@ export default function JoinAlumniPage() {
           {/* Educational Attainment */}
           <Reveal delay={0.1}>
           <div>
+            <SectionEyebrow>Education</SectionEyebrow>
             <h2 className="text-lg font-bold mb-4">Educational Attainment</h2>
             <select
               value={educationalAttainment}
               onChange={(e) => setEducationalAttainment(e.target.value)}
-              className="border p-2 rounded w-full"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               required
             >
               <option value="">Select Educational Attainment</option>
@@ -460,11 +481,12 @@ export default function JoinAlumniPage() {
           {/* Program Information */}
           <Reveal delay={0.2}>
           <div>
+            <SectionEyebrow>Program</SectionEyebrow>
             <h2 className="text-lg font-bold mb-4">Program Information</h2>
             <select
               value={program}
               onChange={(e) => setProgram(e.target.value)}
-              className="border p-2 rounded w-full"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               required
             >
               <option value="">Select Program</option>
@@ -487,6 +509,7 @@ export default function JoinAlumniPage() {
           {/* Work Experience */}
           <Reveal delay={0.3}>
           <div>
+            <SectionEyebrow>Career</SectionEyebrow>
             <h2 className="text-lg font-bold mb-4">Work Experience</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <input
@@ -496,7 +519,7 @@ export default function JoinAlumniPage() {
                 onChange={(e) =>
                   setCurrentWork({ ...currentWork, companyName: e.target.value })
                 }
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               />
               <input
                 name="roleOrReason"
@@ -508,7 +531,7 @@ export default function JoinAlumniPage() {
                     roleOrReason: e.target.value,
                   })
                 }
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               />
               <input
                 name="workYear"
@@ -517,13 +540,13 @@ export default function JoinAlumniPage() {
                 onChange={(e) =>
                   setCurrentWork({ ...currentWork, workYear: e.target.value })
                 }
-                className="border p-3 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               />
               <button
                 type="button"
                 onClick={addWorkExperience}
                 disabled={!isCurrentWorkComplete}
-                className="bg-blue-700 text-white px-4 rounded"
+                className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors disabled:opacity-50"
               >
                 Add Experience
               </button>
@@ -560,7 +583,7 @@ export default function JoinAlumniPage() {
               <select
                 value={selectedCertificate}
                 onChange={(e) => setSelectedCertificate(e.target.value)}
-                className="border p-2 rounded w-full"
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               >
                 <option value="">Select Certificate</option>
                 <option>Not on the list</option>
@@ -573,7 +596,7 @@ export default function JoinAlumniPage() {
               <button
                 type="button"
                 onClick={addCertificate}
-                className="bg-blue-700 text-white px-4 rounded"
+                className="rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
               >
                 Add
               </button>
@@ -603,13 +626,14 @@ export default function JoinAlumniPage() {
           {/* Reflection */}
           <Reveal delay={0.5}>
           <div>
+            <SectionEyebrow>Reflection</SectionEyebrow>
             <h2 className="text-lg font-bold mb-4">Reflection</h2>
             <textarea
               name="experience"
               placeholder="How was your experience with LCCB ETEEAP?"
               value={experience}
               onChange={(e) => setExperience(e.target.value)}
-              className="border p-3 rounded w-full mb-4"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition mb-4"
               rows={4}
               required
             />
@@ -618,7 +642,7 @@ export default function JoinAlumniPage() {
               placeholder="How did the LCCB ETEEAP transform your career as a professional?"
               value={transformation}
               onChange={(e) => setTransformation(e.target.value)}
-              className="border p-3 rounded w-full"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               rows={4}
               required
             />
@@ -628,12 +652,13 @@ export default function JoinAlumniPage() {
           {/* Profile Visibility */}
           <Reveal delay={0.6}>
           <div>
+            <SectionEyebrow>Privacy</SectionEyebrow>
             <h2 className="text-lg font-bold mb-4">Profile Visibility</h2>
             <select
               name="visibility"
               value={visibility}
               onChange={(e) => setVisibility(e.target.value)}
-              className="border p-3 rounded w-full"
+              className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 placeholder-slate-400 ring-1 ring-transparent focus:ring-2 focus:ring-blue-500 focus:outline-hidden w-full transition"
               required
             >
               <option value="public">Public</option>
@@ -715,6 +740,7 @@ export default function JoinAlumniPage() {
           </div>
         </div>
       )}
+      </div>
     </main>
   );
 }

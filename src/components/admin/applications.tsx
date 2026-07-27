@@ -11,6 +11,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Reveal from "@/components/shared/Reveal";
+import Skeleton from "@/components/shared/Skeleton";
 
 type ApplicationStatus =
   | "draft"
@@ -148,56 +149,44 @@ export default function AdminApplications() {
   };
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        {/* Header Section */}
+    <main className="min-h-screen bg-section-warm p-4 sm:p-6">
+      <div className="mx-auto max-w-7xl">
+        {/* Page Header */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Applications</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Verify Applications</h1>
+          <p className="mt-1 text-sm text-slate-500">Review and manage all submitted applications from applicants.</p>
+        </div>
+
+        {/* Stats + Actions */}
         <Reveal>
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">
-                Application Management
-              </p>
-              <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
-                Verify Applications
-              </h1>
-              <p className="mt-2 text-sm text-slate-600">
-                Review and manage all submitted applications from applicants.
-              </p>
-            </div>
+        <div className="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-5">
 
-            <button
-              onClick={fetchApplications}
-              disabled={fetching}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
-            >
-              <RefreshCw className={fetching ? "animate-spin" : ""} size={16} />
-              Refresh
-            </button>
-
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="rounded-2xl bg-amber-50 px-4 py-3 text-center">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="rounded-xl bg-amber-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-amber-800">{totals.draft}</p>
-                <p className="text-xs uppercase tracking-wide text-amber-700">Draft</p>
+                <p className="text-xs uppercase tracking-wide text-amber-600">Draft</p>
               </div>
-              <div className="rounded-2xl bg-blue-50 px-4 py-3 text-center">
+              <div className="rounded-xl bg-blue-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-blue-800">{totals.underReview}</p>
                 <p className="text-xs uppercase tracking-wide text-blue-600">Under Review</p>
               </div>
-              <div className="rounded-2xl bg-green-50 px-4 py-3 text-center">
+              <div className="rounded-xl bg-green-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-green-800">{totals.accepted}</p>
-                <p className="text-xs uppercase tracking-wide text-green-700">Accepted</p>
+                <p className="text-xs uppercase tracking-wide text-green-600">Accepted</p>
               </div>
-              <div className="rounded-2xl bg-red-50 px-4 py-3 text-center">
+              <div className="rounded-xl bg-red-50 px-4 py-3 text-center">
                 <p className="text-2xl font-bold text-red-800">{totals.rejected}</p>
-                <p className="text-xs uppercase tracking-wide text-red-700">Rejected</p>
+                <p className="text-xs uppercase tracking-wide text-red-600">Rejected</p>
               </div>
             </div>
           </div>
+        </Reveal>
 
-          {/* Search */}
-          <div className="mt-6 flex max-w-xl items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-            <Search className="shrink-0 text-slate-500" size={18} />
+        {/* Search + Refresh */}
+        <div className="mb-6 flex items-center gap-3">
+          <div className="flex-1 flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm ring-1 ring-transparent focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500 transition-all">
+            <Search className="shrink-0 text-slate-400" size={18} />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -205,15 +194,48 @@ export default function AdminApplications() {
               className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
           </div>
-        </section>
-        </Reveal>
+          <button
+            onClick={fetchApplications}
+            disabled={fetching}
+            className="shrink-0 inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60 shadow-sm"
+          >
+            <RefreshCw className={fetching ? "animate-spin" : ""} size={16} />
+            Refresh
+          </button>
+        </div>
 
         {/* Loading State */}
         {fetching ? (
-          <div className="text-center py-12">
-            <RefreshCw className="animate-spin mx-auto mb-3 text-blue-600" size={32} />
-            <p className="text-slate-600">Loading applications...</p>
-          </div>
+          <>
+            {/* Mobile skeleton */}
+            <section className="space-y-4 md:hidden">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30">
+                  <Skeleton className="h-5 w-3/4 mb-3" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              ))}
+            </section>
+            {/* Desktop skeleton */}
+            <section className="hidden md:block overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30">
+              <div className="border-b border-slate-200 px-6 py-4">
+                <Skeleton className="h-6 w-48" />
+              </div>
+              <div className="p-6 space-y-4">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="flex gap-6">
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="h-5 w-56" />
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 w-36" />
+                    <Skeleton className="h-5 w-20 ml-auto" />
+                  </div>
+                ))}
+              </div>
+            </section>
+          </>
         ) : (
           <>
             {/* Mobile View */}
@@ -265,7 +287,7 @@ export default function AdminApplications() {
 
               <div className="overflow-x-auto">
                 <table className="w-full min-w-175">
-                  <thead className="bg-slate-50 text-left text-sm text-slate-600">
+                  <thead className="bg-blue-800 text-left text-sm text-white">
                     <tr>
                       <th className="px-6 py-4 font-semibold">Applicant</th>
                       <th className="px-6 py-4 font-semibold">Email</th>
@@ -275,9 +297,9 @@ export default function AdminApplications() {
                       <th className="px-6 py-4 font-semibold text-right">Action</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200">
+                  <tbody className="divide-y divide-slate-100 bg-white">
                     {sortedApplications.map((item) => (
-                      <motion.tr key={item.id} whileHover={reduced ? undefined : { backgroundColor: "rgba(0,0,0,0.02)" }} className="transition-colors">
+                      <motion.tr key={item.id} className="transition-colors hover:bg-blue-50/40">
                         <td className="px-6 py-4 text-sm font-medium text-slate-900">
                           {item.applicantName}
                         </td>
@@ -292,9 +314,9 @@ export default function AdminApplications() {
                         <td className="px-6 py-4 text-right">
                           <button
                             onClick={() => setSelectedApp(item)}
-                            className="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-3 py-2 text-sm font-medium text-blue-600 hover:bg-blue-100 transition"
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700 transition shadow-xs"
                           >
-                            <Eye size={16} />
+                            <Eye size={15} />
                             View
                           </button>
                         </td>

@@ -1,72 +1,148 @@
-## Task 1: Design tokens + Playfair Display
+# Task 1: CSS Foundation + Shared Components
 
-**Files:**
-- Modify: `src/app/layout.tsx`
+## Files
 - Modify: `src/app/globals.css`
+- Create: `src/components/shared/InteriorPage.tsx`
+- Create: `src/components/shared/AdminPage.tsx`
+- Create: `src/components/shared/SectionHeading.tsx`
 
-### Step 1: Add Playfair Display font to layout.tsx
+## Dependencies
+- Consumes: `Header`, `Footer` from `@/components/landpage`; `SideNav` from `@/components/admin`; `PageTransition` from `@/components/shared`
+- Consumes: `Fetch_to` from `@/utilities`; `api_link` from `@/config/api_link.json`
+- Produces: `<InteriorPage variant="public"|"auth" showFooter={true|false}>`, `<AdminPage>`, `<SectionHeading level="h1"|"h2"|"h3">`
 
-In `layout.tsx`, modify the imports and font definitions:
+## Step 1: Add `--bg-interior` token to globals.css
 
-```tsx
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
-
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-const playfairDisplay = Playfair_Display({
-  variable: "--font-playfair-display",
-  subsets: ["latin"],
-});
-```
-
-Update the `<html>` tag to include the playfair variable:
-```tsx
-<html lang="en" className={`${geistSans.variable} ${geistMono.variable} ${playfairDisplay.variable} h-full antialiased`}>
-```
-
-### Step 2: Replace globals.css with the full color token system
-
-Replace the entire `src/app/globals.css` with:
-
+Add to the `:root` block in `src/app/globals.css`:
 ```css
-@import "tailwindcss";
+--bg-interior: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(30, 58, 95, 0.04) 0%, transparent 60%);
+```
 
-:root {
-  --background: #ffffff;
-  --foreground: #0f172a;
-  --primary: #1e3a5f;
-  --primary-light: #2d4f7a;
-  --accent: #d97706;
-  --surface-warm: #f8f6f3;
-  --surface-muted: #f0ede8;
-  --muted: #64748b;
-  --success: #16a34a;
-  --error: #dc2626;
-}
+## Step 2: Create `<SectionHeading>` component
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-primary: var(--primary);
-  --color-primary-light: var(--primary-light);
-  --color-accent: var(--accent);
-  --color-surface-warm: var(--surface-warm);
-  --color-surface-muted: var(--surface-muted);
-  --color-muted: var(--muted);
-  --color-success: var(--success);
-  --color-error: var(--error);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-display: var(--font-playfair-display);
-}
+File: `src/components/shared/SectionHeading.tsx`:
+```tsx
+"use client";
+import { ReactNode } from "react";
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+type SectionHeadingProps = {
+  children: ReactNode;
+  level?: "h1" | "h2" | "h3";
+  className?: string;
+};
+
+export default function SectionHeading({ children, level = "h2", className = "" }: SectionHeadingProps) {
+  const Tag = level;
+  const sizeMap = { h1: "text-3xl sm:text-4xl", h2: "text-2xl sm:text-3xl", h3: "text-xl sm:text-2xl" };
+  return (
+    <div className={`mb-6 ${className}`}>
+      <Tag className={`font-display font-bold text-primary ${sizeMap[level]}`}>
+        {children}
+      </Tag>
+      <div className="mt-2 h-1 w-12 bg-primary rounded-full" />
+    </div>
+  );
 }
 ```
 
-### Verification
-- `npx tsc --noEmit` should pass
-- `npm run build` should pass (or at minimum lint)
+## Step 3: Create `<InteriorPage>` component
+
+File: `src/components/shared/InteriorPage.tsx`:
+```tsx
+"use client";
+import { useEffect, useState, type ReactNode } from "react";
+import { Fetch_to } from "@/utilities";
+import api_link from "@/config/api_link.json";
+import { Header, Footer } from "@/components/landpage";
+import PageTransition from "@/components/shared/PageTransition";
+import { usePathname } from "next/navigation";
+
+type Props = { children: ReactNode; variant?: "public" | "auth"; showFooter?: boolean };
+
+export default function InteriorPage({ children, variant = "public", showFooter = true }: Props) {
+  const [showProfile, setShowProfile] = useState(false);
+  const [email, setEmail] = useState("");
+  const pathname = usePathname();
+  const isSigninOrSignup = pathname === "/auth/signin" || pathname === "/auth/signup";
+
+  useEffect(() => {
+    const verify = async () => {
+      const response = await Fetch_to(api_link.jwt.verify);
+      if (response.success) {
+        const data = response.data.message.final_data.data[0];
+        setShowProfile(true);
+        setEmail(data.email);
+      } else {
+        setShowProfile(false);
+      }
+    };
+    verify();
+  }, []);
+
+  return (
+    <PageTransition>
+      {variant === "public" ? (
+        <div className="min-h-screen bg-surface-warm" style={{ backgroundImage: "var(--bg-interior)" }}>
+          <Header showProfile={showProfile} email={email} />
+          {children}
+          {showFooter && <Footer />}
+        </div>
+      ) : (
+        <>
+          {isSigninOrSignup && <Header showProfile={showProfile} email={email} />}
+          {children}
+        </>
+      )}
+    </PageTransition>
+  );
+}
+```
+
+## Step 4: Create `<AdminPage>` component
+
+File: `src/components/shared/AdminPage.tsx`:
+```tsx
+"use client";
+import { useEffect, type ReactNode } from "react";
+import { useRouter } from "next/navigation";
+import { Fetch_to } from "@/utilities";
+import api_link from "@/config/api_link.json";
+import { SideNav } from "@/components/admin";
+import PageTransition from "@/components/shared/PageTransition";
+
+type Props = { children: ReactNode };
+
+export default function AdminPage({ children }: Props) {
+  const router = useRouter();
+
+  useEffect(() => {
+    const verify = async () => {
+      const response = await Fetch_to(api_link.jwt.verify);
+      if (!response.success) router.push("/");
+    };
+    verify();
+  }, [router]);
+
+  return (
+    <PageTransition className="flex min-h-screen bg-surface-warm" style={{ backgroundImage: "var(--bg-interior)" }}>
+      <div className="md:w-64 shrink-0">
+        <SideNav />
+      </div>
+      <div className="flex-1 overflow-hidden">
+        {children}
+      </div>
+    </PageTransition>
+  );
+}
+```
+
+## Verification
+```bash
+npx tsc --noEmit --pretty 2>&1 | Select-String -Pattern "InteriorPage|AdminPage|SectionHeading"
+```
+
+## Commit
+```bash
+git add src/app/globals.css src/components/shared/InteriorPage.tsx src/components/shared/AdminPage.tsx src/components/shared/SectionHeading.tsx
+git commit -m "feat: add interior design tokens and shared page wrapper components"
+```

@@ -20,6 +20,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Reveal from "@/components/shared/Reveal";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 const DOCUMENTS = [
   { key: "letterOfIntent", label: "Letter of Intent", required: true },
@@ -341,10 +342,24 @@ export default function ApplicationStatus() {
     ? Math.round((requiredUploadedCount / requiredDocuments.length) * 100)
     : 0;
 
+  const heroSection = (
+    <section className="relative w-full h-72 flex items-center justify-center overflow-hidden bg-primary">
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 text-center px-6">
+        <SectionEyebrow className="text-white/80">Application</SectionEyebrow>
+        <h1 className="text-4xl md:text-5xl font-bold text-white font-display">Status</h1>
+        <p className="text-white/70 mt-4 max-w-xl mx-auto">
+          Track your application progress, review submitted documents, and manage your enrollment.
+        </p>
+      </div>
+    </section>
+  );
+
   if (loading) {
     return (
-      <main className="min-h-screen pt-20">
-        <div className="max-w-6xl mx-auto px-4 py-12">
+      <main>
+        {heroSection}
+        <div className="max-w-6xl mx-auto px-4 py-20">
           <div className="flex items-center justify-center p-12">
             <Loader className="w-8 h-8 animate-spin text-blue-600" />
           </div>
@@ -355,34 +370,48 @@ export default function ApplicationStatus() {
 
   if (!app) {
     return (
-      <main className="min-h-screen pt-20">
-        <div className="max-w-6xl mx-auto px-4 py-12">
+      <main>
+        {heroSection}
+        <div className="max-w-6xl mx-auto px-4 py-20">
           {alumniProfile ? (
             <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-8">
               <AlumniStatusCard profile={alumniProfile} />
-              <div className="text-center mt-6 text-gray-500 text-sm">
-                No program application found.{" "}
-                <button onClick={() => router.push("/courses")} className="text-blue-600 hover:underline font-medium">
-                  Apply to a program
+              <div className="text-center mt-8 pt-6 border-t border-slate-100">
+                <SectionEyebrow className="text-slate-400">Next Step</SectionEyebrow>
+                <p className="text-slate-600 mt-2 mb-5">You haven&apos;t submitted a program application yet.</p>
+                <button
+                  onClick={() => router.push("/courses")}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs"
+                >
+                  Apply to a Program
                 </button>
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-8 text-center">
-              <p className="text-gray-600 mb-4">No applications or alumni registrations found.</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => router.push("/courses")}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                  Apply to Program
-                </button>
-                <button
-                  onClick={() => router.push("/alumni/alumniform")}
-                  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  Join Alumni
-                </button>
+            <div className="max-w-lg mx-auto text-center">
+              <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-12">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <FileText className="w-8 h-8 text-slate-400" />
+                </div>
+                <SectionEyebrow className="text-slate-400">Get Started</SectionEyebrow>
+                <h2 className="text-2xl font-bold text-slate-900 mt-3 mb-2 font-display">No Applications Yet</h2>
+                <p className="text-slate-500 mb-8">
+                  No applications or alumni registrations found. Choose your path below.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => router.push("/courses")}
+                    className="flex-1 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs"
+                  >
+                    Apply to Program
+                  </button>
+                  <button
+                    onClick={() => router.push("/alumni/alumniform")}
+                    className="flex-1 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50 transition-colors"
+                  >
+                    Join Alumni
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -410,7 +439,9 @@ export default function ApplicationStatus() {
   };
 
   return (
-    <main className="min-h-screen pt-20">
+    <main>
+      {heroSection}
+
       {/* Toast Notification */}
       {toast && (
         <div
@@ -426,16 +457,16 @@ export default function ApplicationStatus() {
         </div>
       )}
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header Section */}
+      <div className="max-w-6xl mx-auto px-4 py-20">
+        {/* Status Card */}
         <Reveal>
-        <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-sm p-8">
+        <div className="mb-12">
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8">
             <div className="grid md:grid-cols-3 gap-8">
               <div className="md:col-span-2">
-                <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                <h2 className="text-4xl font-bold text-gray-900 mb-2">
                   {app.program}
-                </h1>
+                </h2>
                 <p className="text-lg text-gray-600 mb-4">{app.applicantName}</p>
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Clock className="w-4 h-4" />
@@ -470,13 +501,12 @@ export default function ApplicationStatus() {
         </Reveal>
 
         {/* Progress Overview */}
+        <section className="mb-12">
+          <SectionEyebrow className="text-center">Progress</SectionEyebrow>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8 font-display">Progress Overview</h2>
         <Reveal>
-        <div className="mb-8">
-          <div className="bg-white rounded-2xl shadow-sm p-8">
-            <div className="flex items-center gap-3 mb-6">
-              <BarChart3 className="w-6 h-6 text-blue-600" />
-              <h2 className="text-2xl font-bold text-gray-900">Progress Overview</h2>
-            </div>
+        <div>
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-8">
 
             {/* Progress Bar */}
             <div className="mb-8">
@@ -516,9 +546,11 @@ export default function ApplicationStatus() {
         </div>
         </Reveal>
 
+        </section>
+
         {/* Read-only Mode Banner */}
         {readOnly && (
-          <div className="mb-8 bg-amber-50 border border-amber-200 rounded-xl p-6 flex gap-4">
+          <div className="mb-12 bg-amber-50 border border-amber-200 rounded-xl p-6 flex gap-4">
             <AlertCircle className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <p className="font-semibold text-amber-900 mb-1">Application Read-Only</p>
@@ -530,9 +562,11 @@ export default function ApplicationStatus() {
         )}
 
         {/* Documents Section */}
+        <section>
+          <SectionEyebrow className="text-center">Requirements</SectionEyebrow>
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-8 font-display">Documents & Status</h2>
         <Reveal>
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Documents & Status</h2>
+        <div className="mb-12">
           <div className="grid md:grid-cols-2 gap-6">
             {DOCUMENTS.map((d) => {
               const val = app[d.key];
@@ -716,6 +750,7 @@ export default function ApplicationStatus() {
           </div>
         </div>
         </Reveal>
+        </section>
 
         {/* Action Buttons */}
         <Reveal>

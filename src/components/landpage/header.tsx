@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Myprofile } from "@/components/myprofile";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
@@ -341,13 +342,13 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
         </>
       ) : null}
 
-      {profileModalOpen ? (
+      {profileModalOpen && typeof document === "object" ? createPortal(
         <Myprofile
           modal
           onClose={() => {
             setProfileModalOpen(false);
           }}
-        />
+        />, document.body
       ) : null}
     </header>
   );

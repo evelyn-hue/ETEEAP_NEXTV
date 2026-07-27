@@ -6,6 +6,7 @@ import Fetch_toFile from "@/utilities/Fetch_toFile";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 import SectionHeading from "@/components/shared/SectionHeading";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 import Reveal from "@/components/shared/Reveal";
 
 const DRAFTS_KEY = "eteeap-application-drafts";
@@ -354,6 +355,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-6 md:p-8">
             <div className="grid md:grid-cols-2 gap-4 md:gap-6 items-center">
               <div>
+                <SectionEyebrow>Summary</SectionEyebrow>
                 <SectionHeading>Application Review</SectionHeading>
                 <p className="text-slate-600 text-lg">{programName}</p>
               </div>

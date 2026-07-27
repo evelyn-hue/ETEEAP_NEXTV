@@ -37,7 +37,7 @@ function PwaMeta() {
     document.head.appendChild(themeColor);
 
     const appleCapable = document.createElement("meta");
-    appleCapable.name = "apple-mobile-web-app-capable";
+    appleCapable.name = "mobile-web-app-capable";
     appleCapable.content = "yes";
     document.head.appendChild(appleCapable);
 

@@ -16,6 +16,7 @@ import apiLinks from "@/config/api_link.json";
 import Reveal from "@/components/shared/Reveal";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
+import Skeleton from "@/components/shared/Skeleton";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
 type FormStatus = "Under Review" | "Approve" | "Reject" | "Draft" | "Delete";
@@ -714,54 +715,51 @@ export default function Application() {
   };
 
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <Reveal>
-        <section className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-6">
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:items-center">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-700">
-                Applications
-              </p>
-              <h1 className="mt-2 text-2xl font-bold text-slate-900 sm:text-3xl">
-                Review submitted applications
-              </h1>
-              <p className="mt-2 text-sm text-slate-600">
-                Open a record to verify, reject, and remark each uploaded document.
-              </p>
-            </div>
+    <main className="min-h-screen bg-section-warm">
+      <div className="p-4 sm:p-6 mx-auto max-w-7xl space-y-6">
+        {/* Page Header */}
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Applications</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Review Applications</h1>
+          <p className="mt-1 text-sm text-slate-500">Open a record to verify, reject, and remark each uploaded document.</p>
+        </div>
 
-            <div className="flex w-full flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 lg:flex-row lg:flex-wrap lg:items-center">
-              <Search className="text-slate-500" size={18} />
+        {/* Search & Filters */}
+        <Reveal>
+        <div className="rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-5">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+            <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 flex-1">
+              <Search className="text-slate-400" size={18} />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search applicant..."
-                className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400 lg:w-64"
+                className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
               />
-              <select
-                value={programFilter}
-                onChange={(e) => setProgramFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none sm:w-auto"
-              >
-                {programOptions.map((program) => (
-                  <option key={program} value={program}>
-                    {program}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 outline-none sm:w-auto"
-              >
-                <option value="All Status">All Status</option>
-                <option value="Under Review">Under Review</option>
-                <option value="Approve">Approve</option>
-                <option value="Reject">Reject</option>
-                <option value="Delete">Delete</option>
-              </select>
+            </div>
+            <select
+              value={programFilter}
+              onChange={(e) => setProgramFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              {programOptions.map((program) => (
+                <option key={program} value={program}>
+                  {program}
+                </option>
+              ))}
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/30"
+            >
+              <option value="All Status">All Status</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Approve">Approve</option>
+              <option value="Reject">Reject</option>
+              <option value="Delete">Delete</option>
+            </select>
               <input
                 type="date"
                 value={dateFilter}
@@ -777,15 +775,19 @@ export default function Application() {
               </button>
             </div>
           </div>
-        </section>
         </Reveal>
 
         <Reveal>
         <section className="space-y-4 md:hidden">
           {loading ? (
-            <div className="flex items-center justify-center rounded-3xl bg-white p-8 text-slate-600 shadow-sm ring-1 ring-slate-200/30">
-              <Loader2 className="mr-2 animate-spin" size={18} />
-              Loading applications...
+            <div className="space-y-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30">
+                  <Skeleton className="h-5 w-3/4 mb-3" />
+                  <Skeleton className="h-4 w-1/2 mb-2" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+              ))}
             </div>
           ) : null}
           {!loading && error ? (
@@ -857,9 +859,16 @@ export default function Application() {
         <Reveal>
         <section className="hidden overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200/30 md:block">
           {loading ? (
-            <div className="flex items-center justify-center p-8 text-slate-600">
-              <Loader2 className="mr-2 animate-spin" size={18} />
-              Loading applications...
+            <div className="p-6 space-y-5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex gap-6">
+                  <Skeleton className="h-5 w-44" />
+                  <Skeleton className="h-5 w-60" />
+                  <Skeleton className="h-5 w-36" />
+                  <Skeleton className="h-5 w-28" />
+                  <Skeleton className="h-5 w-20 ml-auto" />
+                </div>
+              ))}
             </div>
           ) : null}
           {!loading && error ? (
@@ -867,7 +876,7 @@ export default function Application() {
           ) : null}
           <div className="overflow-x-auto">
             <table className="w-full min-w-245 text-left">
-              <thead className="bg-slate-50 text-sm text-slate-600">
+              <thead className="bg-blue-800 text-sm text-white">
                 <tr>
                   <th className="px-6 py-4 font-semibold">Applicant</th>
                   <th className="px-6 py-4 font-semibold">Program</th>

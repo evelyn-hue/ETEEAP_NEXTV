@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
+import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 const eteeapFormId = [
   "1FAIpQLScTWK7hH2",
@@ -314,6 +315,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         Back to Programs
       </Link>
 
+      <SectionEyebrow className="text-center">Application</SectionEyebrow>
       <SectionHeading>Apply for {programName}</SectionHeading>
       <p className="text-center text-sm text-gray-600 mb-6">
         Applicant: {applicantName || "Unnamed user"}
@@ -350,6 +352,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         </div>
 
         <div className="mt-6 mb-4">
+          <SectionEyebrow>Documents</SectionEyebrow>
           <h2 className="text-xl font-semibold text-blue-800">
             Upload Documents
           </h2>

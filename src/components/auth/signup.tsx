@@ -111,7 +111,7 @@ export default function SignUp() {
     return Object.keys(validationErrors).length === 0;
   };
 
-    const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!validateForm()) return;
     setSubmitting(true);

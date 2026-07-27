@@ -1,9 +1,8 @@
-import Image from "next/image";
-import imgSrc from "@/config/img_src.json";
+
 
 export default function Footer() {
   return (
-    <footer className="bg-blue-800 text-white pt-12 pb-6 relative overflow-hidden">
+    <footer className="bg-[#1e3a5f] text-white pt-12 pb-6 relative overflow-hidden">
 
       {/* MAIN CONTENT */}
       <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center md:items-start justify-between gap-6">
@@ -11,22 +10,9 @@ export default function Footer() {
         {/* LEFT: LOGOS + DESCRIPTION */}
         <div className="flex-1 flex flex-col items-start justify-start gap-4">
 
-          <div className="flex items-center gap-4">
-            <Image
-              src={imgSrc.lccblogo}
-              alt="LCCB Logo"
-              width={110}
-              height={110}
-              className="object-contain"
-            />
-
-            <Image
-              src={imgSrc.eteeapLogo}
-              alt="ETEEAP Logo"
-              width={110}
-              height={110}
-              className="object-contain"
-            />
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold text-white">LCCB</span>
+            <span className="text-sm font-semibold text-blue-200 border-l border-blue-400 pl-2">ETEEAP</span>
           </div>
 
           <p className="text-gray-300 leading-relaxed max-w-sm mt-2">

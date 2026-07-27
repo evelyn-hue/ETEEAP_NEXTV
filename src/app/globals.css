@@ -35,3 +35,24 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+.text-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  font-weight: 600;
+  color: #2563eb;
+  text-transform: uppercase;
+}
+
+.bg-section-warm {
+  background-color: #f8f6f3;
+}
+
+.bg-section-navy {
+  background-color: #1e3a5f;
+  color: #ffffff;
+}
+
+.section-eyebrow + * {
+  margin-top: 0.5rem;
+}
