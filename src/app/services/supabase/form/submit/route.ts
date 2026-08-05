@@ -75,9 +75,9 @@ export async function POST(req: NextRequest) {
           { status: 400 },
         );
       }
-      if (file.size > 10 * 1024 * 1024) {
-        return NextResponse.json(
-          { success: false, error: `File "${file.name}" exceeds the 10MB limit.` },
+if (file.size > 5 * 1024 * 1024) {
+    return NextResponse.json(
+      { success: false, error: `File "${file.name}" exceeds the 5MB limit.` },
           { status: 400 },
         );
       }

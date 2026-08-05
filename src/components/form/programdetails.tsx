@@ -150,8 +150,8 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         (event.target as HTMLInputElement).value = "";
         return;
       }
-      if (file.size > 10 * 1024 * 1024) {
-        setError(`"${file.name}" exceeds the 10MB file size limit.`);
+if (file.size > 5 * 1024 * 1024) {
+    setError(`"${file.name}" exceeds the 5MB file size limit.`);
         (event.target as HTMLInputElement).value = "";
         return;
       }
@@ -378,7 +378,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
             { id: "letterOfIntent", multiple: false, note: "Click to select file", show: true },
             { id: "resume", multiple: false, note: "Click to select file", show: true },
             { id: "picture", multiple: false, note: "Click to select file", accept: "image/*", show: true },
-            { id: "applicationForm", multiple: false, note: "Submit a screenshot of your completed Google Form.", showForm: true, show: true },
+            { id: "applicationForm", multiple: false, note: "Submit a screenshot of your completed Google Form.", showForm: false, show: true },
             { id: "recommendationLetter", multiple: false, note: "Click to select file", show: true },
             { id: "schoolCredentials", multiple: false, note: "Click to select file", show: true },
             { id: "highSchoolDiploma", multiple: false, note: "Click to select file", show: true },
@@ -491,6 +491,17 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
           ))}
         </div>
         </Reveal>
+
+        <div className="mt-6 text-center">
+          <Link
+            href={eteeapFormUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            Fill ETEEAP Form Online <FaExternalLinkAlt size={12} />
+          </Link>
+        </div>
 
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
