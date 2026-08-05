@@ -3,11 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, GraduationCap } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { GoogleLogin } from "@react-oauth/google";
 import { Fetch_to } from "@/utilities";
 import apiLink from "@/config/api_link.json";
+import imgSrc from "@/config/img_src.json";
 import { useAuth } from "@/context/AuthContext";
 
 export default function SignIn() {
@@ -107,8 +109,8 @@ export default function SignIn() {
           <div className="h-1.5 bg-blue-600" />
           <div className="p-8 sm:p-10">
             <motion.div {...fadeUp} transition={{ delay: 0.1 }} className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-4">
-                <GraduationCap className="w-6 h-6 text-white" />
+              <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-blue-600 mb-4 overflow-hidden p-2">
+                <Image src={imgSrc.eteeapLogo} alt="ETEEAP" width={40} height={40} className="object-contain" />
               </div>
               <h1 className="text-2xl sm:text-3xl font-display font-bold text-primary">
                 Welcome Back

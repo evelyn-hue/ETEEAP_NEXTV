@@ -34,6 +34,7 @@ type AlumniProfile = {
   transformation: string | null;
   visibility: "public" | "private";
   verification_status: AlumniStatus;
+  is_graduate?: boolean;
   created_at: string;
 };
 
@@ -67,6 +68,7 @@ function AlumniActions({
   onVerify,
   onReject,
   onDelete,
+  onToggleGraduate,
   loading,
 }: {
   item: AlumniProfile;
@@ -74,6 +76,7 @@ function AlumniActions({
   onVerify: () => void;
   onReject: () => void;
   onDelete: () => void;
+  onToggleGraduate: () => void;
   loading: boolean;
 }) {
   return (
@@ -104,6 +107,20 @@ function AlumniActions({
         <FiUserX />
         Reject
       </button>
+      {item.verification_status === "verified" && (
+        <button
+          type="button"
+          onClick={onToggleGraduate}
+          disabled={loading}
+          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+            item.is_graduate
+              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+              : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+          }`}
+        >
+          {item.is_graduate ? "✓ Graduate" : "Mark Graduate"}
+        </button>
+      )}
       {item.verification_status === "rejected" ? (
         <button
             type="button"
@@ -123,6 +140,7 @@ export default function AdminAlumni() {
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [fetching, setFetching] = useState(true);
   const [query, setQuery] = useState("");
+  const [graduateFilter, setGraduateFilter] = useState<"all" | "graduate" | "non-graduate">("all");
   const [selectedAlumni, setSelectedAlumni] = useState<AlumniProfile | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
@@ -187,7 +205,10 @@ export default function AdminAlumni() {
 
   const filteredAlumni = alumni.filter((item) => {
     const haystack = `${item.full_name} ${item.email} ${item.programs?.join(" ") || ""} ${item.verification_status}`.toLowerCase();
-    return haystack.includes(query.toLowerCase());
+    if (!haystack.includes(query.toLowerCase())) return false;
+    if (graduateFilter === "graduate") return item.is_graduate === true;
+    if (graduateFilter === "non-graduate") return !item.is_graduate;
+    return true;
   });
 
   const sortedAlumni = useMemo(() => {
@@ -272,6 +293,46 @@ export default function AdminAlumni() {
       });
       setTimeout(() => setToast(null), 3000);
       console.error("Error updating status:", error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const toggleGraduate = async (id: string, current: boolean) => {
+    setUpdatingId(id);
+    try {
+      const result = await Fetch_to(
+        "/services/supabase/alumni_profiles/update",
+        { id, is_graduate: !current }
+      );
+
+      if (result.success) {
+        setAlumni((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, is_graduate: !current } : item
+          )
+        );
+        if (selectedAlumni?.id === id) {
+          setSelectedAlumni({ ...selectedAlumni, is_graduate: !current });
+        }
+        setToast({
+          message: `Marked as ${!current ? "graduate" : "non-graduate"}`,
+          type: "success",
+        });
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        setToast({
+          message: `Failed to update: ${result.message}`,
+          type: "error",
+        });
+        setTimeout(() => setToast(null), 3000);
+      }
+    } catch (error) {
+      setToast({
+        message: `Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+        type: "error",
+      });
+      setTimeout(() => setToast(null), 3000);
     } finally {
       setUpdatingId(null);
     }
@@ -373,8 +434,8 @@ export default function AdminAlumni() {
         </div>
         </Reveal>
 
-        {/* Search */}
-        <div className="mb-6">
+        {/* Search + Graduate Filter */}
+        <div className="mb-6 space-y-3">
           <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 shadow-sm ring-1 ring-transparent focus-within:ring-2 focus-within:ring-blue-500/30 focus-within:border-blue-500 transition-all">
             <FiSearch className="shrink-0 text-slate-400" size={18} />
             <input
@@ -383,6 +444,22 @@ export default function AdminAlumni() {
               placeholder="Search name, email, program, or status..."
               className="w-full min-w-0 bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
             />
+          </div>
+          <div className="flex gap-2">
+            {(["all", "graduate", "non-graduate"] as const).map((f) => (
+              <button
+                key={f}
+                type="button"
+                onClick={() => setGraduateFilter(f)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                  graduateFilter === f
+                    ? "bg-blue-600 text-white"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {f === "all" ? "All" : f === "graduate" ? "Graduates" : "Non-Graduates"}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -474,6 +551,7 @@ export default function AdminAlumni() {
                           void deleteAlumni(item.id);
                         }
                       }}
+                      onToggleGraduate={() => toggleGraduate(item.id, !!item.is_graduate)}
                       loading={updatingId === item.id}
                     />
                   </div>
@@ -532,6 +610,7 @@ export default function AdminAlumni() {
                                 void deleteAlumni(item.id);
                               }
                             }}
+                            onToggleGraduate={() => toggleGraduate(item.id, !!item.is_graduate)}
                             loading={updatingId === item.id}
                           />
                         </td>

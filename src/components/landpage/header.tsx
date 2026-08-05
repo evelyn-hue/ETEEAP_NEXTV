@@ -7,7 +7,6 @@ import { createPortal } from "react-dom";
 import { Myprofile } from "@/components/myprofile";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
-import imgSrc from "@/config/img_src.json";
 
 import { FaBars, FaEnvelope, FaTimes, FaUserCircle } from "react-icons/fa";
 // import { LiaJenkins } from "react-icons/lia";
@@ -96,21 +95,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               {isMobileNavOpen ? <FaTimes className="text-xl" /> : <FaBars className="text-xl" />}
             </button>
           ) : null}
-          <Image
-            src={imgSrc.lccblogo}
-            alt="LCCB Logo"
-            width={65}
-            height={65}
-            className="object-contain"
-          />
-
-          <Image
-            src={imgSrc.eteeapLogo}
-            alt="ETEEAP Logo"
-            width={65}
-            height={65}
-            className="object-contain"
-          />
+          <span className="text-lg font-bold text-primary tracking-tight">LCCB ETEEAP</span>
         </div>
 
         {/* CENTER NAVIGATION */}

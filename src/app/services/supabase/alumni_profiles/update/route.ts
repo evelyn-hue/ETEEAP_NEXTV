@@ -4,18 +4,29 @@ import { supabaseServer } from "@/lib/supabase-server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, verification_status } = body;
+    const { id, verification_status, is_graduate } = body;
 
-    if (!id || !verification_status) {
+    if (!id) {
       return NextResponse.json(
-        { success: false, error: "ID and verification_status are required" },
+        { success: false, error: "ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const updates: Record<string, unknown> = {};
+    if (verification_status !== undefined) updates.verification_status = verification_status;
+    if (is_graduate !== undefined) updates.is_graduate = is_graduate;
+
+    if (Object.keys(updates).length === 0) {
+      return NextResponse.json(
+        { success: false, error: "No fields to update" },
         { status: 400 }
       );
     }
 
     const { data, error } = await supabaseServer
       .from("alumni_profiles")
-      .update({ verification_status })
+      .update(updates)
       .eq("id", id)
       .select();
 
@@ -28,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { success: true, message: "Alumni profile status updated successfully", data },
+      { success: true, message: "Alumni profile updated successfully", data },
       { status: 200 }
     );
   } catch (error) {

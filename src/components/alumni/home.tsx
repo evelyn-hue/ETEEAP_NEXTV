@@ -33,6 +33,7 @@ type AlumniProfile = {
   visibility: "public" | "private";
   verification_status: string;
   profile_picture: string | null;
+  is_graduate?: boolean;
 };
 
 export default function AlumniFeedPage() {
@@ -45,6 +46,7 @@ export default function AlumniFeedPage() {
   const [selectedProgram, setSelectedProgram] = useState("");
   const [selectedYear, setSelectedYear] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [graduateOnly, setGraduateOnly] = useState(false);
 
   const allPrograms = [
     "Bachelor of Arts in English Language Studies",
@@ -116,9 +118,10 @@ export default function AlumniFeedPage() {
         !selectedProgram || person.programs?.includes(selectedProgram);
       const matchesYear =
         !selectedYear || person.graduation_year === selectedYear;
-      return matchesSearch && matchesProgram && matchesYear;
+      const matchesGraduate = !graduateOnly || person.is_graduate === true;
+      return matchesSearch && matchesProgram && matchesYear && matchesGraduate;
     });
-  }, [alumni, searchQuery, selectedProgram, selectedYear]);
+  }, [alumni, searchQuery, selectedProgram, selectedYear, graduateOnly]);
 
   const getInitials = (name: string) => {
     return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
@@ -163,7 +166,7 @@ export default function AlumniFeedPage() {
           <div className="bg-section-warm rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6">
             <SectionEyebrow>Filter</SectionEyebrow>
             <SectionHeading level="h3">Search Alumni</SectionHeading>
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,240px)_minmax(160px,200px)] mt-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(180px,240px)_minmax(160px,200px)_auto] mt-4">
               <input className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-600/30" placeholder="Search alumni by name" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
               <select className="w-full border border-gray-300 rounded-lg px-4 py-2 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-600/30" value={selectedProgram} onChange={(e) => setSelectedProgram(e.target.value)}>
                 <option value="">All programs</option>
@@ -173,6 +176,17 @@ export default function AlumniFeedPage() {
                 <option value="">All academic years</option>
                 {allYears.map((year) => (<option key={year} value={year}>{year}</option>))}
               </select>
+              <button
+                type="button"
+                onClick={() => setGraduateOnly(!graduateOnly)}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
+                  graduateOnly
+                    ? "bg-emerald-600 text-white"
+                    : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50"
+                }`}
+              >
+                {graduateOnly ? "✓ Graduates" : "All Alumni"}
+              </button>
             </div>
             {(searchQuery || selectedProgram || selectedYear) && (
               <div className="border-t pt-4 mt-6">
@@ -220,6 +234,7 @@ export default function AlumniFeedPage() {
                           {person.nickname && <p className="text-sm text-gray-500 truncate">&quot;{person.nickname}&quot;</p>}
                           <div className="flex items-center gap-2 mt-1">
                             <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full shrink-0">Verified</span>
+                            {person.is_graduate && <span className="text-xs bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full shrink-0">Graduate</span>}
                             {person.graduation_year && <span className="text-xs text-gray-400">{person.graduation_year}</span>}
                           </div>
                         </div>

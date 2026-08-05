@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { sendStatusEmail } from "@/lib/resend";
 
-type FormStatus = "Under Review" | "Reject" | "Approve" | "Draft" | "Delete";
+type FormStatus = "Under Review" | "Reject" | "Approve" | "On Hold" | "Defer" | "Draft" | "Delete";
 type DocumentApprovalStatus = "Pending" | "Verified" | "Rejected";
 
 type ApprovalEntry = {
@@ -101,12 +102,16 @@ function resolveNextStatus(inputStatus: unknown, fallback: string): FormStatus {
   if (value === "Under Review") return "Under Review";
   if (value === "Reject") return "Reject";
   if (value === "Approve") return "Approve";
+  if (value === "On Hold") return "On Hold";
+  if (value === "Defer") return "Defer";
   if (value === "Draft") return "Draft";
   if (value === "Delete") return "Delete";
 
   if (fallback === "Under Review") return "Under Review";
   if (fallback === "Reject") return "Reject";
   if (fallback === "Approve") return "Approve";
+  if (fallback === "On Hold") return "On Hold";
+  if (fallback === "Defer") return "Defer";
   if (fallback === "Delete") return "Delete";
   return "Draft";
 }
@@ -164,14 +169,18 @@ export async function POST(params: NextRequest) {
         const statusOrder: Record<string, number> = {
           "Under Review": 0,
           "under review": 0,
-          "Reject": 1,
-          "reject": 1,
-          "Approve": 2,
-          "approve": 2,
-          "Draft": 3,
-          "draft": 3,
-          "Delete": 4,
-          "delete": 4,
+          "On Hold": 1,
+          "on hold": 1,
+          "Defer": 2,
+          "defer": 2,
+          "Reject": 3,
+          "reject": 3,
+          "Approve": 4,
+          "approve": 4,
+          "Draft": 5,
+          "draft": 5,
+          "Delete": 6,
+          "delete": 6,
         };
 
         const enrichedData = (await Promise.all(
@@ -350,7 +359,11 @@ export async function PATCH(params: NextRequest) {
           ? "Accepted Applicant"
           : nextStatus === "Reject"
             ? "Rejected Applicant"
-            : nextStatus === "Under Review"
+            : nextStatus === "On Hold"
+              ? "On Hold Applicant"
+              : nextStatus === "Defer"
+                ? "Defer Applicant"
+                : nextStatus === "Under Review"
               ? "Under Review Applicant"
               : "Draft Applicant";
 
@@ -366,6 +379,19 @@ export async function PATCH(params: NextRequest) {
           statusAction,
           `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy).split('@')[0]}` : ""}.`,
         );
+      }
+
+      if (currentRow.email && currentRow.applicantName) {
+        try {
+          await sendStatusEmail(
+            currentRow.email,
+            currentRow.applicantName,
+            nextStatus,
+            `Your application status has been updated to ${nextStatus} by the admin.`,
+          );
+        } catch {
+          console.error("Failed to send status email to", currentRow.email);
+        }
       }
     }
 
@@ -394,7 +420,11 @@ export async function PATCH(params: NextRequest) {
             ? "accepted"
             : nextStatus === "Under Review"
               ? "submitted"
-              : "draft";
+              : nextStatus === "On Hold"
+                ? "submitted"
+                : nextStatus === "Defer"
+                  ? "submitted"
+                  : "draft";
 
       await supabaseServer
         .from("auth")

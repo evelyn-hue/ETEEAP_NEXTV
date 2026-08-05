@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  Archive,
   Check,
+  Clock,
   Eye,
   ExternalLink,
   Loader2,
@@ -19,7 +21,7 @@ import { Fetch_to } from "@/utilities";
 import Skeleton from "@/components/shared/Skeleton";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
-type FormStatus = "Under Review" | "Approve" | "Reject" | "Draft" | "Delete";
+type FormStatus = "Under Review" | "Approve" | "Reject" | "On Hold" | "Defer" | "Draft" | "Delete";
 
 type DocumentDefinition = {
   id: string;
@@ -119,6 +121,8 @@ function normalizeFormStatus(status?: string): FormStatus {
   if (normalized === "approve" || normalized === "approved") return "Approve";
   if (normalized === "reject" || normalized === "rejected") return "Reject";
   if (normalized === "under review") return "Under Review";
+  if (normalized === "on hold") return "On Hold";
+  if (normalized === "defer") return "Defer";
   if (normalized === "delete") return "Delete";
   return "Draft";
 }
@@ -193,6 +197,8 @@ function ApplicationActions({
   onView,
   onAccept,
   onReject,
+  onOnHold,
+  onDefer,
   onDelete,
   onRestore,
   currentStatus,
@@ -201,6 +207,8 @@ function ApplicationActions({
   onView: () => void;
   onAccept: () => void;
   onReject: () => void;
+  onOnHold: () => void;
+  onDefer: () => void;
   onDelete: () => void;
   onRestore: () => void;
   currentStatus: FormStatus;
@@ -217,8 +225,8 @@ function ApplicationActions({
         onClick={onView}
         className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 sm:w-auto"
       >
-        <Eye size={16} />
-        View
+        <ExternalLink size={16} />
+        Review
       </button>
       {isDeleted ? (
         <button
@@ -239,6 +247,24 @@ function ApplicationActions({
           >
             <Check size={16} />
             Accept
+          </button>
+          <button
+            type="button"
+            onClick={onOnHold}
+            disabled={!isUnderReview}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          >
+            <Clock size={16} />
+            On Hold
+          </button>
+          <button
+            type="button"
+            onClick={onDefer}
+            disabled={!isUnderReview}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          >
+            <Archive size={16} />
+            Defer
           </button>
           <button
             type="button"
@@ -682,8 +708,8 @@ export default function Application() {
     item: ApplicationRecord,
     status: FormStatus,
   ) => {
-    const actionLabel = status === "Approve" ? "Yes" : status === "Reject" ? "Yes" : status === "Under Review" ? "Restore" : "Update";
-    const actionVerb = status === "Approve" ? "accept" : status === "Reject" ? "reject" : status === "Under Review" ? "restore" : "update";
+    const actionLabel = status === "Approve" ? "Yes" : status === "Reject" ? "Yes" : status === "Under Review" ? "Restore" : status === "On Hold" ? "Hold" : status === "Defer" ? "Defer" : "Update";
+    const actionVerb = status === "Approve" ? "accept" : status === "Reject" ? "reject" : status === "Under Review" ? "restore" : status === "On Hold" ? "hold" : status === "Defer" ? "defer" : "update";
 
     openConfirmation({
       title: `${actionLabel} Application`,
@@ -835,7 +861,24 @@ export default function Application() {
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       Documents
                     </p>
-                    <p className="mt-1">{item.documents.length}</p>
+                    <div className="mt-1 flex flex-wrap gap-1.5">
+                      {item.documents.filter(d => d.fileUrl).map((doc) => (
+                        <a
+                          key={doc.id}
+                          href={doc.fileUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                          title={doc.label}
+                        >
+                          <ExternalLink size={10} />
+                          <span className="max-w-20 truncate">{doc.label}</span>
+                        </a>
+                      ))}
+                      {item.documents.filter(d => d.fileUrl).length === 0 && (
+                        <span className="text-xs text-slate-400">None</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -844,6 +887,8 @@ export default function Application() {
                 <ApplicationActions
                   onView={() => setSelectedApplication(item)}
                   onAccept={() => requestApplicationStatusChange(item, "Approve")}
+                  onOnHold={() => requestApplicationStatusChange(item, "On Hold")}
+                  onDefer={() => requestApplicationStatusChange(item, "Defer")}
                   onReject={() => requestApplicationStatusChange(item, "Reject")}
                   onDelete={() => requestApplicationDelete(item)}
                   onRestore={() => requestApplicationStatusChange(item, "Under Review")}
@@ -901,13 +946,32 @@ export default function Application() {
                     <td className="px-6 py-5">
                       <StatusPill status={item.status} />
                     </td>
-                    <td className="px-6 py-5 text-sm text-slate-700">
-                      {item.documents.filter((doc) => doc.fileUrl).length} documents
+                    <td className="px-6 py-5">
+                      <div className="flex flex-wrap gap-1.5 max-w-60">
+                        {item.documents.filter((doc) => doc.fileUrl).map((doc) => (
+                          <a
+                            key={doc.id}
+                            href={doc.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                            title={doc.label}
+                          >
+                            <ExternalLink size={9} />
+                            <span className="max-w-16 truncate">{doc.label}</span>
+                          </a>
+                        ))}
+                        {item.documents.filter((doc) => doc.fileUrl).length === 0 && (
+                          <span className="text-xs text-slate-400">None</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-5">
                       <ApplicationActions
                         onView={() => setSelectedApplication(item)}
                         onAccept={() => requestApplicationStatusChange(item, "Approve")}
+                        onOnHold={() => requestApplicationStatusChange(item, "On Hold")}
+                        onDefer={() => requestApplicationStatusChange(item, "Defer")}
                         onReject={() => requestApplicationStatusChange(item, "Reject")}
                         onDelete={() => requestApplicationDelete(item)}
                         onRestore={() => requestApplicationStatusChange(item, "Under Review")}

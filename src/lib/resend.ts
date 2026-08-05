@@ -43,3 +43,21 @@ export async function sendResetEmail(email: string, resetLink: string) {
     `,
   });
 }
+
+export async function sendStatusEmail(email: string, applicantName: string, action: string, details: string) {
+  await transporter.sendMail({
+    from: `"ETEEAP NEXTV" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `Application ${action} - ETEEAP NEXTV`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
+        <h1 style="color: #1e3a5f;">ETEEAP NEXTV</h1>
+        <p>Dear ${applicantName},</p>
+        <p>Your application has been <strong>${action}</strong>.</p>
+        <p style="color: #64748b;">${details}</p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px;">This is an automated message from the ETEEAP system.</p>
+      </div>
+    `,
+  });
+}

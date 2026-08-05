@@ -12,7 +12,7 @@ export default function About() {
   return (
     <main>
       {/* Hero Section */}
-      <section className="relative w-full h-64 md:h-96 flex items-center justify-center overflow-hidden">
+      <section className="relative w-full h-64 md:h-96 flex items-center justify-center overflow-hidden mt-14">
         <Image
           src={imgSrc.heroImage}
           alt="ETEEAP Students"
