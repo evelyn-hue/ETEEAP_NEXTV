@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  Archive,
   Check,
   Clock,
   Eye,
@@ -11,7 +10,6 @@ import {
   RotateCcw,
   Search,
   Trash2,
-  XCircle,
   X,
 } from "lucide-react";
 import apiLinks from "@/config/api_link.json";
@@ -178,17 +176,19 @@ function StatusPill({ status }: { status: DocumentStatus | FormStatus }) {
   const styles =
     status === "Verified" || status === "Approve"
       ? "bg-green-100 text-green-800"
-      : status === "Rejected" || status === "Reject"
-        ? "bg-red-100 text-red-800"
-        : status === "Delete"
-          ? "bg-slate-200 text-slate-700"
-        : status === "Under Review"
-          ? "bg-blue-100 text-blue-800"
-          : "bg-yellow-100 text-yellow-800";
+      : status === "Rejected"
+        ? "bg-amber-100 text-amber-800"
+        : status === "Reject"
+          ? "bg-red-100 text-red-800"
+          : status === "Delete"
+            ? "bg-slate-200 text-slate-700"
+          : status === "Under Review"
+            ? "bg-blue-100 text-blue-800"
+            : "bg-yellow-100 text-yellow-800";
 
   return (
     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>
-      {status}
+      {status === "Rejected" ? "On Hold" : status}
     </span>
   );
 }
@@ -196,9 +196,7 @@ function StatusPill({ status }: { status: DocumentStatus | FormStatus }) {
 function ApplicationActions({
   onView,
   onAccept,
-  onReject,
   onOnHold,
-  onDefer,
   onDelete,
   onRestore,
   currentStatus,
@@ -206,9 +204,7 @@ function ApplicationActions({
 }: {
   onView: () => void;
   onAccept: () => void;
-  onReject: () => void;
   onOnHold: () => void;
-  onDefer: () => void;
   onDelete: () => void;
   onRestore: () => void;
   currentStatus: FormStatus;
@@ -246,7 +242,7 @@ function ApplicationActions({
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <Check size={16} />
-            Accept
+            Approve
           </button>
           <button
             type="button"
@@ -256,24 +252,6 @@ function ApplicationActions({
           >
             <Clock size={16} />
             On Hold
-          </button>
-          <button
-            type="button"
-            onClick={onDefer}
-            disabled={!isUnderReview}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-purple-600 px-4 py-2 text-sm font-semibold text-white hover:bg-purple-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            <Archive size={16} />
-            Defer
-          </button>
-          <button
-            type="button"
-            onClick={onReject}
-            disabled={!isUnderReview}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
-          >
-            <XCircle size={16} />
-            Reject
           </button>
           <button
             type="button"
@@ -351,16 +329,16 @@ function DocumentCard({
           className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-3 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Check size={16} />
-          Verify
+          Approve
         </button>
         <button
           type="button"
           onClick={() => onStatusChange("Rejected", document.remark)}
           disabled={disabled}
-          className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          <XCircle size={16} />
-          Reject
+          <Clock size={16} />
+          On Hold
         </button>
       </div>
 
@@ -861,24 +839,9 @@ export default function Application() {
                     <p className="text-xs uppercase tracking-wide text-slate-500">
                       Documents
                     </p>
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {item.documents.filter(d => d.fileUrl).map((doc) => (
-                        <a
-                          key={doc.id}
-                          href={doc.fileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                          title={doc.label}
-                        >
-                          <ExternalLink size={10} />
-                          <span className="max-w-20 truncate">{doc.label}</span>
-                        </a>
-                      ))}
-                      {item.documents.filter(d => d.fileUrl).length === 0 && (
-                        <span className="text-xs text-slate-400">None</span>
-                      )}
-                    </div>
+                    <p className="mt-1 text-sm text-slate-700">
+                      {item.documents.filter(d => d.fileUrl).length} out of {item.documents.length} submitted
+                    </p>
                   </div>
                 </div>
               </div>
@@ -888,8 +851,6 @@ export default function Application() {
                   onView={() => setSelectedApplication(item)}
                   onAccept={() => requestApplicationStatusChange(item, "Approve")}
                   onOnHold={() => requestApplicationStatusChange(item, "On Hold")}
-                  onDefer={() => requestApplicationStatusChange(item, "Defer")}
-                  onReject={() => requestApplicationStatusChange(item, "Reject")}
                   onDelete={() => requestApplicationDelete(item)}
                   onRestore={() => requestApplicationStatusChange(item, "Under Review")}
                   currentStatus={item.status}
@@ -947,32 +908,15 @@ export default function Application() {
                       <StatusPill status={item.status} />
                     </td>
                     <td className="px-6 py-5">
-                      <div className="flex flex-wrap gap-1.5 max-w-60">
-                        {item.documents.filter((doc) => doc.fileUrl).map((doc) => (
-                          <a
-                            key={doc.id}
-                            href={doc.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                            title={doc.label}
-                          >
-                            <ExternalLink size={9} />
-                            <span className="max-w-16 truncate">{doc.label}</span>
-                          </a>
-                        ))}
-                        {item.documents.filter((doc) => doc.fileUrl).length === 0 && (
-                          <span className="text-xs text-slate-400">None</span>
-                        )}
-                      </div>
+                      <p className="text-sm text-slate-700">
+                        {item.documents.filter((doc) => doc.fileUrl).length} out of {item.documents.length} submitted
+                      </p>
                     </td>
                     <td className="px-6 py-5">
                       <ApplicationActions
                         onView={() => setSelectedApplication(item)}
                         onAccept={() => requestApplicationStatusChange(item, "Approve")}
                         onOnHold={() => requestApplicationStatusChange(item, "On Hold")}
-                        onDefer={() => requestApplicationStatusChange(item, "Defer")}
-                        onReject={() => requestApplicationStatusChange(item, "Reject")}
                         onDelete={() => requestApplicationDelete(item)}
                         onRestore={() => requestApplicationStatusChange(item, "Under Review")}
                         currentStatus={item.status}
