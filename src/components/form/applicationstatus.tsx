@@ -649,25 +649,53 @@ export default function ApplicationStatus() {
                       )}
                     </div>
 
-                    {/* File Actions */}
+                    {/* File Preview */}
                     {val ? (
-                      <div className="flex gap-2 mb-4">
-                        <a
-                          href={val}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="flex-1 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition flex items-center justify-center gap-2"
-                        >
-                          <FileText className="w-4 h-4" />
-                          View File
-                        </a>
-                        <a
-                          href={val}
-                          download
-                          className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition flex items-center justify-center gap-2"
-                        >
-                          <Download className="w-4 h-4" />
-                        </a>
+                      <div className="mb-4">
+                        {(() => {
+                          const isImage = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(val) || val.startsWith("data:") && val.includes("image/");
+                          if (isImage) {
+                            return (
+                              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                                <img
+                                  src={val}
+                                  alt={d.label}
+                                  className="w-full max-h-64 object-contain bg-gray-50"
+                                />
+                              </div>
+                            );
+                          }
+                          if (/\.pdf(\?|$)/i.test(val) || val.startsWith("data:") && val.includes("application/pdf")) {
+                            return (
+                              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                                <iframe
+                                  src={val}
+                                  title={d.label}
+                                  className="w-full h-64"
+                                />
+                              </div>
+                            );
+                          }
+                          return (
+                            <a
+                              href={val}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition text-center"
+                            >
+                              View File
+                            </a>
+                          );
+                        })()}
+                        <div className="mt-2 flex justify-end">
+                          <a
+                            href={val}
+                            download
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
+                          >
+                            <Download className="w-4 h-4" /> Download
+                          </a>
+                        </div>
                       </div>
                     ) : (
                       <div className="mb-4 p-3 bg-gray-100 rounded-lg text-center text-sm text-gray-600">

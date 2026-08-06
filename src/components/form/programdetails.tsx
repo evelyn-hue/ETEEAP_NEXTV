@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
@@ -503,8 +503,6 @@ if (file.size > 5 * 1024 * 1024) {
           </Link>
         </div>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-
         <div className="mt-6 text-center">
           <button
             type="submit"
@@ -515,6 +513,50 @@ if (file.size > 5 * 1024 * 1024) {
           </button>
         </div>
       </form>
+
+      <AnimatePresence>
+        {error ? (
+          <motion.div
+            initial={reduced ? undefined : { opacity: 0 }}
+            animate={reduced ? undefined : { opacity: 1 }}
+            exit={reduced ? undefined : { opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+            onClick={() => setError("")}
+          >
+            <motion.div
+              initial={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              animate={reduced ? undefined : { opacity: 1, scale: 1 }}
+              exit={reduced ? undefined : { opacity: 0, scale: 0.95 }}
+              transition={reduced ? undefined : { duration: 0.2 }}
+              className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-5 w-5 text-red-600">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-slate-900">Upload Error</h3>
+                  <p className="mt-2 text-sm text-slate-600">{error}</p>
+                </div>
+              </div>
+              <div className="mt-6 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setError("")}
+                  className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
+                >
+                  OK
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </main>
   );
 }

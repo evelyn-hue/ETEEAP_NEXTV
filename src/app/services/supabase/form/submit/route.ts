@@ -101,7 +101,8 @@ if (file.size > 5 * 1024 * 1024) {
         );
       }
 
-      const filePath = `${email}/${documentType}/${Date.now()}-${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `${email}/${documentType}/${Date.now()}-${safeName}`;
 
       const { error: uploadError } = await supabaseServer.storage
         .from(bucketName)

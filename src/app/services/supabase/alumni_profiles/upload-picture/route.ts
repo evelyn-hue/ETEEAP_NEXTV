@@ -15,7 +15,8 @@ export async function POST(req: NextRequest) {
         }
 
         const buffer = await file.arrayBuffer();
-        const fileName = `alumni-${email}-${Date.now()}-${file.name}`;
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+        const fileName = `alumni-${email}-${Date.now()}-${safeName}`;
         const filePath = `alumni_pics/${fileName}`;
 
         const { error: uploadError } = await supabaseServer.storage

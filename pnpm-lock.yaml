@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@next/swc-wasm-nodejs':
+        specifier: ^16.2.12
+        version: 16.3.0
       '@react-oauth/google':
         specifier: ^0.13.5
         version: 0.13.5(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -444,6 +447,9 @@ packages:
     cpu: [x64]
     os: [linux]
     libc: [musl]
+
+  '@next/swc-wasm-nodejs@16.3.0':
+    resolution: {integrity: sha512-fkF1rDfao0RWc5KojvpO8MQlPWdbcWnA8Np9dTtziGlZHePOEeycyLfyKSTQI04prd2UMY0AIqLWs2YrKat0wQ==}
 
   '@next/swc-win32-arm64-msvc@16.2.4':
     resolution: {integrity: sha512-3NdJV5OXMSOeJYijX+bjaLge3mJBlh4ybydbT4GFoB/2hAojWHtMhl3CYlYoMrjPuodp0nzFVi4Tj2+WaMg+Ow==}
@@ -2594,6 +2600,8 @@ snapshots:
 
   '@next/swc-linux-x64-musl@16.2.4':
     optional: true
+
+  '@next/swc-wasm-nodejs@16.3.0': {}
 
   '@next/swc-win32-arm64-msvc@16.2.4':
     optional: true
