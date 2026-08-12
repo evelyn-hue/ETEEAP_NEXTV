@@ -20,6 +20,10 @@ export default function AdminSettings() {
   const [uploading, setUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [pendingConfirm, setPendingConfirm] = useState<null | {
+    kind: "save" | "photo";
+    file?: File;
+  }>(null);
 
   // Fetch admin settings
   useEffect(() => {
@@ -72,10 +76,7 @@ export default function AdminSettings() {
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.currentTarget.files?.[0];
-    if (!file) return;
-
+  const handlePhotoUpload = async (file: File) => {
     setUploading(true);
     setErrorMessage("");
     setSuccessMessage("");
@@ -105,6 +106,12 @@ export default function AdminSettings() {
     } finally {
       setUploading(false);
     }
+  };
+
+  const onPhotoSelected = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.currentTarget.files?.[0];
+    if (!file) return;
+    setPendingConfirm({ kind: "photo", file });
   };
   return (
     <div className="min-h-screen bg-section-warm p-4 sm:p-6">
@@ -159,7 +166,7 @@ export default function AdminSettings() {
                   type="file" 
                   className="hidden" 
                   accept="image/*"
-                  onChange={handlePhotoUpload}
+                  onChange={onPhotoSelected}
                   disabled={uploading}
                 />
               </label>
@@ -192,7 +199,7 @@ export default function AdminSettings() {
 
             <div className="flex justify-end pt-2">
               <button 
-                onClick={handleSaveChanges}
+                onClick={() => setPendingConfirm({ kind: "save" })}
                 disabled={saving || uploading}
                 className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs disabled:opacity-60 disabled:cursor-not-allowed">
                 {saving ? "Saving..." : "Save Changes"}
@@ -202,6 +209,46 @@ export default function AdminSettings() {
           </Reveal>
         )}
       </div>
+
+      {pendingConfirm ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-slate-900">
+              {pendingConfirm.kind === "save" ? "Confirm Save" : "Confirm Photo Upload"}
+            </h3>
+            <p className="mt-4 text-sm text-slate-600">
+              {pendingConfirm.kind === "save"
+                ? "Are you sure you want to save these changes?"
+                : "Are you sure you want to change your profile photo?"}
+            </p>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setPendingConfirm(null)}
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (pendingConfirm.kind === "save") {
+                    setPendingConfirm(null);
+                    void handleSaveChanges();
+                  } else if (pendingConfirm.file) {
+                    const file = pendingConfirm.file;
+                    setPendingConfirm(null);
+                    void handlePhotoUpload(file);
+                  }
+                }}
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

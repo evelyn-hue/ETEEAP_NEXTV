@@ -106,6 +106,7 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               { label: "About", path: "/overview" },
               { label: "Programs", path: "/courses" },
               { label: "Alumni", path: "/alumni" },
+              { label: "News & Events", path: "/news" },
               { label: "FAQ's", path: "/question" },
             ].map((item) => (
               <li key={item.path} className="relative group cursor-pointer" onClick={() => { router.push(item.path); }}>
@@ -311,6 +312,16 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 className="py-3 text-left hover:text-blue-600"
               >
                 Alumni
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  router.push("/news");
+                  setIsMobileNavOpen(false);
+                }}
+                className="py-3 text-left hover:text-blue-600"
+              >
+                News &amp; Events
               </button>
               <button
                 type="button"

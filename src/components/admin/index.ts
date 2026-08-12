@@ -9,3 +9,5 @@ export {default as ActivityLog} from "./activitylogs";
 export {default as Setting} from "./setting";
 
 export {default as AdminAlumni} from "./adminalumni";
+
+export {default as AdminContent} from "./content";

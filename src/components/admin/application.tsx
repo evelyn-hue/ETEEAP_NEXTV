@@ -389,6 +389,9 @@ export default function Application() {
   const [savingRemark, setSavingRemark] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
   const [toast, setToast] = useState<Toast | null>(null);
+  const [graduateEmails, setGraduateEmails] = useState<Set<string>>(new Set());
+  const [graduationYear, setGraduationYear] = useState("");
+  const [markingGraduate, setMarkingGraduate] = useState(false);
 
   const syncApplication = (updated: ApplicationRecord) => {
     setApplications((prev) => prev.map((item) => (item.id === updated.id ? updated : item)));
@@ -443,6 +446,25 @@ export default function Application() {
     };
 
     void verifyAndLoad();
+  }, []);
+
+  useEffect(() => {
+    const fetchGraduates = async () => {
+      try {
+        const result = await Fetch_to("/services/supabase/alumni_profiles/retrieve-all", {});
+        const rows = Array.isArray(result.data) ? result.data : (result.data?.data || []);
+        const marked = new Set<string>();
+        (rows as Array<{ email?: string; is_graduate?: boolean }>).forEach((row) => {
+          if (row.email && row.is_graduate === true) {
+            marked.add(String(row.email).trim().toLowerCase());
+          }
+        });
+        setGraduateEmails(marked);
+      } catch (error) {
+        console.error("Failed to fetch graduates:", error);
+      }
+    };
+    void fetchGraduates();
   }, []);
 
   const filteredApplications = useMemo(() => {
@@ -714,8 +736,60 @@ export default function Application() {
     document: DocumentItem,
     status: DocumentStatus,
   ) => {
-    // Directly update document status without confirmation
-    updateDocumentStatus(applicationId, document.id, status, document.remark);
+    const verb = status === "Verified" ? "approve" : "put on hold";
+    const label = status === "Verified" ? "Approve" : "On Hold";
+    openConfirmation({
+      title: `${label} Document`,
+      message: `Are you sure you want to ${verb} the document "${document.label}" for ${applicantName}?`,
+      confirmLabel: label,
+      cancelLabel: "Cancel",
+      execute: () => updateDocumentStatus(applicationId, document.id, status, document.remark),
+    });
+  };
+
+  const isGraduate = (email?: string) =>
+    email ? graduateEmails.has(String(email).trim().toLowerCase()) : false;
+
+  const requestMarkGraduate = (item: ApplicationRecord) => {
+    const year = graduationYear.trim();
+    if (!year) {
+      showToast("Please enter the graduation year.", "error");
+      return;
+    }
+    openConfirmation({
+      title: "Mark as Graduate",
+      message: `Are you sure you want to mark ${item.applicant} as a graduate for the academic year ${year}?`,
+      confirmLabel: "Mark as Graduate",
+      cancelLabel: "Cancel",
+      execute: () => void markGraduate(item, year),
+    });
+  };
+
+  const markGraduate = async (item: ApplicationRecord, year: string) => {
+    setMarkingGraduate(true);
+    try {
+      const result = await Fetch_to("/services/supabase/alumni_profiles/graduate", {
+        email: item.email,
+        full_name: item.applicant,
+        program: item.program,
+        graduation_year: year,
+      });
+      if (result.success) {
+        setGraduateEmails((prev) => {
+          const next = new Set(prev);
+          next.add(String(item.email).trim().toLowerCase());
+          return next;
+        });
+        showToast("Marked as graduate successfully.", "success");
+      } else {
+        showToast(result.message || "Failed to mark as graduate.", "error");
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      showToast(`Error marking as graduate: ${message}`, "error");
+    } finally {
+      setMarkingGraduate(false);
+    }
   };
 
   return (
@@ -848,7 +922,7 @@ export default function Application() {
 
               <div className="mt-4">
                 <ApplicationActions
-                  onView={() => setSelectedApplication(item)}
+                  onView={() => { setSelectedApplication(item); setGraduationYear(""); }}
                   onAccept={() => requestApplicationStatusChange(item, "Approve")}
                   onOnHold={() => requestApplicationStatusChange(item, "On Hold")}
                   onDelete={() => requestApplicationDelete(item)}
@@ -914,7 +988,7 @@ export default function Application() {
                     </td>
                     <td className="px-6 py-5">
                       <ApplicationActions
-                        onView={() => setSelectedApplication(item)}
+                        onView={() => { setSelectedApplication(item); setGraduationYear(""); }}
                         onAccept={() => requestApplicationStatusChange(item, "Approve")}
                         onOnHold={() => requestApplicationStatusChange(item, "On Hold")}
                         onDelete={() => requestApplicationDelete(item)}
@@ -974,6 +1048,40 @@ export default function Application() {
                     </div>
                   </section>
 
+                  <section className="rounded-2xl bg-slate-50 p-5">
+                    <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">
+                      Graduation
+                    </h3>
+                    {isGraduate(selectedApplication.email) ? (
+                      <div className="mt-4 flex items-center gap-2 text-sm font-medium text-emerald-700 bg-emerald-50 rounded-xl px-4 py-3">
+                        <span className="text-emerald-600">&#10003;</span>
+                        Marked as Graduate
+                      </div>
+                    ) : selectedApplication.status !== "Approve" ? (
+                      <p className="mt-4 text-sm text-slate-500 bg-white rounded-xl px-4 py-3 ring-1 ring-slate-200/30">
+                        This application must be approved before the applicant can be marked as a graduate.
+                      </p>
+                    ) : (
+                      <div className="mt-4 flex flex-col gap-3">
+                        <input
+                          type="text"
+                          value={graduationYear}
+                          onChange={(e) => setGraduationYear(e.target.value)}
+                          placeholder="Academic year (e.g. 2024-2025)"
+                          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-700 focus:ring-2 focus:ring-blue-500/30"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => requestMarkGraduate(selectedApplication)}
+                          disabled={markingGraduate}
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 transition disabled:opacity-60"
+                        >
+                          {markingGraduate ? "Marking..." : "Mark as Graduate"}
+                        </button>
+                      </div>
+                    )}
+                  </section>
+
                 </aside>
 
                 <section className="space-y-4">
@@ -1010,11 +1118,18 @@ export default function Application() {
                           )
                         }
                         onRemarkSave={(remark) =>
-                          saveDocumentRemark(
-                            selectedApplication.id,
-                            document.id,
-                            remark
-                          )
+                          openConfirmation({
+                            title: "Send Remark",
+                            message: `Are you sure you want to send this remark for the document "${document.label}"?`,
+                            confirmLabel: "Send",
+                            cancelLabel: "Cancel",
+                            execute: () =>
+                              saveDocumentRemark(
+                                selectedApplication.id,
+                                document.id,
+                                remark,
+                              ),
+                          })
                         }
                         isSaving={savingRemark === `${selectedApplication.id}-${document.id}`}
                         disabled={

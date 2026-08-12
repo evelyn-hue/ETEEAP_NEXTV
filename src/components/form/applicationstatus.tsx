@@ -396,7 +396,7 @@ export default function ApplicationStatus() {
                 <SectionEyebrow className="text-slate-400">Get Started</SectionEyebrow>
                 <h2 className="text-2xl font-bold text-slate-900 mt-3 mb-2 font-display">No Applications Yet</h2>
                 <p className="text-slate-500 mb-8">
-                  No applications or alumni registrations found. Choose your path below.
+                  No applications found. Choose your path below.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button
@@ -404,12 +404,6 @@ export default function ApplicationStatus() {
                     className="flex-1 rounded-xl bg-blue-600 px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700 transition-colors shadow-xs"
                   >
                     Apply to Program
-                  </button>
-                  <button
-                    onClick={() => router.push("/alumni/alumniform")}
-                    className="flex-1 rounded-xl bg-white px-6 py-3 text-sm font-semibold text-slate-700 ring-1 ring-slate-300 hover:bg-slate-50 transition-colors"
-                  >
-                    Join Alumni
                   </button>
                 </div>
               </div>

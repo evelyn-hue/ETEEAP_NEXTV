@@ -33,5 +33,12 @@
         "retrieve" : "/services/supabase/admin_settings/retrieve",
         "update" : "/services/supabase/admin_settings/update",
         "uploadAvatar" : "/services/supabase/admin_settings/upload-avatar"
+    },
+    "content" : {
+        "retrieve" : "/services/supabase/content/retrieve",
+        "create" : "/services/supabase/content/create",
+        "update" : "/services/supabase/content/update",
+        "delete" : "/services/supabase/content/delete",
+        "upload" : "/services/supabase/content/upload"
     }
 }

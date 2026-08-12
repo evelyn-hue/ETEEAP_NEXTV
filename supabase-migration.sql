@@ -10,3 +10,21 @@ ALTER TABLE auth ADD COLUMN IF NOT EXISTS google_id text;
 
 -- Verify
 SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'auth' AND column_name IN ('otp_code', 'otp_expires_at', 'email_verified', 'reset_token', 'reset_token_expires_at', 'google_id');
+
+-- Content (blogs / videos / events)
+CREATE TABLE IF NOT EXISTS posts (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  type text NOT NULL CHECK (type IN ('blog', 'video', 'event')),
+  title text NOT NULL,
+  body text,
+  cover_image text,
+  video_url text,
+  event_date date,
+  event_location text,
+  status text NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'published')),
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Storage bucket for content cover images (create manually in Supabase Dashboard > Storage)
+-- Bucket name: posts_media (public)
