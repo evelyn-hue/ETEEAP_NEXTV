@@ -146,10 +146,11 @@ export default function AdminAlumni() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
-    action: "verify" | "reject" | "";
+    action: "verify" | "reject" | "delete" | "graduate" | "";
     alumniId: string;
     fullName: string;
-  }>({ show: false, action: "", alumniId: "", fullName: "" });
+    isGraduateNow: boolean;
+  }>({ show: false, action: "", alumniId: "", fullName: "", isGraduateNow: false });
 
   useEffect(() => {
     fetchAlumni();
@@ -222,21 +223,27 @@ export default function AdminAlumni() {
     });
   }, [filteredAlumni]);
 
-  const confirmAction = (message: string) => window.confirm(message);
-
-  const openConfirmModal = (action: "verify" | "reject", alumniId: string, fullName: string) => {
-    setConfirmModal({ show: true, action, alumniId, fullName });
+  const openConfirmModal = (
+    action: "verify" | "reject" | "delete" | "graduate",
+    alumniId: string,
+    fullName: string,
+    isGraduateNow = false,
+  ) => {
+    setConfirmModal({ show: true, action, alumniId, fullName, isGraduateNow });
   };
 
   const cancelConfirmModal = () => {
-    setConfirmModal({ show: false, action: "", alumniId: "", fullName: "" });
+    setConfirmModal({ show: false, action: "", alumniId: "", fullName: "", isGraduateNow: false });
   };
 
   const confirmModalYes = () => {
-    const { action, alumniId } = confirmModal;
+    const { action, alumniId, isGraduateNow } = confirmModal;
     cancelConfirmModal();
     if (!alumniId || !action) return;
-    void updateStatus(alumniId, action === "verify" ? "verified" : "rejected");
+    if (action === "verify") void updateStatus(alumniId, "verified");
+    else if (action === "reject") void updateStatus(alumniId, "rejected");
+    else if (action === "delete") void deleteAlumni(alumniId);
+    else if (action === "graduate") void toggleGraduate(alumniId, isGraduateNow);
   };
 
   const updateStatus = async (id: string, status: AlumniStatus) => {
@@ -536,22 +543,10 @@ export default function AdminAlumni() {
                     <AlumniActions
                       item={item}
                       onView={() => setSelectedAlumni(item)}
-                      onVerify={() => {
-                        if (confirmAction(`Verify ${item.full_name}?`)) {
-                          void updateStatus(item.id, "verified");
-                        }
-                      }}
-                      onReject={() => {
-                        if (confirmAction(`Reject ${item.full_name}?`)) {
-                          void updateStatus(item.id, "rejected");
-                        }
-                      }}
-                      onDelete={() => {
-                        if (confirmAction(`Delete rejected alumni profile for ${item.full_name}? This cannot be undone.`)) {
-                          void deleteAlumni(item.id);
-                        }
-                      }}
-                      onToggleGraduate={() => toggleGraduate(item.id, !!item.is_graduate)}
+                      onVerify={() => openConfirmModal("verify", item.id, item.full_name)}
+                      onReject={() => openConfirmModal("reject", item.id, item.full_name)}
+                      onDelete={() => openConfirmModal("delete", item.id, item.full_name)}
+                      onToggleGraduate={() => openConfirmModal("graduate", item.id, item.full_name, !!item.is_graduate)}
                       loading={updatingId === item.id}
                     />
                   </div>
@@ -605,12 +600,8 @@ export default function AdminAlumni() {
                             onView={() => setSelectedAlumni(item)}
                             onVerify={() => openConfirmModal("verify", item.id, item.full_name)}
                             onReject={() => openConfirmModal("reject", item.id, item.full_name)}
-                            onDelete={() => {
-                              if (confirmAction(`Delete rejected alumni profile for ${item.full_name}? This cannot be undone.`)) {
-                                void deleteAlumni(item.id);
-                              }
-                            }}
-                            onToggleGraduate={() => toggleGraduate(item.id, !!item.is_graduate)}
+                            onDelete={() => openConfirmModal("delete", item.id, item.full_name)}
+                            onToggleGraduate={() => openConfirmModal("graduate", item.id, item.full_name, !!item.is_graduate)}
                             loading={updatingId === item.id}
                           />
                         </td>
@@ -822,11 +813,7 @@ export default function AdminAlumni() {
                   {selectedAlumni.verification_status === "rejected" ? (
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirmAction(`Delete rejected alumni profile for ${selectedAlumni.full_name}? This cannot be undone.`)) {
-                          void deleteAlumni(selectedAlumni.id);
-                        }
-                      }}
+                      onClick={() => openConfirmModal("delete", selectedAlumni.id, selectedAlumni.full_name)}
                       disabled={updatingId === selectedAlumni.id}
                       className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
                     >
@@ -845,10 +832,22 @@ export default function AdminAlumni() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-semibold text-slate-900">
-              {confirmModal.action === "verify" ? "Confirm Verify" : "Confirm Reject"}
+              {confirmModal.action === "verify"
+                ? "Confirm Verify"
+                : confirmModal.action === "reject"
+                  ? "Confirm Reject"
+                  : confirmModal.action === "delete"
+                    ? "Confirm Delete"
+                    : "Confirm Graduate"}
             </h3>
             <p className="mt-4 text-sm text-slate-600">
-              Are you sure you want to {confirmModal.action} {confirmModal.fullName}?
+              {confirmModal.action === "verify" && `Are you sure you want to verify ${confirmModal.fullName}?`}
+              {confirmModal.action === "reject" && `Are you sure you want to reject ${confirmModal.fullName}?`}
+              {confirmModal.action === "delete" && `Are you sure you want to delete the alumni profile for ${confirmModal.fullName}? This cannot be undone.`}
+              {confirmModal.action === "graduate" &&
+                (confirmModal.isGraduateNow
+                  ? `Are you sure you want to unmark ${confirmModal.fullName} as a graduate?`
+                  : `Are you sure you want to mark ${confirmModal.fullName} as a graduate?`)}
             </p>
             <div className="mt-6 flex justify-end gap-3">
               <button
@@ -861,7 +860,11 @@ export default function AdminAlumni() {
               <button
                 type="button"
                 onClick={confirmModalYes}
-                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                className={`rounded-xl px-4 py-2 text-sm font-semibold text-white ${
+                  confirmModal.action === "delete" || confirmModal.action === "reject"
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-800"
+                }`}
               >
                 Yes
               </button>

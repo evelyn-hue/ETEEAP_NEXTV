@@ -64,21 +64,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const hasActiveApplication = (existingProfiles ?? []).some(
+    const existingActive = (existingProfiles ?? []).find(
       (profile) => String(profile.verification_status ?? "").toLowerCase() !== "rejected",
     );
 
-    if (hasActiveApplication) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.",
-        },
-        { status: 409 }
-      );
-    }
-
-    const insertPayload: Record<string, unknown> = {
+    const profilePayload: Record<string, unknown> = {
       full_name,
       nickname,
       graduation_year,
@@ -90,17 +80,37 @@ export async function POST(req: NextRequest) {
       experience,
       transformation,
       visibility: visibility || "public",
-      verification_status: "pending",
       email: normalizedEmail,
     };
 
     if (profile_picture) {
-      insertPayload.profile_picture = profile_picture;
+      profilePayload.profile_picture = profile_picture;
+    }
+
+    if (existingActive) {
+      const { data, error } = await supabaseServer
+        .from("alumni_profiles")
+        .update(profilePayload)
+        .eq("id", existingActive.id)
+        .select();
+
+      if (error) {
+        console.error("Supabase update error:", error);
+        return NextResponse.json(
+          { success: false, error: error.message },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json(
+        { success: true, message: "Alumni profile saved successfully", data },
+        { status: 200 }
+      );
     }
 
     const { data, error } = await supabaseServer
       .from("alumni_profiles")
-      .insert([insertPayload])
+      .insert([{ ...profilePayload, verification_status: "pending" }])
       .select();
 
     if (error) {

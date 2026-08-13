@@ -25,6 +25,7 @@ export default function JoinAlumniPage() {
   const [successMessage, setSuccessMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [existingProfile, setExistingProfile] = useState<"checking" | "none" | "exists">("checking");
+  const [isEditMode, setIsEditMode] = useState(false);
   const [showSubmissionInfoModal, setShowSubmissionInfoModal] = useState(false);
   const [infoModalMessage, setInfoModalMessage] = useState("");
   const [showDraftConfirm, setShowDraftConfirm] = useState(false);
@@ -74,10 +75,30 @@ export default function JoinAlumniPage() {
         const result = await Fetch_to("/services/supabase/alumni_profiles/retrieve", { email: authEmail });
         if (result.success) {
           const data = Array.isArray(result.data) ? result.data : (result.data?.data || []);
-          const hasActive = data.some(
+          const active = data.find(
             (p: { verification_status?: string }) => String(p.verification_status ?? "").toLowerCase() !== "rejected"
           );
-          setExistingProfile(hasActive ? "exists" : "none");
+          if (active) {
+            setExistingProfile("exists");
+            setIsEditMode(true);
+            setFullName(active.full_name || authFullName || "");
+            setNickname(active.nickname || "");
+            setGraduationYear(active.graduation_year || "");
+            setBirthday(active.birthday || "");
+            setEmail(active.email || authEmail || "");
+            const edu = Array.isArray(active.educational_attainments) ? active.educational_attainments : [];
+            if (edu.length > 0) setEducationalAttainment(String(edu[0]));
+            const progs = Array.isArray(active.programs) ? active.programs : [];
+            if (progs.length > 0) setProgram(String(progs[0]));
+            if (Array.isArray(active.certificates)) setCertificates(active.certificates.map(String));
+            if (Array.isArray(active.work_experiences)) setWorkExperiences(active.work_experiences);
+            setExperience(active.experience || "");
+            setTransformation(active.transformation || "");
+            if (active.visibility) setVisibility(active.visibility);
+            setIsAutoFilled(true);
+          } else {
+            setExistingProfile("none");
+          }
         } else {
           setExistingProfile("none");
         }
@@ -299,17 +320,21 @@ export default function JoinAlumniPage() {
 
       if (result.success) {
         setInfoModalMessage(
-          "Wait for 3-7 business days for the verification of admin and check your notification for update."
+          isEditMode
+            ? "Your alumni profile has been updated successfully."
+            : "Wait for 3-7 business days for the verification of admin and check your notification for update."
         );
         setShowSubmissionInfoModal(true);
         setSuccessMessage(
-          "Alumni profile submitted successfully for verification!"
+          isEditMode ? "Alumni profile saved successfully!" : "Alumni profile submitted successfully for verification!"
         );
         if (email) {
           await notifyApplicant(
             email,
-            "Under Review Applicant",
-            "Your alumni profile has been submitted and is now under verification.",
+            isEditMode ? "Alumni Profile Updated" : "Under Review Applicant",
+            isEditMode
+              ? "Your alumni profile has been updated."
+              : "Your alumni profile has been submitted and is now under verification.",
           );
         }
         // Reset form
@@ -343,9 +368,9 @@ export default function JoinAlumniPage() {
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 text-center px-6">
         <SectionEyebrow className="text-white/80">Community</SectionEyebrow>
-        <h1 className="text-4xl md:text-5xl font-bold text-white font-display">Alumni Registration</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-white font-display">{isEditMode ? "Edit Alumni Profile" : "Alumni Registration"}</h1>
         <p className="text-white/70 mt-4 max-w-xl mx-auto">
-          Build your verified alumni profile for the LCCB ETEEAP community.
+          {isEditMode ? "Update your alumni profile for the LCCB ETEEAP community." : "Build your verified alumni profile for the LCCB ETEEAP community."}
         </p>
       </div>
     </section>
@@ -364,7 +389,7 @@ export default function JoinAlumniPage() {
     );
   }
 
-  if (existingProfile === "exists") {
+  if (existingProfile === "none") {
     return (
       <main>
         {heroSection}
@@ -373,9 +398,9 @@ export default function JoinAlumniPage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <FileText className="w-8 h-8 text-blue-600" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-3 font-display">Already Submitted</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-3 font-display">Alumni Profile Unavailable</h2>
             <p className="text-slate-500 mb-8">
-              You already have an alumni application in progress or approved. You can apply again only after your previous application has been rejected.
+              Alumni profiles are created when you are marked as a graduate by the administration. Please wait for the admin to process your graduation.
             </p>
             <button
               onClick={() => router.push("/alumni")}
@@ -689,7 +714,7 @@ export default function JoinAlumniPage() {
               disabled={loading}
               className="w-full md:w-40 bg-blue-700 text-white py-3 rounded-xl font-semibold transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              {loading ? "Submitting..." : "Submit"}
+              {loading ? "Saving..." : isEditMode ? "Save Changes" : "Submit"}
             </button>
           </div>
         </form>

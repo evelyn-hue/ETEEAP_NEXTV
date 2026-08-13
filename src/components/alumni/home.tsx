@@ -41,6 +41,7 @@ export default function AlumniFeedPage() {
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasExistingAlumni, setHasExistingAlumni] = useState(false);
+  const [myProfile, setMyProfile] = useState<AlumniProfile | null>(null);
   const [checkingAlumniStatus, setCheckingAlumniStatus] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProgram, setSelectedProgram] = useState("");
@@ -74,10 +75,11 @@ export default function AlumniFeedPage() {
         const result = await Fetch_to("/services/supabase/alumni_profiles/retrieve", { email: authEmail });
         if (result.success) {
           const data = Array.isArray(result.data) ? result.data : (result.data?.data || []);
-          const hasActive = data.some(
+          const active = data.find(
             (p: AlumniProfile) => String(p.verification_status ?? "").toLowerCase() !== "rejected"
           );
-          setHasExistingAlumni(hasActive);
+          setMyProfile(active ?? null);
+          setHasExistingAlumni(Boolean(active));
         }
       } catch {
       } finally {
@@ -151,13 +153,19 @@ export default function AlumniFeedPage() {
         <Reveal>
           <div className="bg-white rounded-xl shadow-sm ring-1 ring-slate-200/30 p-6">
             <SectionEyebrow>Get Connected</SectionEyebrow>
-            <SectionHeading className="mb-4">Join the Alumni Network</SectionHeading>
+            <SectionHeading className="mb-4">Alumni Community</SectionHeading>
             {checkingAlumniStatus || authLoading ? (
               <span className="inline-block mt-2 bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed">Checking...</span>
             ) : hasExistingAlumni ? (
-              <span className="inline-block mt-2 bg-gray-400 text-white px-4 py-2 rounded-lg cursor-not-allowed">Already Applied</span>
+              myProfile && myProfile.is_graduate && !(myProfile.work_experiences && myProfile.work_experiences.length > 0) ? (
+                <Link href="/alumni/alumniform" className="inline-block mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Complete Your Alumni Profile</Link>
+              ) : (
+                <Link href="/alumni/alumniform" className="inline-block mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Edit Profile</Link>
+              )
             ) : (
-              <Link href="/alumni/alumniform" className="inline-block mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">Join Alumni</Link>
+              <p className="mt-2 text-sm text-slate-500">
+                Alumni profiles are created when you are marked as a graduate by the administration.
+              </p>
             )}
           </div>
         </Reveal>
