@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Check,
   Clock,
-  Eye,
   ExternalLink,
   Loader2,
   RotateCcw,
@@ -176,9 +175,9 @@ function StatusPill({ status }: { status: DocumentStatus | FormStatus }) {
   const styles =
     status === "Verified" || status === "Approve"
       ? "bg-green-100 text-green-800"
-      : status === "Rejected"
+      : status === "On Hold"
         ? "bg-amber-100 text-amber-800"
-        : status === "Reject"
+        : status === "Rejected" || status === "Reject"
           ? "bg-red-100 text-red-800"
           : status === "Delete"
             ? "bg-slate-200 text-slate-700"
@@ -188,7 +187,7 @@ function StatusPill({ status }: { status: DocumentStatus | FormStatus }) {
 
   return (
     <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>
-      {status === "Rejected" ? "On Hold" : status}
+      {status}
     </span>
   );
 }
@@ -201,6 +200,7 @@ function ApplicationActions({
   onRestore,
   currentStatus,
   isDeleted,
+  hasRejectedDocs = false,
 }: {
   onView: () => void;
   onAccept: () => void;
@@ -209,10 +209,14 @@ function ApplicationActions({
   onRestore: () => void;
   currentStatus: FormStatus;
   isDeleted: boolean;
+  hasRejectedDocs?: boolean;
 }) {
   const isUnderReview = currentStatus === "Under Review";
+  const isOnHold = currentStatus === "On Hold";
   const isRejected = currentStatus === "Reject";
   const canDelete = isUnderReview || isRejected;
+  const canApprove = isUnderReview || (isOnHold && !hasRejectedDocs);
+  const canOnHold = isUnderReview;
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -238,7 +242,8 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onAccept}
-            disabled={!isUnderReview}
+            disabled={!canApprove}
+            title={isOnHold && hasRejectedDocs ? "Applicant must fix remarked files before approval" : undefined}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <Check size={16} />
@@ -247,7 +252,7 @@ function ApplicationActions({
           <button
             type="button"
             onClick={onOnHold}
-            disabled={!isUnderReview}
+            disabled={!canOnHold}
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
           >
             <Clock size={16} />
@@ -929,6 +934,7 @@ export default function Application() {
                   onRestore={() => requestApplicationStatusChange(item, "Under Review")}
                   currentStatus={item.status}
                   isDeleted={item.status === "Delete"}
+                  hasRejectedDocs={item.documents.some((doc) => doc.status === "Rejected")}
                 />
               </div>
             </article>
@@ -995,6 +1001,7 @@ export default function Application() {
                         onRestore={() => requestApplicationStatusChange(item, "Under Review")}
                         currentStatus={item.status}
                         isDeleted={item.status === "Delete"}
+                        hasRejectedDocs={item.documents.some((doc) => doc.status === "Rejected")}
                       />
                     </td>
                   </tr>
