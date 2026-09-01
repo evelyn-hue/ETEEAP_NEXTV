@@ -356,8 +356,11 @@ export async function PATCH(params: NextRequest) {
     });
 
     const fallbackStatus = String(currentRow.form_status ?? "Draft");
+    const explicitStatus = String(form_status ?? "").trim();
     let nextStatus = resolveNextStatus(form_status, fallbackStatus);
-    if (allRequiredVerified && nextStatus !== "Delete") {
+    // Only auto-approve when the admin did not explicitly choose a status
+    // (e.g. per-document verification). Respect explicit On Hold / Draft / Reject.
+    if (!explicitStatus && allRequiredVerified && nextStatus !== "Delete") {
       nextStatus = "Approve";
     }
 

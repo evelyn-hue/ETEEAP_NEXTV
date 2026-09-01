@@ -459,11 +459,24 @@ export default function ApplicationStatus() {
 
   const statusLower = String(app.form_status || "").toLowerCase();
   const hasRemarks = Object.keys(remarks).length > 0;
-  const readOnly = !statusLower.includes("reject") && !hasRemarks;
   const isUnderReview = statusLower === "under review";
   const isOnHoldStatus = statusLower === "on hold";
+  const isLocked =
+    isUnderReview ||
+    statusLower === "accepted" ||
+    statusLower === "approve" ||
+    statusLower === "approved" ||
+    statusLower.includes("delete");
+  const readOnly = isLocked;
   const showReminderSection = isUnderReview || isOnHoldStatus;
   const daysSinceSubmit = app?.created_at ? Math.floor((Date.now() - new Date(String(app.created_at)).getTime()) / 86400000) : 0;
+
+  const canEditDoc = (key: string) => {
+    if (isLocked) return false;
+    if (verified[`${key}_verified`]) return false;
+    if (hasRemarks) return Boolean(remarks[key]?.remark);
+    return true;
+  };
 
   const getStatusBadgeClass = () => {
     switch (statusLower) {
@@ -802,7 +815,7 @@ export default function ApplicationStatus() {
                     )}
 
                     {/* Upload Section — only remarked file editable */}
-                    {!!remark && !isVerified ? (
+                    {canEditDoc(d.key) ? (
                       <div
                         onDragOver={(e) => handleDragOver(e, d.key)}
                         onDragLeave={handleDragLeave}
@@ -842,7 +855,7 @@ export default function ApplicationStatus() {
                     ) : null}
 
                     {/* Upload Button — only remarked file */}
-                    {!!remark && !isVerified && (
+                    {canEditDoc(d.key) && (
                       <button
                         disabled={!fileInputs[d.key] || uploadingDoc === d.key}
                         onClick={() => handleResubmit(d.key)}
