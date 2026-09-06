@@ -1,6 +1,6 @@
 "use client";
 
-import { Banner, Footer, Header } from "@/components/landpage";
+import { Banner, Footer, Header, EventsCarousel } from "@/components/landpage";
 import { Fetch_to } from "@/utilities";
 import { useEffect, useState } from "react";
 import api_link from "@/config/api_link.json";
@@ -30,6 +30,7 @@ export default function LandPage() {
     <PageTransition>
       <Header showProfile={showProfile} email={email} />
       <Banner />
+      <EventsCarousel />
       <Footer />
     </PageTransition>
   );

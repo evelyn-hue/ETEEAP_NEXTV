@@ -121,6 +121,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
   const [submitError, setSubmitError] = useState("");
   const [submitSuccess, setSubmitSuccess] = useState("");
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   const handleDeleteFile = (fileKey: string, fileIndex: number) => {
     const currentDraft = draft ?? getDraft();
@@ -572,9 +573,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
 
           <button
             type="button"
-            onClick={() => {
-              void handleSubmit("Under Review");
-            }}
+            onClick={() => setShowSubmitConfirm(true)}
             disabled={submitting}
             style={{ display: isUnderReview || submitting ? "none" : "block" }}
             className="px-6 py-3 rounded-lg bg-blue-700 text-white font-semibold hover:bg-blue-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
@@ -583,6 +582,36 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
           </button>
         </div>
         </Reveal>
+
+        {showSubmitConfirm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+            <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+              <h3 className="text-lg font-semibold text-slate-900">Submit Application?</h3>
+              <p className="mt-3 text-sm text-slate-600">
+                Are you sure you want to submit your application? Once submitted, you can only edit it if an admin returns it for revision. Verification may take 3–7 business days.
+              </p>
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowSubmitConfirm(false)}
+                  className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSubmitConfirm(false);
+                    void handleSubmit("Under Review");
+                  }}
+                  className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
         
       </div>
     </main>
