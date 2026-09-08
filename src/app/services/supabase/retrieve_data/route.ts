@@ -286,6 +286,19 @@ export async function PATCH(params: NextRequest) {
           `Your ${documentKeyToLabel(nextEntry.documentId)} was ${nextEntry.status.toLowerCase()}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy).split('@')[0]}` : ""}${nextEntry.remark ? ` Remark: ${nextEntry.remark}` : ""}`,
         );
       }
+
+      if (currentRow.email && currentRow.applicantName && nextEntry.remark) {
+        try {
+          await sendStatusEmail(
+            currentRow.email,
+            currentRow.applicantName,
+            nextEntry.status === "Rejected" ? "On Hold" : nextEntry.status,
+            nextEntry.remark,
+          );
+        } catch {
+          console.error("Failed to send document remark email to", currentRow.email);
+        }
+      }
     } else if (
       normalizedRequestedStatus === "approve" ||
       normalizedRequestedStatus === "approved" ||
@@ -343,9 +356,20 @@ export async function PATCH(params: NextRequest) {
     });
 
     const fallbackStatus = String(currentRow.form_status ?? "Draft");
+    const explicitStatus = String(form_status ?? "").trim();
     let nextStatus = resolveNextStatus(form_status, fallbackStatus);
-    if (allRequiredVerified && nextStatus !== "Delete") {
+    // Only auto-approve when the admin did not explicitly choose a status
+    // (e.g. per-document verification). Respect explicit On Hold / Draft / Reject.
+    if (!explicitStatus && allRequiredVerified && nextStatus !== "Delete") {
       nextStatus = "Approve";
+    }
+
+    // B-mode: Approve is only allowed when no doc remains Rejected (must comply first)
+    if (nextStatus === "Approve" && approvals.some((entry) => entry.status === "Rejected")) {
+      return NextResponse.json(
+        { success: false, error: "Applicant must fix remarked files before approval" },
+        { status: 400 },
+      );
     }
 
     if (String(form_status ?? "").trim() !== "" || allRequiredVerified) {
@@ -374,20 +398,28 @@ export async function PATCH(params: NextRequest) {
       );
 
       if (currentRow.email) {
+        const applicantDetail =
+          nextStatus === "On Hold"
+            ? "Application On Hold — Your application is currently being reviewed by the administrator. Verification may take 3–7 business days. Please wait while your application is being processed."
+            : `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy).split('@')[0]}` : ""}.`;
         await insertActivityLog(
           String(currentRow.email),
           statusAction,
-          `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy).split('@')[0]}` : ""}.`,
+          applicantDetail,
         );
       }
 
       if (currentRow.email && currentRow.applicantName) {
         try {
+          const emailDetails =
+            nextStatus === "On Hold"
+              ? "Your application is currently being reviewed by the administrator. Verification may take 3–7 business days. Please wait while your application is being processed."
+              : `Your application status has been updated to ${nextStatus} by the admin.`;
           await sendStatusEmail(
             currentRow.email,
             currentRow.applicantName,
             nextStatus,
-            `Your application status has been updated to ${nextStatus} by the admin.`,
+            emailDetails,
           );
         } catch {
           console.error("Failed to send status email to", currentRow.email);

@@ -164,15 +164,31 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                     ) : notifications.length === 0 ? (
                       <div className="p-4 text-sm text-gray-500">No notifications yet.</div>
                     ) : (
-                      notifications.map((notification) => (
-                        <div key={notification.id} className="p-4 border-b last:border-b-0 hover:bg-gray-50 transition">
-                          <p className="text-sm font-medium text-gray-800">{notification.actions}</p>
-                          <p className="mt-1 text-sm text-gray-600">{notification.details}</p>
-                          <span className="text-xs text-gray-400">
-                            {new Date(notification.created_at).toLocaleString()}
-                          </span>
-                        </div>
-                      ))
+                      notifications.map((notification) => {
+                        const href = (() => {
+                          const a = String(notification.actions || "").toLowerCase();
+                          if (a.includes("alumni")) return "/alumni";
+                          if (a.includes("draft") || a.includes("deleted")) return "/form/draft";
+                          return "/form/applicationstatus";
+                        })();
+                        return (
+                          <button
+                            key={notification.id}
+                            type="button"
+                            onClick={() => {
+                              setNotificationOpen(false);
+                              router.push(href);
+                            }}
+                            className="w-full text-left p-4 border-b last:border-b-0 hover:bg-gray-50 transition"
+                          >
+                            <p className="text-sm font-medium text-gray-800">{notification.actions}</p>
+                            <p className="mt-1 text-sm text-gray-600">{notification.details}</p>
+                            <span className="text-xs text-gray-400">
+                              {new Date(notification.created_at).toLocaleString()}
+                            </span>
+                          </button>
+                        );
+                      })
                     )}
                   </div>
                 </div>

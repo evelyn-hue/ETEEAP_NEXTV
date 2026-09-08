@@ -15,7 +15,6 @@ import {
   AlertCircle,
   Download,
   Lock,
-  BarChart3,
   Clock,
   XCircle,
 } from "lucide-react";
@@ -128,6 +127,7 @@ export default function ApplicationStatus() {
   const [loading, setLoading] = useState(true);
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
   const [alumniProfile, setAlumniProfile] = useState<Record<string, unknown> | null>(null);
+  const [reminding, setReminding] = useState(false);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
@@ -342,6 +342,49 @@ export default function ApplicationStatus() {
     ? Math.round((requiredUploadedCount / requiredDocuments.length) * 100)
     : 0;
 
+  const handleRemindAdmin = async () => {
+    if (!app?.id) return;
+    setReminding(true);
+    try {
+      const res = await fetch("/services/supabase/form/reminder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: app.email }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.success) {
+        showToast(body?.error || "Failed to send reminder", "error");
+        return;
+      }
+      showToast("Reminder sent to admin", "success");
+    } catch (err) {
+      showToast((err as Error).message || "Failed to send reminder", "error");
+    } finally {
+      setReminding(false);
+    }
+  };
+
+  const handleRevertToDraft = async () => {
+    if (!app?.id) return;
+    try {
+      const res = await fetch("/services/supabase/retrieve_data", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: Number(app.id), form_status: "Draft" }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok || !body?.success) {
+        showToast(body?.error || "Failed to revert to draft", "error");
+        return;
+      }
+      showToast("Application reverted to draft — you may resubmit", "success");
+      const controller = new AbortController();
+      await fetchDetails(controller.signal);
+    } catch (err) {
+      showToast((err as Error).message || "Failed to revert", "error");
+    }
+  };
+
   const heroSection = (
     <section className="relative w-full h-72 flex items-center justify-center overflow-hidden bg-primary">
       <div className="absolute inset-0 bg-black/40" />
@@ -416,8 +459,24 @@ export default function ApplicationStatus() {
 
   const statusLower = String(app.form_status || "").toLowerCase();
   const hasRemarks = Object.keys(remarks).length > 0;
-  const readOnly = !statusLower.includes("reject") && !hasRemarks;
   const isUnderReview = statusLower === "under review";
+  const isOnHoldStatus = statusLower === "on hold";
+  const isLocked =
+    isUnderReview ||
+    statusLower === "accepted" ||
+    statusLower === "approve" ||
+    statusLower === "approved" ||
+    statusLower.includes("delete");
+  const readOnly = isLocked;
+  const showReminderSection = isUnderReview || isOnHoldStatus;
+  const daysSinceSubmit = app?.created_at ? Math.floor((Date.now() - new Date(String(app.created_at)).getTime()) / 86400000) : 0;
+
+  const canEditDoc = (key: string) => {
+    if (isLocked) return false;
+    if (verified[`${key}_verified`]) return false;
+    if (hasRemarks) return Boolean(remarks[key]?.remark);
+    return true;
+  };
 
   const getStatusBadgeClass = () => {
     switch (statusLower) {
@@ -493,6 +552,56 @@ export default function ApplicationStatus() {
           </div>
         </div>
         </Reveal>
+
+        {/* Reminder — 3/7 business days */}
+        {showReminderSection && (
+          <div className="mb-12">
+            {daysSinceSubmit >= 7 ? (
+              <div className="rounded-xl border border-amber-300 bg-amber-50 p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-3">
+                  <AlertCircle className="w-6 h-6 text-amber-600 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-amber-900">Verification time exceeded</p>
+                    <p className="text-sm text-amber-800">It has been 7 business days. Your application can be reverted to draft — files will be kept, you may resubmit.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRevertToDraft}
+                  className="shrink-0 rounded-xl bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+                >
+                  Revert to Draft
+                </button>
+              </div>
+            ) : daysSinceSubmit >= 3 ? (
+              <div className="rounded-xl border border-blue-200 bg-blue-50 p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex gap-3">
+                  <Clock className="w-6 h-6 text-blue-600 shrink-0" />
+                  <div>
+                    <p className="font-semibold text-blue-900">Need a follow-up?</p>
+                    <p className="text-sm text-blue-800">You can remind the admin. Limited to once every 24 hours.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRemindAdmin}
+                  disabled={reminding}
+                  className="shrink-0 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {reminding ? "Sending..." : "Remind Admin"}
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-6 flex gap-3">
+                <Clock className="w-6 h-6 text-slate-500 shrink-0" />
+                <div>
+                  <p className="font-semibold text-slate-700">Verification in progress</p>
+                  <p className="text-sm text-slate-600">You can send a reminder after 3 business days.</p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Progress Overview */}
         <section className="mb-12">
@@ -705,8 +814,8 @@ export default function ApplicationStatus() {
                       </div>
                     )}
 
-                    {/* Upload Section */}
-                    {(!readOnly || !!remark) && !isVerified ? (
+                    {/* Upload Section — only remarked file editable */}
+                    {canEditDoc(d.key) ? (
                       <div
                         onDragOver={(e) => handleDragOver(e, d.key)}
                         onDragLeave={handleDragLeave}
@@ -745,8 +854,8 @@ export default function ApplicationStatus() {
                       </div>
                     ) : null}
 
-                    {/* Upload Button */}
-                    {!readOnly && !isVerified && (
+                    {/* Upload Button — only remarked file */}
+                    {canEditDoc(d.key) && (
                       <button
                         disabled={!fileInputs[d.key] || uploadingDoc === d.key}
                         onClick={() => handleResubmit(d.key)}

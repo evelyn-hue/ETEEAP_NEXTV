@@ -128,7 +128,7 @@ if (file.size > 5 * 1024 * 1024) {
     const { data: existingApplication, error: existingApplicationError } =
       await supabaseServer
         .from("form")
-        .select("id")
+        .select("id, forms_approvals")
         .eq("email", email)
         .maybeSingle();
 
@@ -139,10 +139,30 @@ if (file.size > 5 * 1024 * 1024) {
       );
     }
 
+    // If re-uploading a previously rejected doc, reset its approval to Pending so admin can re-review
+    let approvalUpdate: Record<string, unknown> | null = null;
+    if (existingApplication && Array.isArray((existingApplication as { forms_approvals?: unknown }).forms_approvals)) {
+      const existingApprovals = (existingApplication as { forms_approvals: unknown[] }).forms_approvals;
+      const reuploadedTypes = new Set(uploadItems.map((u) => u.documentType));
+      let changed = false;
+      const nextApprovals = existingApprovals.map((entry) => {
+        if (!entry || typeof entry !== "object") return entry;
+        const obj = entry as Record<string, unknown>;
+        const docId = String(obj.documentId ?? "");
+        if (!reuploadedTypes.has(docId)) return entry;
+        if (String(obj.status) !== "Rejected") return entry;
+        changed = true;
+        return { ...obj, status: "Pending", remark: "", reviewedAt: new Date().toISOString() };
+      });
+      if (changed) approvalUpdate = { forms_approvals: nextApprovals } as Record<string, unknown>;
+    }
+
+    const updateData: Record<string, unknown> = approvalUpdate ? { ...rowData, ...approvalUpdate } : rowData;
+
     const { error: saveError } = existingApplication
       ? await supabaseServer
           .from("form")
-          .update(rowData)
+          .update(updateData)
           .eq("id", existingApplication.id)
       : await supabaseServer
           .from("form")
