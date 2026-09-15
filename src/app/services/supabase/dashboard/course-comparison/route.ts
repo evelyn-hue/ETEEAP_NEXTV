@@ -1,74 +1,48 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { supportedPrograms, getCourseAbbrev, normalizeProgram } from "@/lib/programs";
 
-const supportedPrograms = [
-  "Bachelor of Arts in English Language Studies",
-  "Bachelor of Science in Business Administration - Marketing Management",
-  "Bachelor of Science in Business Administration - Human Resource Management",
-  "Bachelor of Science in Hospitality Management",
-] as const;
-
-function getCourseAbbrev(course: string) {
-  const map: Record<string, string> = {
-    "Bachelor of Arts in English Language Studies": "BAELS",
-    "Bachelor of Science in Business Administration - Marketing Management": "BSBA-MM",
-    "Bachelor of Science in Business Administration - Human Resource Management": "BSBA-HRM",
-    "Bachelor of Science in Hospitality Management": "BSHM",
-  };
-
-  return map[course] ?? course;
-}
-
-function normalizeProgram(program?: string | null) {
-  const value = String(program ?? "").trim().toLowerCase();
-
-  if (!value) {
-    return null;
-  }
-
-  if (value.includes("baels") || value.includes("english language studies")) {
-    return supportedPrograms[0];
-  }
-
-  if ((value.includes("bsba") || value.includes("marketing")) && (value.includes("marketing") || value.includes("mm"))) {
-    return supportedPrograms[1];
-  }
-
-  if ((value.includes("bsba") || value.includes("human resource")) && (value.includes("human resource") || value.includes("hrm"))) {
-    return supportedPrograms[2];
-  }
-
-  if (value.includes("hospitality") || value.includes("bshm")) {
-    return supportedPrograms[3];
-  }
-
-  return null;
-}
-
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
+    let body: { year?: string | null; course?: string | null } = {};
+    try {
+      body = (await req.json()) as typeof body;
+    } catch { /* no body — treat as no filters */ }
+
+    const year = body?.year ? String(body.year).trim() : "";
+    const course = body?.course ? String(body.course).trim() : "";
+
     const { data: applicationData } = await supabaseServer
       .from("form")
       .select("program, created_at");
 
     const { data: alumniData } = await supabaseServer
       .from("alumni_profiles")
-      .select("programs, created_at");
+      .select("programs, graduation_year, created_at");
 
     const courseMap: Record<string, { applications: number; alumni: number; lastUpdated?: string }> = {};
 
-    supportedPrograms.forEach((course) => {
-      courseMap[course] = { applications: 0, alumni: 0, lastUpdated: undefined };
+    supportedPrograms.forEach((courseName) => {
+      courseMap[courseName] = { applications: 0, alumni: 0, lastUpdated: undefined };
     });
+
+    const matchesCourse = (program?: string | null) => {
+      if (!course) return true;
+      return normalizeProgram(program) === normalizeProgram(course);
+    };
 
     if (applicationData) {
       applicationData.forEach((app: { program?: string | null; created_at?: string }) => {
-        const course = normalizeProgram(app.program);
-        if (!course) {
+        if (year && app.created_at) {
+          const appYear = String(new Date(app.created_at).getFullYear());
+          if (appYear !== year) return;
+        }
+        const courseName = normalizeProgram(app.program);
+        if (!courseName || !matchesCourse(app.program)) {
           return;
         }
 
-        const row = courseMap[course];
+        const row = courseMap[courseName];
         row.applications += 1;
         if (app.created_at) {
           const appDate = new Date(app.created_at).toISOString();
@@ -80,18 +54,22 @@ export async function POST() {
     }
 
     if (alumniData) {
-      alumniData.forEach((alumni: { programs?: string[] | null; created_at?: string }) => {
+      alumniData.forEach((alumni: { programs?: string[] | null; graduation_year?: string | null; created_at?: string }) => {
         if (!Array.isArray(alumni.programs)) {
           return;
         }
 
+        if (year && alumni.graduation_year && String(alumni.graduation_year).trim() !== year) {
+          return;
+        }
+
         alumni.programs.forEach((program: string) => {
-          const course = normalizeProgram(program);
-          if (!course) {
+          const courseName = normalizeProgram(program);
+          if (!courseName || !matchesCourse(program)) {
             return;
           }
 
-          const row = courseMap[course];
+          const row = courseMap[courseName];
           row.alumni += 1;
           if (alumni.created_at) {
             const alumniDate = new Date(alumni.created_at).toISOString();
@@ -103,11 +81,11 @@ export async function POST() {
       });
     }
 
-    const courseComparison = supportedPrograms.map((course) => {
-      const data = courseMap[course];
+    const courseComparison = supportedPrograms.map((courseName) => {
+      const data = courseMap[courseName];
       return {
-        course,
-        courseAbbrev: getCourseAbbrev(course),
+        course: courseName,
+        courseAbbrev: getCourseAbbrev(courseName),
         applications: data.applications,
         alumni: data.alumni,
         lastUpdated: data.lastUpdated ?? null,

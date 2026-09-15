@@ -54,6 +54,28 @@ const fileLabels: Record<string, string> = {
   certificates: "Certificates",
 };
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
+function formatBytes(bytes: number) {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+function sizeBadge(size: number) {
+  const isBig = size > MAX_FILE_SIZE;
+  return (
+    <span
+      className={`ml-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        isBig ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+      }`}
+    >
+      {formatBytes(size)}
+    </span>
+  );
+}
+
 function fileToDataUrl(file: File) {
   return new Promise<StoredFile>((resolve, reject) => {
     const reader = new FileReader();
@@ -150,7 +172,7 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
         (event.target as HTMLInputElement).value = "";
         return;
       }
-if (file.size > 5 * 1024 * 1024) {
+if (file.size > MAX_FILE_SIZE) {
     setError(`"${file.name}" exceeds the 5MB file size limit.`);
         (event.target as HTMLInputElement).value = "";
         return;
@@ -450,6 +472,7 @@ if (file.size > 5 * 1024 * 1024) {
                       <div className="flex-1 min-w-0">
                         <span className="truncate block">{file.name}</span>
                         <span className="text-xs text-slate-500">Saved</span>
+                        {sizeBadge(file.size)}
                       </div>
                       <button
                         type="button"
@@ -465,6 +488,7 @@ if (file.size > 5 * 1024 * 1024) {
                       <div className="flex-1 min-w-0">
                         <span className="truncate block">{file.name}</span>
                         <span className="text-xs text-slate-500">New</span>
+                        {sizeBadge(file.size)}
                       </div>
                       <button
                         type="button"

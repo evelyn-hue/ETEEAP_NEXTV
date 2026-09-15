@@ -51,6 +51,14 @@ export default function PublicContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("tab");
+    if (requested === "blog" || requested === "video" || requested === "event") {
+      setTab(requested);
+    }
+  }, []);
+
+  useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
