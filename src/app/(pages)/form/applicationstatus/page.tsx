@@ -1,15 +1,15 @@
 "use client";
 export const dynamic = "force-dynamic";
 import { Suspense } from "react";
-import InteriorPage from "@/components/shared/InteriorPage";
+import PageTransition from "@/components/shared/PageTransition";
 import { ApplicationStatus } from "@/components/form";
 
 export default function ApplicationStatusPage() {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-      <InteriorPage>
+      <PageTransition>
         <ApplicationStatus />
-      </InteriorPage>
+      </PageTransition>
     </Suspense>
   );
 }

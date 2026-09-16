@@ -1,52 +1,85 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { normalizeProgram } from "@/lib/programs";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    // Get total applications
-    const { count: totalApps } = await supabaseServer
+    let body: { year?: string | null; course?: string | null } = {};
+    try {
+      body = (await req.json()) as typeof body;
+    } catch { /* no body — treat as no filters */ }
+
+    const year = body?.year ? String(body.year).trim() : "";
+    const course = body?.course ? String(body.course).trim() : "";
+
+    const matchesYear = (date?: string | null) => {
+      if (!year) return true;
+      if (!date) return false;
+      return String(new Date(date).getFullYear()) === year;
+    };
+    const matchesGraduationYear = (gy?: string | null) => {
+      if (!year) return true;
+      return String(gy ?? "").trim() === year;
+    };
+    const matchesCourse = (program?: string | null) => {
+      if (!course) return true;
+      return normalizeProgram(program) === normalizeProgram(course);
+    };
+
+    const { data: forms } = await supabaseServer
       .from("form")
-      .select("*", { count: "exact", head: true });
+      .select("form_status, program, created_at");
 
-    // Get pending applications (draft and under review)
-    const { count: pendingApps } = await supabaseServer
-      .from("form")
-      .select("*", { count: "exact", head: true })
-      .in("form_status", ["draft", "Under Review"]);
-
-    // Get approved applications (accepted or approved)
-    const { count: approvedApps } = await supabaseServer
-      .from("form")
-      .select("*", { count: "exact", head: true })
-      .in("form_status", ["accepted", "Approve"]);
-
-    // Get pending alumni submissions
-    const { count: pendingAlumni } = await supabaseServer
+    const { data: alumni } = await supabaseServer
       .from("alumni_profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("verification_status", "pending");
+      .select("verification_status, is_graduate, graduation_year, programs");
 
-    // Get total alumni profiles
-    const { count: totalAlumni } = await supabaseServer
-      .from("alumni_profiles")
-      .select("*", { count: "exact", head: true });
+    const formRows = (forms ?? []) as Array<{ form_status?: string | null; program?: string | null; created_at?: string | null }>;
+    const alumniRows = (alumni ?? []) as Array<{
+      verification_status?: string | null;
+      is_graduate?: boolean | null;
+      graduation_year?: string | null;
+      programs?: string[] | null;
+    }>;
 
-    // Get verified alumni
-    const { count: verifiedAlumni } = await supabaseServer
-      .from("alumni_profiles")
-      .select("*", { count: "exact", head: true })
-      .eq("verification_status", "verified");
+    let totalApplications = 0;
+    let pendingReview = 0;
+    let approved = 0;
+    let pendingAlumni = 0;
+    let verifiedAlumni = 0;
+    let totalAlumni = 0;
+
+    formRows.forEach((row) => {
+      if (!matchesYear(row.created_at) || !matchesCourse(row.program)) return;
+      totalApplications += 1;
+      const status = String(row.form_status ?? "").toLowerCase();
+      if (status === "draft" || status === "under review") pendingReview += 1;
+      if (status === "accepted" || status === "approve") approved += 1;
+    });
+
+    alumniRows.forEach((row) => {
+      if (!matchesGraduationYear(row.graduation_year)) return;
+      const belongsToCourse = course
+        ? (row.programs ?? []).some((program) => matchesCourse(program))
+        : true;
+      if (!belongsToCourse) return;
+
+      totalAlumni += 1;
+      const status = String(row.verification_status ?? "").toLowerCase();
+      if (status === "pending") pendingAlumni += 1;
+      if (status === "verified") verifiedAlumni += 1;
+    });
 
     return NextResponse.json(
       {
         success: true,
         data: {
-          totalApplications: totalApps || 0,
-          pendingReview: pendingApps || 0,
-          approved: approvedApps || 0,
-          pendingAlumni: pendingAlumni || 0,
-          totalAlumni: totalAlumni || 0,
-          verifiedAlumni: verifiedAlumni || 0,
+          totalApplications,
+          pendingReview,
+          approved,
+          pendingAlumni,
+          verifiedAlumni,
+          totalAlumni,
         },
       },
       { status: 200 }

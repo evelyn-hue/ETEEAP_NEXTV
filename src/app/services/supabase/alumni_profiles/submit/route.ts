@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseServer
       .from("alumni_profiles")
-      .insert([{ ...profilePayload, verification_status: "pending" }])
+      .insert([{ ...profilePayload, verification_status: "verified", is_graduate: true }])
       .select();
 
     if (error) {

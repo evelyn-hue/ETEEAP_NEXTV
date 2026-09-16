@@ -35,8 +35,19 @@ export default function EventsCarousel() {
           type: "event",
           status: "published",
         });
+        if (!result.success) {
+          setError(result.message || "Unable to load upcoming events.");
+          setEvents([]);
+          return;
+        }
         const rows = Array.isArray(result.data) ? result.data : (result.data?.data || []);
-        setEvents((rows as EventPost[]).filter((p) => p.title));
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+        const upcoming = (rows as EventPost[])
+          .filter((p) => p.title)
+          .filter((p) => !p.event_date || p.event_date >= todayStr)
+          .sort((a, b) => (a.event_date || "9999").localeCompare(b.event_date || "9999"));
+        setEvents(upcoming);
       } catch {
         setError("Unable to load upcoming events.");
       } finally {
@@ -45,6 +56,8 @@ export default function EventsCarousel() {
     };
     void load();
   }, []);
+
+  const current = events[activeIndex];
 
   const goTo = (index: number) => {
     if (events.length === 0) return;
@@ -71,21 +84,27 @@ export default function EventsCarousel() {
     );
   }
 
+  if (error) {
+    return (
+      <section className="py-20 bg-section-warm">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <SectionEyebrow className="text-center">What&apos;s Happening</SectionEyebrow>
+          <SectionHeading className="text-center mb-10">Upcoming Events</SectionHeading>
+          <p className="text-center text-sm text-red-600">{error}</p>
+        </div>
+      </section>
+    );
+  }
+
   if (events.length === 0) {
     return null;
   }
-
-  const current = events[activeIndex];
 
   return (
     <section className="py-20 bg-section-warm">
       <div className="max-w-7xl mx-auto px-6">
         <SectionEyebrow className="text-center">What&apos;s Happening</SectionEyebrow>
         <SectionHeading className="text-center mb-10">Upcoming Events</SectionHeading>
-        {error ? (
-          <p className="text-center text-sm text-red-600">{error}</p>
-        ) : (
-          <>
             <div className="relative mx-auto max-w-3xl">
               <div className="grid rounded-2xl overflow-hidden shadow-lg">
                 <AnimatePresence initial={false} custom={direction}>
@@ -133,7 +152,7 @@ export default function EventsCarousel() {
                         <p className="mt-4 text-sm text-slate-600 line-clamp-3">{current.body}</p>
                       ) : null}
                       <Link
-                        href="/news"
+                        href="/news?tab=event"
                         className="mt-6 inline-block w-fit rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
                       >
                         View Event
@@ -180,8 +199,6 @@ export default function EventsCarousel() {
                 ))}
               </div>
             ) : null}
-          </>
-        )}
       </div>
     </section>
   );

@@ -17,6 +17,8 @@ import {
   Lock,
   Clock,
   XCircle,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import Reveal from "@/components/shared/Reveal";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
@@ -128,6 +130,7 @@ export default function ApplicationStatus() {
   const [draggedOver, setDraggedOver] = useState<string | null>(null);
   const [alumniProfile, setAlumniProfile] = useState<Record<string, unknown> | null>(null);
   const [reminding, setReminding] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
 
   const showToast = (message: string, type: "success" | "error" | "info" = "info") => {
     setToast({ message, type });
@@ -139,8 +142,8 @@ export default function ApplicationStatus() {
     if (!allowedTypes.includes(file.type)) {
       return "File must be a PDF, JPG, or PNG.";
     }
-    if (file.size > 10 * 1024 * 1024) {
-      return "File must be 10MB or smaller.";
+    if (file.size > 5 * 1024 * 1024) {
+      return "File must be 5MB or smaller.";
     }
     return null;
   };
@@ -331,6 +334,12 @@ export default function ApplicationStatus() {
       console.error(err);
     }
   };
+
+  const goToDoc = (index: number) => {
+    setActiveIndex(Math.max(0, Math.min(DOCUMENTS.length - 1, index)));
+  };
+  const goPrev = () => goToDoc(activeIndex - 1);
+  const goNext = () => goToDoc(activeIndex + 1);
 
   // Calculate statistics
   const requiredDocuments = DOCUMENTS.filter((document) => document.required);
@@ -668,10 +677,73 @@ export default function ApplicationStatus() {
         <section>
           <SectionEyebrow className="text-center">Requirements</SectionEyebrow>
           <h2 className="text-3xl font-bold text-center text-gray-900 mb-8 font-display">Documents & Status</h2>
+
+          {/* Toolbar */}
+          <div className="flex items-center justify-between gap-4 mb-6">
+            <button
+              onClick={() => router.back()}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Applications
+            </button>
+
+            {(statusLower.includes("reject") || statusLower.includes("draft")) && (
+              <button
+                onClick={handleDelete}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-red-600 text-red-600 font-medium hover:bg-red-50 transition text-sm"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete Application
+              </button>
+            )}
+          </div>
+
         <Reveal>
         <div className="mb-12">
-          <div className="grid md:grid-cols-2 gap-6">
-            {DOCUMENTS.map((d) => {
+          {/* Step Indicator */}
+          <div className="flex items-center justify-between mb-6">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={activeIndex === 0}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <p className="text-sm font-semibold text-gray-700">
+              File {activeIndex + 1} of {DOCUMENTS.length}
+            </p>
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={activeIndex === DOCUMENTS.length - 1}
+              className="inline-flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="flex flex-wrap justify-center gap-2 mb-8">
+            {DOCUMENTS.map((d, i) => (
+              <button
+                key={d.key}
+                type="button"
+                onClick={() => goToDoc(i)}
+                aria-label={`Go to ${d.label}`}
+                title={d.label}
+                className={`h-2.5 rounded-full transition-all duration-200 ${
+                  i === activeIndex ? "w-6 bg-blue-600" : "w-2.5 bg-gray-300 hover:bg-gray-400"
+                }`}
+              />
+            ))}
+          </div>
+
+          <div className="mx-auto max-w-2xl">
+          {(() => {
+            const d = DOCUMENTS[activeIndex];
               const val = app[d.key];
               const remark = remarks[d.key]?.remark || null;
               const isVerified = verified[`${d.key}_verified`];
@@ -842,7 +914,7 @@ export default function ApplicationStatus() {
                               {fileInputs[d.key]?.name || "Drop file or click to select"}
                             </p>
                             <p className="text-xs text-gray-500 mt-1">
-                              PDF, JPG, JPEG, PNG (Max 10MB)
+                              PDF, JPG, JPEG, PNG (Max 5MB)
                             </p>
                           </div>
                         </label>
@@ -877,36 +949,36 @@ export default function ApplicationStatus() {
                   </div>
                 </div>
               );
-            })}
+          })()}
+          </div>
+
+          {/* Bottom Nav */}
+          <div className="mt-8 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={goPrev}
+              disabled={activeIndex === 0}
+              className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Previous
+            </button>
+            <p className="text-sm font-semibold text-gray-700">
+              File {activeIndex + 1} of {DOCUMENTS.length}
+            </p>
+            <button
+              type="button"
+              onClick={goNext}
+              disabled={activeIndex === DOCUMENTS.length - 1}
+              className="inline-flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
         </Reveal>
         </section>
-
-        {/* Action Buttons */}
-        <Reveal>
-        <div className="flex justify-between items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition flex items-center gap-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Applications
-          </button>
-
-          <div>
-            {(statusLower.includes("reject") || statusLower.includes("draft")) && (
-              <button
-                onClick={handleDelete}
-                className="px-6 py-3 rounded-lg border-2 border-red-600 text-red-600 font-medium hover:bg-red-50 transition flex items-center gap-2"
-              >
-                <Trash2 className="w-5 h-5" />
-                Delete Application
-              </button>
-            )}
-          </div>
-        </div>
-        </Reveal>
 
         {/* Alumni registration status */}
         {alumniProfile ? (

@@ -4,7 +4,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { id, verification_status, is_graduate } = body;
+    const { id, is_graduate } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -14,7 +14,6 @@ export async function POST(req: NextRequest) {
     }
 
     const updates: Record<string, unknown> = {};
-    if (verification_status !== undefined) updates.verification_status = verification_status;
     if (is_graduate !== undefined) updates.is_graduate = is_graduate;
 
     if (Object.keys(updates).length === 0) {

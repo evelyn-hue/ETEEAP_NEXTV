@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, motion, useMotionValue, useTransform } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   FiCheckCircle,
   FiClock,
@@ -28,6 +28,7 @@ import {
 } from "recharts";
 
 import Fetch_to from "@/utilities/Fetch_to";
+import { supportedPrograms, getCourseAbbrev } from "@/lib/programs";
 
 type Statistics = {
   totalApplications: number;
@@ -84,17 +85,20 @@ export default function Dashboard() {
   const [activities, setActivities] = useState<Activity[]>([]);
 
   const [loading, setLoading] = useState(true);
+  const [courseFilter, setCourseFilter] = useState("");
+  const [yearFilter, setYearFilter] = useState("");
 
   useEffect(() => {
     const fetchAll = async () => {
       setLoading(true);
 
       try {
+        const filterPayload = { year: yearFilter || undefined, course: courseFilter || undefined };
         const [statsRes, courseRes, enrollRes, activityRes] =
           await Promise.all([
-            Fetch_to("/services/supabase/dashboard/statistics", {}),
-            Fetch_to("/services/supabase/dashboard/course-comparison", {}),
-            Fetch_to("/services/supabase/dashboard/enrollment-trend", {}),
+            Fetch_to("/services/supabase/dashboard/statistics", filterPayload),
+            Fetch_to("/services/supabase/dashboard/course-comparison", filterPayload),
+            Fetch_to("/services/supabase/dashboard/enrollment-trend", filterPayload),
             Fetch_to("/services/supabase/activity_logs", {
               mode: "list",
               page: 1,
@@ -135,7 +139,14 @@ export default function Dashboard() {
     };
 
     fetchAll();
-  }, []);
+  }, [courseFilter, yearFilter]);
+
+  const yearOptions = useMemo(
+    () =>
+      Array.from(new Set(enrollmentData.map((item) => item.year)))
+        .sort((a, b) => a.localeCompare(b)),
+    [enrollmentData],
+  );
 
   return (
     <div className="min-h-screen bg-section-warm">
@@ -147,6 +158,45 @@ export default function Dashboard() {
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Overview</p>
           <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Dashboard</h1>
           <p className="mt-1 text-sm text-slate-500">Enrollment and Reports Overview</p>
+        </div>
+
+        {/* FILTERS */}
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Course
+            </span>
+            <select
+              value={courseFilter}
+              onChange={(e) => setCourseFilter(e.target.value)}
+              className="bg-transparent text-sm font-medium text-slate-900 outline-none"
+            >
+              <option value="">All Courses</option>
+              {supportedPrograms.map((course) => (
+                <option key={course} value={course}>
+                  {getCourseAbbrev(course)} — {course}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 shadow-sm">
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Year
+            </span>
+            <select
+              value={yearFilter}
+              onChange={(e) => setYearFilter(e.target.value)}
+              className="bg-transparent text-sm font-medium text-slate-900 outline-none"
+            >
+              <option value="">All Years</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {/* LOADING */}

@@ -1141,7 +1141,8 @@ export default function Application() {
                         isSaving={savingRemark === `${selectedApplication.id}-${document.id}`}
                         disabled={
                           selectedApplication.status === "Approve" ||
-                          selectedApplication.status === "Reject"
+                          selectedApplication.status === "Reject" ||
+                          document.status === "Verified"
                         }
                       />
                     ))}

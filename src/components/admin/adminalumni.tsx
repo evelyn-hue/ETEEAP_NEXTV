@@ -1,19 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FiSearch,
   FiEye,
-  FiUserCheck,
-  FiUserX,
   FiX,
   FiRefreshCw,
+  FiUpload,
 } from "react-icons/fi";
 import Fetch_to from "@/utilities/Fetch_to";
 import Reveal from "@/components/shared/Reveal";
 import Skeleton from "@/components/shared/Skeleton";
-
-type AlumniStatus = "pending" | "verified" | "rejected";
 
 type AlumniProfile = {
   id: string;
@@ -33,22 +30,18 @@ type AlumniProfile = {
   experience: string | null;
   transformation: string | null;
   visibility: "public" | "private";
-  verification_status: AlumniStatus;
   is_graduate?: boolean;
   created_at: string;
 };
 
-function StatusBadge({ status }: { status: AlumniStatus }) {
-  const styles =
-    status === "verified"
-      ? "bg-green-100 text-green-800"
-      : status === "rejected"
-        ? "bg-red-100 text-red-800"
-        : "bg-yellow-100 text-yellow-800";
-
+function GraduateBadge({ isGraduate }: { isGraduate?: boolean }) {
   return (
-    <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles}`}>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+    <span
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+        isGraduate ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+      }`}
+    >
+      {isGraduate ? "Graduate" : "Non-Graduate"}
     </span>
   );
 }
@@ -65,16 +58,12 @@ function Detail({ label, value }: { label: string; value: string | null }) {
 function AlumniActions({
   item,
   onView,
-  onVerify,
-  onReject,
   onDelete,
   onToggleGraduate,
   loading,
 }: {
   item: AlumniProfile;
   onView: () => void;
-  onVerify: () => void;
-  onReject: () => void;
   onDelete: () => void;
   onToggleGraduate: () => void;
   loading: boolean;
@@ -91,47 +80,25 @@ function AlumniActions({
       </button>
       <button
         type="button"
-        onClick={onVerify}
-        disabled={item.verification_status !== "pending" || loading}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        onClick={onToggleGraduate}
+        disabled={loading}
+        className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition sm:w-auto ${
+          item.is_graduate
+            ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+            : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+        }`}
       >
-        <FiUserCheck />
-        Verify
+        {item.is_graduate ? "✓ Graduate" : "Mark Graduate"}
       </button>
       <button
         type="button"
-        onClick={onReject}
-        disabled={item.verification_status !== "pending" || loading}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+        onClick={onDelete}
+        disabled={loading}
+        className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
       >
-        <FiUserX />
-        Reject
+        <FiX />
+        Delete
       </button>
-      {item.verification_status === "verified" && (
-        <button
-          type="button"
-          onClick={onToggleGraduate}
-          disabled={loading}
-          className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition sm:w-auto ${
-            item.is_graduate
-              ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
-              : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-          }`}
-        >
-          {item.is_graduate ? "✓ Graduate" : "Mark Graduate"}
-        </button>
-      )}
-      {item.verification_status === "rejected" ? (
-        <button
-            type="button"
-            onClick={onDelete}
-            disabled={loading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          >
-            <FiX />
-          Delete
-        </button>
-      ) : null}
     </div>
   );
 }
@@ -146,11 +113,13 @@ export default function AdminAlumni() {
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
   const [confirmModal, setConfirmModal] = useState<{
     show: boolean;
-    action: "verify" | "reject" | "delete" | "graduate" | "";
+    action: "delete" | "graduate" | "";
     alumniId: string;
     fullName: string;
     isGraduateNow: boolean;
   }>({ show: false, action: "", alumniId: "", fullName: "", isGraduateNow: false });
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchAlumni();
@@ -192,20 +161,59 @@ export default function AdminAlumni() {
     }
   };
 
+  const handleImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/services/supabase/alumni_profiles/import", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+      });
+      const result = await response.json().catch(() => null);
+
+      if (response.ok && result?.success) {
+        const summary = result.data;
+        setToast({
+          message: `Imported ${summary.imported}, skipped ${summary.skipped} duplicate${summary.errors?.length ? `, ${summary.errors.length} error(s)` : ""}`,
+          type: "success",
+        });
+        await fetchAlumni();
+      } else {
+        setToast({
+          message: `Import failed: ${result?.error || "Unknown error"}`,
+          type: "error",
+        });
+      }
+    } catch (error) {
+      setToast({
+        message: `Error importing: ${error instanceof Error ? error.message : "Unknown error"}`,
+        type: "error",
+      });
+    } finally {
+      setImporting(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   const totals = useMemo(() => {
     return alumni.reduce(
       (acc, item) => {
-        if (item.verification_status === "pending") acc.pending += 1;
-        if (item.verification_status === "verified") acc.verified += 1;
-        if (item.verification_status === "rejected") acc.rejected += 1;
+        if (item.is_graduate) acc.graduates += 1;
         return acc;
       },
-      { pending: 0, verified: 0, rejected: 0 }
+      { graduates: 0 }
     );
   }, [alumni]);
 
   const filteredAlumni = alumni.filter((item) => {
-    const haystack = `${item.full_name} ${item.email} ${item.programs?.join(" ") || ""} ${item.verification_status}`.toLowerCase();
+    const haystack = `${item.full_name} ${item.email} ${item.programs?.join(" ") || ""} ${item.is_graduate ? "graduate" : ""}`.toLowerCase();
     if (!haystack.includes(query.toLowerCase())) return false;
     if (graduateFilter === "graduate") return item.is_graduate === true;
     if (graduateFilter === "non-graduate") return !item.is_graduate;
@@ -213,18 +221,16 @@ export default function AdminAlumni() {
   });
 
   const sortedAlumni = useMemo(() => {
-    const normalize = (s: string) => String(s || "").toLowerCase().trim();
-    const order: Record<string, number> = { pending: 0, rejected: 1, verified: 2 };
     return [...filteredAlumni].sort((a, b) => {
-      const aKey = order[normalize(a.verification_status)] ?? 99;
-      const bKey = order[normalize(b.verification_status)] ?? 99;
-      if (aKey !== bKey) return aKey - bKey;
+      const aGrad = a.is_graduate ? 0 : 1;
+      const bGrad = b.is_graduate ? 0 : 1;
+      if (aGrad !== bGrad) return aGrad - bGrad;
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
   }, [filteredAlumni]);
 
   const openConfirmModal = (
-    action: "verify" | "reject" | "delete" | "graduate",
+    action: "delete" | "graduate",
     alumniId: string,
     fullName: string,
     isGraduateNow = false,
@@ -240,69 +246,8 @@ export default function AdminAlumni() {
     const { action, alumniId, isGraduateNow } = confirmModal;
     cancelConfirmModal();
     if (!alumniId || !action) return;
-    if (action === "verify") void updateStatus(alumniId, "verified");
-    else if (action === "reject") void updateStatus(alumniId, "rejected");
-    else if (action === "delete") void deleteAlumni(alumniId);
+    if (action === "delete") void deleteAlumni(alumniId);
     else if (action === "graduate") void toggleGraduate(alumniId, isGraduateNow);
-  };
-
-  const updateStatus = async (id: string, status: AlumniStatus) => {
-    setUpdatingId(id);
-    try {
-      const result = await Fetch_to(
-        "/services/supabase/alumni_profiles/update",
-        {
-          id,
-          verification_status: status,
-        }
-      );
-
-      if (result.success) {
-        const profile = alumni.find((a) => a.id === id);
-        setAlumni((prev) =>
-          prev.map((item) =>
-            item.id === id ? { ...item, verification_status: status } : item
-          )
-        );
-        if (selectedAlumni?.id === id) {
-          setSelectedAlumni({ ...selectedAlumni, verification_status: status });
-        }
-        // Send notification to alumni
-        if (profile?.email) {
-          try {
-            const actionLabel = status === "verified" ? "Verified Alumni" : "Rejected Alumni";
-            const detail = `Your alumni profile has been ${status} by the admin.`;
-            await Fetch_to("/services/supabase/activity_logs", {
-              mode: "insert",
-              user: profile.email,
-              actions: actionLabel,
-              details: detail,
-            });
-          } catch { /* activity log insert failed — non-critical */ }
-        }
-        setToast({
-          message: `Alumni profile ${status === "verified" ? "verified" : "rejected"} successfully!`,
-          type: "success",
-        });
-        setTimeout(() => setToast(null), 3000);
-      } else {
-        setToast({
-          message: `Failed to update status: ${result.message}`,
-          type: "error",
-        });
-        setTimeout(() => setToast(null), 3000);
-        console.error("Failed to update status:", result.message);
-      }
-    } catch (error) {
-      setToast({
-        message: `Error updating status: ${error instanceof Error ? error.message : "Unknown error"}`,
-        type: "error",
-      });
-      setTimeout(() => setToast(null), 3000);
-      console.error("Error updating status:", error);
-    } finally {
-      setUpdatingId(null);
-    }
   };
 
   const toggleGraduate = async (id: string, current: boolean) => {
@@ -402,42 +347,56 @@ export default function AdminAlumni() {
         {/* Page Header */}
         <div className="mb-6">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Alumni</p>
-          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Verify Alumni Profiles</h1>
-          <p className="mt-1 text-sm text-slate-500">Review and verify alumni profile submissions from Supabase.</p>
+          <h1 className="mt-1.5 text-2xl font-bold text-slate-900 font-display">Alumni Profiles</h1>
+          <p className="mt-1 text-sm text-slate-500">Manage alumni profiles — mark graduates, import from CSV, and view details.</p>
         </div>
 
         {/* Stats + Actions */}
         <Reveal>
         <div className="mb-6 rounded-xl bg-white p-4 shadow-sm ring-1 ring-slate-200/30 sm:p-5">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-yellow-50 px-4 py-3 text-center">
-                <p className="text-2xl font-bold text-yellow-800">{totals.pending}</p>
-                <p className="text-xs uppercase tracking-wide text-yellow-600">
-                  Pending
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div className="rounded-xl bg-blue-50 px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-blue-800">{alumni.length}</p>
+                <p className="text-xs uppercase tracking-wide text-blue-700">
+                  Total Alumni
                 </p>
               </div>
-              <div className="rounded-xl bg-green-50 px-4 py-3 text-center">
-                <p className="text-2xl font-bold text-green-800">{totals.verified}</p>
-                <p className="text-xs uppercase tracking-wide text-green-700">
-                  Verified
+              <div className="rounded-xl bg-emerald-50 px-4 py-3 text-center">
+                <p className="text-2xl font-bold text-emerald-800">{totals.graduates}</p>
+                <p className="text-xs uppercase tracking-wide text-emerald-700">
+                  Graduates
                 </p>
-              </div>
-              <div className="rounded-xl bg-red-50 px-4 py-3 text-center">
-                <p className="text-2xl font-bold text-red-800">{totals.rejected}</p>
-                <p className="text-xs uppercase tracking-wide text-red-600">Rejected</p>
               </div>
             </div>
 
-            <button
-              onClick={fetchAlumni}
-              disabled={fetching}
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60 shadow-sm"
-            >
-              <FiRefreshCw className={fetching ? "animate-spin" : ""} size={16} />
-              Refresh
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-60 shadow-sm"
+              >
+                <FiUpload size={16} />
+                {importing ? "Importing..." : "Import CSV"}
+              </button>
+              <button
+                onClick={fetchAlumni}
+                disabled={fetching}
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-60 shadow-sm"
+              >
+                <FiRefreshCw className={fetching ? "animate-spin" : ""} size={16} />
+                Refresh
+              </button>
+            </div>
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,text/csv"
+            className="hidden"
+            onChange={handleImport}
+          />
         </div>
         </Reveal>
 
@@ -519,7 +478,7 @@ export default function AdminAlumni() {
                       <p className="truncate font-semibold text-slate-900">{item.full_name}</p>
                       <p className="mt-1 break-all text-sm text-slate-500">{item.email}</p>
                     </div>
-                    <StatusBadge status={item.verification_status} />
+                    <GraduateBadge isGraduate={item.is_graduate} />
                   </div>
 
                   <div className="mt-4 grid gap-3 text-sm text-slate-700">
@@ -543,8 +502,6 @@ export default function AdminAlumni() {
                     <AlumniActions
                       item={item}
                       onView={() => setSelectedAlumni(item)}
-                      onVerify={() => openConfirmModal("verify", item.id, item.full_name)}
-                      onReject={() => openConfirmModal("reject", item.id, item.full_name)}
                       onDelete={() => openConfirmModal("delete", item.id, item.full_name)}
                       onToggleGraduate={() => openConfirmModal("graduate", item.id, item.full_name, !!item.is_graduate)}
                       loading={updatingId === item.id}
@@ -592,14 +549,12 @@ export default function AdminAlumni() {
                           {formatDate(item.created_at)}
                         </td>
                         <td className="px-6 py-5">
-                          <StatusBadge status={item.verification_status} />
+                          <GraduateBadge isGraduate={item.is_graduate} />
                         </td>
                         <td className="px-6 py-5">
                           <AlumniActions
                             item={item}
                             onView={() => setSelectedAlumni(item)}
-                            onVerify={() => openConfirmModal("verify", item.id, item.full_name)}
-                            onReject={() => openConfirmModal("reject", item.id, item.full_name)}
                             onDelete={() => openConfirmModal("delete", item.id, item.full_name)}
                             onToggleGraduate={() => openConfirmModal("graduate", item.id, item.full_name, !!item.is_graduate)}
                             loading={updatingId === item.id}
@@ -781,7 +736,7 @@ export default function AdminAlumni() {
                     Visibility: <span className="font-semibold">{selectedAlumni.visibility}</span>
                   </p>
                   <p className="text-sm text-slate-600">
-                    Status: <span className="font-semibold"><StatusBadge status={selectedAlumni.verification_status} /></span>
+                    Status: <span className="font-semibold"><GraduateBadge isGraduate={selectedAlumni.is_graduate} /></span>
                   </p>
                 </div>
                 <div className="flex gap-3">
@@ -794,33 +749,25 @@ export default function AdminAlumni() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => openConfirmModal("verify", selectedAlumni.id, selectedAlumni.full_name)}
-                    disabled={selectedAlumni.verification_status !== "pending" || updatingId === selectedAlumni.id}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-700 disabled:opacity-60"
+                    onClick={() => openConfirmModal("graduate", selectedAlumni.id, selectedAlumni.full_name, !!selectedAlumni.is_graduate)}
+                    disabled={updatingId === selectedAlumni.id}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60 ${
+                      selectedAlumni.is_graduate
+                        ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200"
+                        : "bg-emerald-600 text-white hover:bg-emerald-700"
+                    }`}
                   >
-                    <FiUserCheck />
-                    Verify
+                    {selectedAlumni.is_graduate ? "Unmark Graduate" : "Mark Graduate"}
                   </button>
                   <button
                     type="button"
-                    onClick={() => openConfirmModal("reject", selectedAlumni.id, selectedAlumni.full_name)}
-                    disabled={selectedAlumni.verification_status !== "pending" || updatingId === selectedAlumni.id}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                    onClick={() => openConfirmModal("delete", selectedAlumni.id, selectedAlumni.full_name)}
+                    disabled={updatingId === selectedAlumni.id}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
                   >
-                    <FiUserX />
-                    Reject
+                    <FiX />
+                    Delete
                   </button>
-                  {selectedAlumni.verification_status === "rejected" ? (
-                    <button
-                      type="button"
-                      onClick={() => openConfirmModal("delete", selectedAlumni.id, selectedAlumni.full_name)}
-                      disabled={updatingId === selectedAlumni.id}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60"
-                    >
-                      <FiX />
-                      Delete
-                    </button>
-                  ) : null}
                 </div>
               </div>
             </div>
@@ -832,17 +779,11 @@ export default function AdminAlumni() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
           <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
             <h3 className="text-lg font-semibold text-slate-900">
-              {confirmModal.action === "verify"
-                ? "Confirm Verify"
-                : confirmModal.action === "reject"
-                  ? "Confirm Reject"
-                  : confirmModal.action === "delete"
-                    ? "Confirm Delete"
-                    : "Confirm Graduate"}
+              {confirmModal.action === "delete"
+                ? "Confirm Delete"
+                : "Confirm Graduate"}
             </h3>
             <p className="mt-4 text-sm text-slate-600">
-              {confirmModal.action === "verify" && `Are you sure you want to verify ${confirmModal.fullName}?`}
-              {confirmModal.action === "reject" && `Are you sure you want to reject ${confirmModal.fullName}?`}
               {confirmModal.action === "delete" && `Are you sure you want to delete the alumni profile for ${confirmModal.fullName}? This cannot be undone.`}
               {confirmModal.action === "graduate" &&
                 (confirmModal.isGraduateNow
@@ -861,7 +802,7 @@ export default function AdminAlumni() {
                 type="button"
                 onClick={confirmModalYes}
                 className={`rounded-xl px-4 py-2 text-sm font-semibold text-white ${
-                  confirmModal.action === "delete" || confirmModal.action === "reject"
+                  confirmModal.action === "delete"
                     ? "bg-red-600 hover:bg-red-700"
                     : "bg-blue-600 hover:bg-blue-800"
                 }`}
