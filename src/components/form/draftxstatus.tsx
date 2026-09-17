@@ -4,8 +4,8 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
+import { getObject, setObject, removeObject } from "@/utilities/idb";
 import Reveal from "@/components/shared/Reveal";
-import SectionHeading from "@/components/shared/SectionHeading";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
 const ALUMNI_DRAFT_KEY = "eteeap-alumni-draft";
@@ -39,32 +39,41 @@ export default function Draft() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const rawApps = window.localStorage.getItem(APP_DRAFTS_KEY);
-    if (rawApps) {
+    void (async () => {
       try {
-        const parsed = JSON.parse(rawApps);
+        const parsed = await getObject<DraftType[]>(APP_DRAFTS_KEY);
         if (Array.isArray(parsed)) setAppDrafts(parsed);
-      } catch { }
-    }
+      } catch {
+        // ignore drafts parse errors
+      }
+    })();
     const rawAlumni = window.localStorage.getItem(ALUMNI_DRAFT_KEY);
     if (rawAlumni) {
       try {
         setAlumniDraft(JSON.parse(rawAlumni));
-      } catch { }
+      } catch {
+        // ignore alumni draft parse errors
+      }
     }
   }, []);
 
   const handleContinueApp = (draft: DraftType) => {
     if (typeof window === "undefined") return;
-    try {
-      window.localStorage.setItem("selected-application", JSON.stringify(draft));
-    } catch {
+    void (async () => {
       try {
-        window.sessionStorage.setItem("selected-application", JSON.stringify(draft));
+        await setObject("selected-application", draft);
       } catch {
-        (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__ = draft;
+        try {
+          window.localStorage.setItem("selected-application", JSON.stringify(draft));
+        } catch {
+          try {
+            window.sessionStorage.setItem("selected-application", JSON.stringify(draft));
+          } catch {
+            (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__ = draft;
+          }
+        }
       }
-    }
+    })();
     router.push(`/form?program=${encodeURIComponent(String(draft.programName ?? ""))}`);
   };
 
@@ -77,11 +86,13 @@ export default function Draft() {
     const deletedDraft = appDrafts[index];
     const updated = appDrafts.filter((_, i) => i !== index);
     setAppDrafts(updated);
-    if (updated.length > 0) {
-      window.localStorage.setItem(APP_DRAFTS_KEY, JSON.stringify(updated));
-    } else {
-      window.localStorage.removeItem(APP_DRAFTS_KEY);
-    }
+    void (async () => {
+      if (updated.length > 0) {
+        await setObject(APP_DRAFTS_KEY, updated);
+      } else {
+        await removeObject(APP_DRAFTS_KEY);
+      }
+    })();
     if (userEmail && deletedDraft) {
       const program = String(deletedDraft.programName || "Unknown Program");
       Fetch_to("/services/supabase/activity_logs", {

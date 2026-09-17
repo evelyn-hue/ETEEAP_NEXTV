@@ -104,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       sessionStorage.removeItem("authToken");
       localStorage.removeItem("eteeap-application-drafts");
       localStorage.removeItem("eteeap-alumni-draft");
+      import("@/utilities/idb").then(({ removeObject }) => void removeObject("eteeap-application-drafts").catch(() => null));
     }
     try {
       await Fetch_to(api_link.jwt.deauth);

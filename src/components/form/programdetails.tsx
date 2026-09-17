@@ -8,6 +8,7 @@ import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
+import { getObject, setObject } from "@/utilities/idb";
 
 const eteeapFormId = [
   "1FAIpQLScTWK7hH2",
@@ -220,10 +221,9 @@ if (file.size > MAX_FILE_SIZE) {
   // Load saved draft on component mount
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const raw = window.localStorage.getItem(DRAFTS_KEY);
-    if (!raw) return;
-    try {
-      const drafts: DraftApplication[] = JSON.parse(raw);
+    void (async () => {
+      const draftsJson = await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null);
+      const drafts = Array.isArray(draftsJson) ? draftsJson : [];
       const draft = drafts.find((d) => d.programName === programName);
       if (!draft) return;
       setSavedFiles(draft.files ?? {});
@@ -238,9 +238,7 @@ if (file.size > MAX_FILE_SIZE) {
       if (draft.isBusinessOwner) {
         setIsBus(draft.isBusinessOwner);
       }
-    } catch {
-      // Silently fail if draft parsing fails
-    }
+    })();
   }, [programName]);
 
   useEffect(() => {
@@ -309,16 +307,16 @@ if (file.size > MAX_FILE_SIZE) {
         files: Object.fromEntries(files),
       };
 
-      const existing = localStorage.getItem(DRAFTS_KEY);
-      const drafts: DraftApplication[] = existing ? JSON.parse(existing) : [];
+      const existing = await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null);
+      const drafts: DraftApplication[] = Array.isArray(existing) ? existing : [];
       const idx = drafts.findIndex((d) => d.programName === draft.programName);
       if (idx >= 0) {
         drafts[idx] = draft;
       } else {
         drafts.push(draft);
       }
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
-      localStorage.setItem("selected-application", JSON.stringify(draft));
+      await setObject(DRAFTS_KEY, drafts);
+      await setObject("selected-application", draft);
       router.push(REVIEW_ROUTE);
     } catch (draftError) {
       setError("Unable to save the draft files. Try again with smaller files.");
