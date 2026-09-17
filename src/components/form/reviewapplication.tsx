@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
+import { getObject, setObject, removeObject } from "@/utilities/idb";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 import SectionHeading from "@/components/shared/SectionHeading";
@@ -84,15 +85,12 @@ function shortenLinkLabel(value: string) {
   return `${value.slice(0, 50)}..`;
 }
 
-function getDraft() {
+async function getDraft() {
   if (typeof window === "undefined") return null;
 
-  const raw = window.localStorage.getItem(DRAFTS_KEY);
-  if (!raw) return null;
-
   try {
-    const drafts: DraftApplication[] = JSON.parse(raw);
-    return drafts.length > 0 ? drafts[drafts.length - 1] : null;
+    const drafts = await getObject<DraftApplication[]>(DRAFTS_KEY);
+    return drafts && drafts.length > 0 ? drafts[drafts.length - 1] : null;
   } catch {
     return null;
   }
@@ -123,8 +121,8 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
-  const handleDeleteFile = (fileKey: string, fileIndex: number) => {
-    const currentDraft = draft ?? getDraft();
+  const handleDeleteFile = async (fileKey: string, fileIndex: number) => {
+    const currentDraft = draft ?? (await getDraft());
     if (!currentDraft) return;
 
     const updatedFiles = { ...currentDraft.files };
@@ -140,23 +138,14 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       files: updatedFiles,
     };
 
-    const existingRaw = localStorage.getItem(DRAFTS_KEY);
-    if (existingRaw) {
-      try {
-        const allDrafts: DraftApplication[] = JSON.parse(existingRaw);
-        const idx = allDrafts.findIndex((d) => d.programName === updatedDraft.programName);
-        if (idx >= 0) {
-          allDrafts[idx] = updatedDraft;
-        } else {
-          allDrafts.push(updatedDraft);
-        }
-        localStorage.setItem(DRAFTS_KEY, JSON.stringify(allDrafts));
-      } catch {
-        localStorage.setItem(DRAFTS_KEY, JSON.stringify([updatedDraft]));
-      }
+    const allDrafts = (await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null)) ?? [];
+    const idx = allDrafts.findIndex((d) => d.programName === updatedDraft.programName);
+    if (idx >= 0) {
+      allDrafts[idx] = updatedDraft;
     } else {
-      localStorage.setItem(DRAFTS_KEY, JSON.stringify([updatedDraft]));
+      allDrafts.push(updatedDraft);
     }
+    await setObject(DRAFTS_KEY, allDrafts);
     setDraft(updatedDraft);
   };
   
@@ -185,8 +174,8 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
     return required;
   };
 
-  const validateRequiredDocuments = (): boolean => {
-    const currentDraft = draft ?? getDraft();
+  const validateRequiredDocuments = async (): Promise<boolean> => {
+    const currentDraft = draft ?? (await getDraft());
     if (!currentDraft) return false;
 
     const required = getRequiredDocuments();
@@ -205,28 +194,37 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
   };
 
   useEffect(() => {
-    setDraft(getDraft());
     if (typeof window === "undefined") return;
+    void (async () => {
+      const draftFromStore = await getDraft();
+      setDraft(draftFromStore);
 
-    let raw = window.localStorage.getItem("selected-application");
-    if (!raw) {
-      raw = window.sessionStorage.getItem("selected-application");
-    }
-    if (!raw) {
-      const fallback = (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__;
-      if (fallback) {
-        setSelectedApplication(fallback as SelectedApplication);
+      const storedSelected = await getObject<SelectedApplication>("selected-application").catch(() => null);
+      if (storedSelected) {
+        setSelectedApplication(storedSelected);
         return;
       }
-    }
 
-    if (!raw) return;
+      let raw = window.localStorage.getItem("selected-application");
+      if (!raw) {
+        raw = window.sessionStorage.getItem("selected-application");
+      }
+      if (!raw) {
+        const fallback = (window as unknown as { __SELECTED_APPLICATION__?: unknown }).__SELECTED_APPLICATION__;
+        if (fallback) {
+          setSelectedApplication(fallback as SelectedApplication);
+          return;
+        }
+      }
 
-    try {
-      setSelectedApplication(JSON.parse(raw) as SelectedApplication);
-    } catch {
-      setSelectedApplication(null);
-    }
+      if (!raw) return;
+
+      try {
+        setSelectedApplication(JSON.parse(raw) as SelectedApplication);
+      } catch {
+        setSelectedApplication(null);
+      }
+    })();
   }, []);
 
   const notifyApplicant = async (userEmail: string, action: string, details: string) => {
@@ -243,12 +241,12 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
     if (isDraft || isReject) return router.push("/courses");
     
     // Validate required documents before submitting
-    if (!validateRequiredDocuments()) {
+    if (!(await validateRequiredDocuments())) {
       setSubmitError("Please upload all required documents before submitting.");
       return;
     }
 
-    const currentDraft = draft ?? getDraft();
+    const currentDraft = draft ?? (await getDraft());
     if (!currentDraft) {
       setSubmitError("No Data found in local storage.");
       return;
@@ -310,19 +308,15 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       setProgressLabel("Finalizing...");
       window.localStorage.removeItem("selected-application");
       window.sessionStorage.removeItem("selected-application");
+      await removeObject("selected-application").catch(() => null);
       const submittedProgram = currentDraft.programName;
-      const existingRaw = window.localStorage.getItem(DRAFTS_KEY);
-      if (existingRaw && submittedProgram) {
-        try {
-          const drafts: DraftApplication[] = JSON.parse(existingRaw);
-          const filtered = drafts.filter((d) => d.programName !== submittedProgram);
-          if (filtered.length > 0) {
-            window.localStorage.setItem(DRAFTS_KEY, JSON.stringify(filtered));
-          } else {
-            window.localStorage.removeItem(DRAFTS_KEY);
-          }
-        } catch {
-          // ignore parse errors
+      if (submittedProgram) {
+        const drafts = (await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null)) ?? [];
+        const filtered = drafts.filter((d) => d.programName !== submittedProgram);
+        if (filtered.length > 0) {
+          await setObject(DRAFTS_KEY, filtered);
+        } else {
+          await removeObject(DRAFTS_KEY).catch(() => null);
         }
       }
       setSubmitSuccess(response.message || "Your application was submitted successfully.");
@@ -554,7 +548,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
           <button
             type="button"
             onClick={async () => {
-              const currentDraft = draft ?? getDraft();
+              const currentDraft = draft ?? (await getDraft());
               const saveEmail = currentDraft?.email || email;
               if (saveEmail) {
                 await notifyApplicant(

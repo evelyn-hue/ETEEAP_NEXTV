@@ -28,3 +28,11 @@ CREATE TABLE IF NOT EXISTS posts (
 
 -- Storage bucket for content cover images (create manually in Supabase Dashboard > Storage)
 -- Bucket name: posts_media (public)
+
+-- Alumni graduate marking (run in Supabase Dashboard > SQL Editor)
+ALTER TABLE alumni_profiles ADD COLUMN IF NOT EXISTS is_graduate boolean DEFAULT false;
+ALTER TABLE alumni_profiles ADD COLUMN IF NOT EXISTS profile_picture text;
+
+-- Verify
+SELECT column_name, data_type FROM information_schema.columns
+WHERE table_name = 'alumni_profiles' AND column_name IN ('is_graduate', 'profile_picture');
