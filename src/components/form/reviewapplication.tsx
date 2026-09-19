@@ -3,7 +3,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Fetch_to from "@/utilities/Fetch_to";
 import Fetch_toFile from "@/utilities/Fetch_toFile";
-import { getObject, setObject, removeObject } from "@/utilities/idb";
+import { getObjectWithFallback, setObjectWithFallback, removeObject } from "@/utilities/idb";
 import api_link from "@/config/api_link.json";
 import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 import SectionHeading from "@/components/shared/SectionHeading";
@@ -89,7 +89,7 @@ async function getDraft() {
   if (typeof window === "undefined") return null;
 
   try {
-    const drafts = await getObject<DraftApplication[]>(DRAFTS_KEY);
+    const drafts = await getObjectWithFallback<DraftApplication[]>(DRAFTS_KEY);
     return drafts && drafts.length > 0 ? drafts[drafts.length - 1] : null;
   } catch {
     return null;
@@ -138,14 +138,14 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       files: updatedFiles,
     };
 
-    const allDrafts = (await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null)) ?? [];
+    const allDrafts = (await getObjectWithFallback<DraftApplication[]>(DRAFTS_KEY).catch(() => null)) ?? [];
     const idx = allDrafts.findIndex((d) => d.programName === updatedDraft.programName);
     if (idx >= 0) {
       allDrafts[idx] = updatedDraft;
     } else {
       allDrafts.push(updatedDraft);
     }
-    await setObject(DRAFTS_KEY, allDrafts);
+    await setObjectWithFallback(DRAFTS_KEY, allDrafts);
     setDraft(updatedDraft);
   };
   
@@ -199,7 +199,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       const draftFromStore = await getDraft();
       setDraft(draftFromStore);
 
-      const storedSelected = await getObject<SelectedApplication>("selected-application").catch(() => null);
+      const storedSelected = await getObjectWithFallback<SelectedApplication>("selected-application");
       if (storedSelected) {
         setSelectedApplication(storedSelected);
         return;
@@ -309,12 +309,16 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       window.localStorage.removeItem("selected-application");
       window.sessionStorage.removeItem("selected-application");
       await removeObject("selected-application").catch(() => null);
+      delete (window as unknown as Record<string, unknown>)["__idb_selected-application__"];
       const submittedProgram = currentDraft.programName;
       if (submittedProgram) {
-        const drafts = (await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null)) ?? [];
+        const drafts = (await getObjectWithFallback<DraftApplication[]>(DRAFTS_KEY).catch(() => null)) ?? [];
         const filtered = drafts.filter((d) => d.programName !== submittedProgram);
+        window.localStorage.removeItem(DRAFTS_KEY);
+        window.sessionStorage.removeItem(DRAFTS_KEY);
+        delete (window as unknown as Record<string, unknown>)[`__idb_${DRAFTS_KEY}__`];
         if (filtered.length > 0) {
-          await setObject(DRAFTS_KEY, filtered);
+          await setObjectWithFallback(DRAFTS_KEY, filtered);
         } else {
           await removeObject(DRAFTS_KEY).catch(() => null);
         }

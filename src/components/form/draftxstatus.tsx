@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { Fetch_to } from "@/utilities";
-import { getObject, setObject, removeObject } from "@/utilities/idb";
+import { getObjectWithFallback, setObjectWithFallback, removeObject } from "@/utilities/idb";
 import Reveal from "@/components/shared/Reveal";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
 
@@ -41,7 +41,7 @@ export default function Draft() {
     if (typeof window === "undefined") return;
     void (async () => {
       try {
-        const parsed = await getObject<DraftType[]>(APP_DRAFTS_KEY);
+        const parsed = await getObjectWithFallback<DraftType[]>(APP_DRAFTS_KEY);
         if (Array.isArray(parsed)) setAppDrafts(parsed);
       } catch {
         // ignore drafts parse errors
@@ -61,7 +61,7 @@ export default function Draft() {
     if (typeof window === "undefined") return;
     void (async () => {
       try {
-        await setObject("selected-application", draft);
+        await setObjectWithFallback("selected-application", draft);
       } catch {
         try {
           window.localStorage.setItem("selected-application", JSON.stringify(draft));
@@ -88,9 +88,11 @@ export default function Draft() {
     setAppDrafts(updated);
     void (async () => {
       if (updated.length > 0) {
-        await setObject(APP_DRAFTS_KEY, updated);
+        await setObjectWithFallback(APP_DRAFTS_KEY, updated);
       } else {
         await removeObject(APP_DRAFTS_KEY);
+        window.localStorage.removeItem(APP_DRAFTS_KEY);
+        window.sessionStorage.removeItem(APP_DRAFTS_KEY);
       }
     })();
     if (userEmail && deletedDraft) {

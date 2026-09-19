@@ -46,3 +46,56 @@ export async function removeObject(key: string): Promise<void> {
     tx.onerror = () => reject(tx.error);
   });
 }
+
+function memoryFallback(key: string) {
+  return (window as unknown as Record<string, unknown>)[`__idb_${key}__`];
+}
+
+function setMemoryFallback(key: string, value: unknown) {
+  (window as unknown as Record<string, unknown>)[`__idb_${key}__`] = value;
+}
+
+function tryScriptStorage(key: string, value: unknown): boolean {
+  const json = JSON.stringify(value);
+  try {
+    window.localStorage.setItem(key, json);
+    return true;
+  } catch {
+    try {
+      window.sessionStorage.setItem(key, json);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+}
+
+function tryScriptRead(key: string): unknown {
+  try {
+    const raw = window.localStorage.getItem(key) ?? window.sessionStorage.getItem(key);
+    if (raw) return JSON.parse(raw);
+  } catch {
+    /* fall through to memory */
+  }
+  return memoryFallback(key);
+}
+
+export async function setObjectWithFallback(key: string, value: unknown): Promise<void> {
+  try {
+    await setObject(key, value);
+  } catch {
+    if (!tryScriptStorage(key, value)) {
+      setMemoryFallback(key, value);
+    }
+  }
+}
+
+export async function getObjectWithFallback<T>(key: string): Promise<T | null> {
+  try {
+    const value = await getObject<T>(key);
+    if (value !== null && value !== undefined) return value;
+  } catch {
+    /* fall through */
+  }
+  return (tryScriptRead(key) as T | null) ?? null;
+}
