@@ -8,7 +8,7 @@ import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
-import { getObject, setObject } from "@/utilities/idb";
+import { getObjectWithFallback, setObjectWithFallback } from "@/utilities/idb";
 
 const eteeapFormId = [
   "1FAIpQLScTWK7hH2",
@@ -222,7 +222,7 @@ if (file.size > MAX_FILE_SIZE) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     void (async () => {
-      const draftsJson = await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null);
+      const draftsJson = await getObjectWithFallback<DraftApplication[]>(DRAFTS_KEY);
       const drafts = Array.isArray(draftsJson) ? draftsJson : [];
       const draft = drafts.find((d) => d.programName === programName);
       if (!draft) return;
@@ -307,7 +307,7 @@ if (file.size > MAX_FILE_SIZE) {
         files: Object.fromEntries(files),
       };
 
-      const existing = await getObject<DraftApplication[]>(DRAFTS_KEY).catch(() => null);
+      const existing = await getObjectWithFallback<DraftApplication[]>(DRAFTS_KEY);
       const drafts: DraftApplication[] = Array.isArray(existing) ? existing : [];
       const idx = drafts.findIndex((d) => d.programName === draft.programName);
       if (idx >= 0) {
@@ -315,11 +315,17 @@ if (file.size > MAX_FILE_SIZE) {
       } else {
         drafts.push(draft);
       }
-      await setObject(DRAFTS_KEY, drafts);
-      await setObject("selected-application", draft);
+      await setObjectWithFallback(DRAFTS_KEY, drafts);
+      await setObjectWithFallback("selected-application", draft);
       router.push(REVIEW_ROUTE);
     } catch (draftError) {
-      setError("Unable to save the draft files. Try again with smaller files.");
+      const message = draftError instanceof Error ? draftError.message : String(draftError);
+      const isStorageBlocked = /quota|denied|unavailable|privacy/i.test(message);
+      setError(
+        isStorageBlocked
+          ? "Your browser storage is unavailable (private/incognito mode may block it). Switch to a normal browser tab and try again."
+          : `Unable to save the draft files: ${message}`,
+      );
       console.error(draftError);
     } finally {
       setIsSaving(false);
