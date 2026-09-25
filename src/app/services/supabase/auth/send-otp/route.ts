@@ -14,6 +14,27 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
+
+    // 60-second cooldown check to prevent email flooding
+    const { data: existingUser } = await supabaseServer
+      .from("auth")
+      .select("otp_expires_at")
+      .eq("email", cleanEmail)
+      .maybeSingle();
+
+    if (existingUser?.otp_expires_at) {
+      const expiresAt = new Date(existingUser.otp_expires_at as string).getTime();
+      const remainingMs = expiresAt - Date.now();
+      // Total validity is 10m (600,000ms). If remaining > 9m (540,000ms), under 60s has elapsed
+      if (remainingMs > 9 * 60 * 1000) {
+        const waitSec = Math.ceil((remainingMs - 9 * 60 * 1000) / 1000);
+        return NextResponse.json(
+          { success: false, error: `Please wait ${waitSec}s before requesting a new code.` },
+          { status: 429 }
+        );
+      }
+    }
+
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
