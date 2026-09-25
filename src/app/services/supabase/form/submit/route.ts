@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAuth, isAdminUser } from "@/lib/auth";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE } from "@/lib/documents";
 
 type UploadItem = {
   file: File;
@@ -8,18 +10,34 @@ type UploadItem = {
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireAuth(req);
+    if (!authResult.ok) return authResult.response;
+
+    const caller = authResult.user;
+    const isCallerAdmin = isAdminUser(caller);
+
     const formData = await req.formData();
-    const email = String(formData.get("email") ?? "").trim().toLowerCase();
-    const applicantName = String(formData.get("applicantName") ?? "");
+    const providedEmail = String(formData.get("email") ?? "").trim().toLowerCase();
+
+    // Enforce email ownership: regular users can only submit under their own verified email
+    const email = !isCallerAdmin || !providedEmail ? caller.email : providedEmail;
+    const applicantName = String(formData.get("applicantName") ?? caller.fullName ?? "");
     const businessName = String(formData.get("businessName") ?? "");
     const isBusinessOwner = String(formData.get("isBusinessOwner") ?? "No");
-    const form_status = String(formData.get("form_status") ?? "draft");
-    const programName = String(formData.get("programName") ?? "draft");
+    const rawStatus = String(formData.get("form_status") ?? "Under Review").trim();
+    const programName = String(formData.get("programName") ?? "");
+
+    // Business rule: Regular applicants can only set "Under Review" or "draft", never "Approve"
+    const allowedApplicantStatuses = ["Under Review", "draft", "Draft"];
+    const form_status =
+      !isCallerAdmin && !allowedApplicantStatuses.includes(rawStatus)
+        ? "Under Review"
+        : rawStatus;
 
     if (!email) {
       return NextResponse.json(
         { success: false, error: "Email is required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -31,7 +49,7 @@ export async function POST(req: NextRequest) {
       if (!singleDocumentType) {
         return NextResponse.json(
           { success: false, error: "Document type is required" },
-          { status: 400 },
+          { status: 400 }
         );
       }
       uploadItems.push({ file: singleFile, documentType: singleDocumentType });
@@ -51,7 +69,7 @@ export async function POST(req: NextRequest) {
             success: false,
             error: "Each uploaded file must have a matching document type",
           },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -63,22 +81,21 @@ export async function POST(req: NextRequest) {
     if (uploadItems.length === 0) {
       return NextResponse.json(
         { success: false, error: "No file provided" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
     for (const { file } of uploadItems) {
-      if (!allowedTypes.includes(file.type)) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
         return NextResponse.json(
           { success: false, error: `File "${file.name}" is not an accepted type. Please upload PDF, JPG, or PNG only.` },
-          { status: 400 },
+          { status: 400 }
         );
       }
-if (file.size > 5 * 1024 * 1024) {
-    return NextResponse.json(
-      { success: false, error: `File "${file.name}" exceeds the 5MB limit.` },
-          { status: 400 },
+      if (file.size > MAX_FILE_SIZE) {
+        return NextResponse.json(
+          { success: false, error: `File "${file.name}" exceeds the 5MB limit.` },
+          { status: 400 }
         );
       }
     }
@@ -90,14 +107,14 @@ if (file.size > 5 * 1024 * 1024) {
       isBusinessOwner,
       businessName,
       form_status,
-      program: programName
+      program: programName,
     };
 
     for (const { file, documentType } of uploadItems) {
       if (!documentType) {
         return NextResponse.json(
           { success: false, error: "Document type is required" },
-          { status: 400 },
+          { status: 400 }
         );
       }
 
@@ -114,7 +131,7 @@ if (file.size > 5 * 1024 * 1024) {
       if (uploadError) {
         return NextResponse.json(
           { success: false, error: uploadError.message },
-          { status: 500 },
+          { status: 500 }
         );
       }
 
@@ -122,7 +139,11 @@ if (file.size > 5 * 1024 * 1024) {
         .from(bucketName)
         .getPublicUrl(filePath);
 
-      rowData[documentType] = publicUrlData.publicUrl;
+      if (rowData[documentType]) {
+        rowData[documentType] = `${rowData[documentType]}, ${publicUrlData.publicUrl}`;
+      } else {
+        rowData[documentType] = publicUrlData.publicUrl;
+      }
     }
 
     const { data: existingApplication, error: existingApplicationError } =
@@ -135,7 +156,7 @@ if (file.size > 5 * 1024 * 1024) {
     if (existingApplicationError) {
       return NextResponse.json(
         { success: false, error: existingApplicationError.message },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
@@ -171,31 +192,32 @@ if (file.size > 5 * 1024 * 1024) {
     if (saveError) {
       return NextResponse.json(
         { success: false, error: saveError.message },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
+    const nextApplicantStatus = form_status === "draft" || form_status === "Draft" ? "draft" : "submitted";
     const { error: authUpdateError } = await supabaseServer
       .from("auth")
-      .update({ applicant_status: "submitted" })
+      .update({ applicant_status: nextApplicantStatus })
       .eq("email", email);
 
     if (authUpdateError) {
       return NextResponse.json(
         { success: false, error: authUpdateError.message },
-        { status: 500 },
+        { status: 500 }
       );
     }
 
     return NextResponse.json(
       { success: true, message: "Submitted Successfully" },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

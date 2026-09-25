@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAdmin } from "@/lib/auth";
 
 function parseCSV(text: string): string[][] {
   const rows: string[][] = [];
@@ -49,6 +50,9 @@ function splitPrograms(value: string | undefined): string[] {
 
 export async function POST(req: NextRequest) {
   try {
+    const adminAuth = await requireAdmin(req);
+    if (!adminAuth.ok) return adminAuth.response;
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
 

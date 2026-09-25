@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import Reveal from "@/components/shared/Reveal";
 import Skeleton from "@/components/shared/Skeleton";
+import { ALL_DOCUMENTS } from "@/lib/documents";
 
 type ApplicationStatus =
   | "draft"
@@ -383,31 +384,24 @@ export default function AdminApplications() {
                 <section className="rounded-2xl bg-slate-50 p-5 border border-slate-200">
                   <h3 className="font-semibold text-slate-900 mb-4">Uploaded Documents</h3>
                   <div className="space-y-2">
-                    {Object.entries(selectedApp)
-                      .filter(
-                        ([key, value]) =>
-                          typeof value === "string" &&
-                          (key.includes("Of") ||
-                            key === "resume" ||
-                            key === "picture" ||
-                            key === "certificate" ||
-                            key === "letterOfIntent") &&
-                          value.startsWith("http")
-                      )
-                      .map(([key, value]) => (
+                    {ALL_DOCUMENTS.map((doc) => {
+                      const val = selectedApp[doc.key];
+                      if (!val || typeof val !== "string" || val.trim() === "") return null;
+                      return (
                         <a
-                          key={key}
-                          href={value}
+                          key={doc.key}
+                          href={val}
                           target="_blank"
                           rel="noreferrer"
                           className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg hover:bg-blue-100 transition"
                         >
                           <FileText className="w-4 h-4 text-blue-600" />
                           <span className="text-sm font-medium text-blue-600 truncate">
-                            {key}
+                            {doc.label}
                           </span>
                         </a>
-                      ))}
+                      );
+                    })}
                   </div>
                 </section>
 

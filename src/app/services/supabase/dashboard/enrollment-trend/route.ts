@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { normalizeProgram } from "@/lib/programs";
+import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const adminAuth = await requireAdmin(req);
+    if (!adminAuth.ok) return adminAuth.response;
+
     let body: { course?: string | null } = {};
     try {
       body = (await req.json()) as typeof body;

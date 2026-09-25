@@ -12,10 +12,12 @@ type AuthContextType = {
   civil_status: string;
   profilePicture: string;
   applicant_status: string;
+  role: string;
+  isAdmin: boolean;
   loading: boolean;
   login: (email: string) => void;
   logout: () => void;
-  verify: () => Promise<void>
+  verify: () => Promise<void>;
   refreshAuth: () => Promise<void>;
 };
 
@@ -29,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [civil_status, setCivilStatus] = useState("");
   const [profilePicture, setProfilePicture] = useState("");
   const [applicant_status, setApplicantStatus] = useState("");
+  const [role, setRole] = useState("applicant");
   const [loading, setLoading] = useState(true);
 
   // Verify token on mount
@@ -52,12 +55,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.success) {
         const response_data = response.data.message.final_data.data[0];
-        setEmail(response_data.email);
+        setEmail(response_data.email || "");
         setFullName(response_data.fullName ?? "");
         setPhone(response_data.phone ?? "");
         setCivilStatus(response_data.civil_status ?? "");
         setProfilePicture(response_data.profilePicture ?? "");
         setApplicantStatus(response_data.applicant_status ?? "");
+        const userRole =
+          response_data.role ||
+          (response_data.email?.toLowerCase() === "admin@admin.com" ? "admin" : "applicant");
+        setRole(userRole);
         setIsLoggedIn(true);
       } else {
         setIsLoggedIn(false);
@@ -67,6 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setCivilStatus("");
         setProfilePicture("");
         setApplicantStatus("");
+        setRole("applicant");
       }
     } catch (error) {
       console.error("Auth verification failed:", error);
@@ -77,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCivilStatus("");
       setProfilePicture("");
       setApplicantStatus("");
+      setRole("applicant");
     } finally {
       setLoading(false);
     }
@@ -98,6 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCivilStatus("");
     setProfilePicture("");
     setApplicantStatus("");
+    setRole("applicant");
     setIsLoggedIn(false);
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
@@ -111,8 +121,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch { /* deauth failed — non-critical */ }
   };
 
+  const isAdmin = role === "admin" || email.toLowerCase() === "admin@admin.com";
+
   return (
-    <AuthContext.Provider value={{ isLoggedIn, email, fullName, phone, civil_status, profilePicture, applicant_status, loading, login, logout, verify, refreshAuth }}>
+    <AuthContext.Provider
+      value={{
+        isLoggedIn,
+        email,
+        fullName,
+        phone,
+        civil_status,
+        profilePicture,
+        applicant_status,
+        role,
+        isAdmin,
+        loading,
+        login,
+        logout,
+        verify,
+        refreshAuth,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -7,6 +7,7 @@ import StaggerContainer from "@/components/shared/StaggerContainer";
 import StaggerItem from "@/components/shared/StaggerItem";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
 import Reveal from "@/components/shared/Reveal";
+import { sanitizeHtml } from "@/lib/sanitize";
 
 type PostType = "blog" | "video" | "event";
 
@@ -179,7 +180,7 @@ export default function PublicContent() {
                     {post.body ? (
                       <div
                         className="prose mt-4 max-w-none text-sm text-slate-700"
-                        dangerouslySetInnerHTML={{ __html: post.body }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(post.body) }}
                       />
                     ) : null}
                   </div>

@@ -1,46 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
-import jwt from "jsonwebtoken";
-import { cookies } from "next/headers";
-
-const REQUIRED_DOCUMENTS = [
-  "letterOfIntent",
-  "resume",
-  "picture",
-  "applicationForm",
-  "schoolCredentials",
-  "highSchoolDiploma",
-  "transcript",
-  "birthCertificate",
-  "nbiClearance",
-];
-
-async function extractToken(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.slice(7);
-  }
-  const cookieStore = await cookies();
-  return cookieStore.get("token")?.value;
-}
+import { requireAuth } from "@/lib/auth";
+import { getRequiredDocumentKeys } from "@/lib/documents";
 
 export async function POST(req: NextRequest) {
   try {
-    const token = await extractToken(req);
-    if (!token) {
-      return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
+    const auth = await requireAuth(req);
+    if (!auth.ok) {
+      return auth.response;
     }
-
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      return NextResponse.json({ success: false, error: "Server misconfiguration" }, { status: 500 });
-    }
-
-    const decoded = jwt.verify(token, secret) as { final_data?: { data?: Array<{ id?: string; email?: string }> } };
-    const userEmail = decoded.final_data?.data?.[0]?.email;
-    if (!userEmail) {
-      return NextResponse.json({ success: false, error: "Authenticated user not found" }, { status: 401 });
-    }
+    const userEmail = auth.user.email;
 
     const { data, error } = await supabaseServer
       .from("form")
@@ -57,7 +26,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, data: null }, { status: 200 });
     }
 
-    const requiredCount = REQUIRED_DOCUMENTS.reduce((count, key) => {
+    const isMarried = application.civil_status?.toLowerCase() === "married";
+    const isBusinessOwner = Boolean(application.businessRegistration);
+    const requiredDocs = getRequiredDocumentKeys({ isMarried, isBusinessOwner });
+
+    const requiredCount = requiredDocs.reduce((count, key) => {
       return count + (application[key] ? 1 : 0);
     }, 0);
 
@@ -81,7 +54,7 @@ export async function POST(req: NextRequest) {
         remarks,
         verified,
         meta: {
-          requiredDocumentCount: REQUIRED_DOCUMENTS.length,
+          requiredDocumentCount: requiredDocs.length,
           requiredUploadedCount: requiredCount,
         },
       },

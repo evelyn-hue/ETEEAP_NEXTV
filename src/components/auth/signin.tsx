@@ -71,17 +71,16 @@ export default function SignIn() {
       email: formData.email,
     });
     if (response.success) {
-      const authResponse = await Fetch_to(apiLink.jwt.auth, { email: formData.email }) as {
-        success: boolean;
-        data?: { token?: string };
-        message?: string;
-      };
-      if (authResponse.success && typeof window !== "undefined" && authResponse.data?.token) {
+      const responseData = (response.data as { token?: string; user?: { role?: string }; require_otp?: boolean; email?: string }) || {};
+      if (responseData.token && typeof window !== "undefined") {
         const storage = rememberMe ? localStorage : sessionStorage;
-        storage.setItem("authToken", authResponse.data.token);
+        storage.setItem("authToken", responseData.token);
       }
       await refreshAuth();
-      const nextPath = formData.email === "admin@admin.com" ? "/admin" : "/";
+      const params = new URLSearchParams(window.location.search);
+      const nextParam = params.get("next");
+      const isAdmin = responseData.user?.role === "admin" || formData.email.toLowerCase() === "admin@admin.com";
+      const nextPath = nextParam || (isAdmin ? "/admin" : "/");
       setSuccessMessage("Sign in successful!");
       setToastOpen(true);
       setTimeout(() => {
@@ -89,6 +88,10 @@ export default function SignIn() {
         router.push(nextPath);
       }, 1400);
     } else {
+      if ((response.data as { require_otp?: boolean })?.require_otp) {
+        router.push(`/auth/verify-otp?email=${encodeURIComponent(formData.email)}`);
+        return;
+      }
       setErrorMessage(response.message || "Sign in failed. Please try again.");
     }
     setLoading(false);

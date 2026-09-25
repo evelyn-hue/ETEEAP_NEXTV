@@ -1,38 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { supabaseServer } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    // Extract user ID from JWT cookie
-    const auth = req.headers.get("authorization") || "";
-    const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    const cookieToken = (await cookies()).get("token")?.value;
-    const token = bearer || cookieToken;
-    
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: "Not authenticated" },
-        { status: 401 }
-      );
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    let userId: string;
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as { final_data: { data: Array<{ id: string }> } };
-      userId = decoded.final_data?.data?.[0]?.id;
-      
-      if (!userId) {
-        return NextResponse.json(
-          { success: false, error: "User ID not found in token" },
-          { status: 401 }
-        );
-      }
-    } catch {
+    let userId = auth.user.id;
+    if (!userId) {
+      const { data: userData } = await supabaseServer
+        .from("auth")
+        .select("id")
+        .eq("email", auth.user.email)
+        .maybeSingle();
+      userId = userData?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Invalid token" },
-        { status: 401 }
+        { success: false, error: "User ID not found" },
+        { status: 400 }
       );
     }
 
@@ -40,7 +30,7 @@ export async function POST(req: NextRequest) {
       .from("admin_settings")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error && error.code !== "PGRST116") {
       return NextResponse.json(
@@ -53,7 +43,7 @@ export async function POST(req: NextRequest) {
     if (!data) {
       const { data: newData, error: insertError } = await supabaseServer
         .from("admin_settings")
-        .insert([{ id: userId, full_name: "Admin User", avatar_url: null }])
+        .insert([{ id: userId, full_name: auth.user.fullName || "Admin User", avatar_url: null }])
         .select()
         .single();
 
@@ -76,7 +66,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error:", message);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { FiBookOpen, FiFileText, FiHome, FiLogOut, FiMenu, FiUsers, FiX } from "react-icons/fi";
+import { FiBookOpen, FiFileText, FiHome, FiLogOut, FiMenu, FiSettings, FiUsers, FiX } from "react-icons/fi";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 import { useAuth } from "@/context/AuthContext";
@@ -33,6 +33,7 @@ function SidenavNavItems({
     { href: "/admin/adminalumni", label: "Alumni", icon: FiFileText, badge: counts.pendingAlumni },
     { href: "/admin/content", label: "Content", icon: FiBookOpen },
     { href: "/admin/activitylogs", label: "Activity Logs", icon: FiUsers },
+    { href: "/admin/setting", label: "Settings", icon: FiSettings },
   ];
 
   return (

@@ -1,31 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { supabaseServer } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
-
-async function requireAdmin(req: NextRequest): Promise<{ ok: boolean; response?: NextResponse }> {
-  const auth = req.headers.get("authorization") || "";
-  const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  const cookieToken = (await cookies()).get("token")?.value;
-  const token = bearer || cookieToken;
-
-  if (!token) {
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 }),
-    };
-  }
-
-  try {
-    jwt.verify(token, process.env.JWT_SECRET || "");
-    return { ok: true };
-  } catch {
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 }),
-    };
-  }
-}
+import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
