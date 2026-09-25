@@ -22,23 +22,12 @@ import {
 } from "lucide-react";
 import Reveal from "@/components/shared/Reveal";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
-
-const DOCUMENTS = [
-  { key: "letterOfIntent", label: "Letter of Intent", required: true },
-  { key: "resume", label: "Résumé / CV", required: true },
-  { key: "picture", label: "Formal Picture", required: true },
-  { key: "applicationForm", label: "Application Form", required: true },
-  { key: "recommendationLetter", label: "Recommendation Letter", required: false },
-  { key: "schoolCredentials", label: "School Credentials", required: true },
-  { key: "highSchoolDiploma", label: "High School Diploma / PEPT", required: true },
-  { key: "transcript", label: "Transcript", required: true },
-  { key: "birthCertificate", label: "Birth Certificate", required: true },
-  { key: "employmentCertificate", label: "Certificate of Employment", required: false },
-  { key: "nbiClearance", label: "NBI Clearance", required: false },
-  { key: "marriageCertificate", label: "Marriage Certificate", required: false },
-  { key: "businessRegistration", label: "Business Registration", required: false },
-  { key: "certificates", label: "Certificates", required: false },
-];
+import {
+  ALL_DOCUMENTS,
+  isDocumentRequired,
+  MAX_FILE_SIZE,
+  ALLOWED_MIME_TYPES,
+} from "@/lib/documents";
 
 interface Application {
   id: string;
@@ -138,11 +127,10 @@ export default function ApplicationStatus() {
   };
 
   const isValidFile = (file: File) => {
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
-    if (!allowedTypes.includes(file.type)) {
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return "File must be a PDF, JPG, or PNG.";
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > MAX_FILE_SIZE) {
       return "File must be 5MB or smaller.";
     }
     return null;
@@ -334,6 +322,15 @@ export default function ApplicationStatus() {
       console.error(err);
     }
   };
+
+  const isMarried = app?.civil_status?.toLowerCase() === "married";
+  const isBusinessOwner = app?.isBusinessOwner === "Yes";
+
+  const DOCUMENTS = ALL_DOCUMENTS.map((doc) => ({
+    key: doc.key,
+    label: doc.shortLabel || doc.label,
+    required: isDocumentRequired(doc.key, { isMarried, isBusinessOwner }),
+  }));
 
   const goToDoc = (index: number) => {
     setActiveIndex(Math.max(0, Math.min(DOCUMENTS.length - 1, index)));
@@ -826,51 +823,54 @@ export default function ApplicationStatus() {
 
                     {/* File Preview */}
                     {val ? (
-                      <div className="mb-4">
-                        {(() => {
-                          const isImage = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(val) || val.startsWith("data:") && val.includes("image/");
-                          if (isImage) {
-                            return (
-                              <div className="rounded-lg border border-gray-200 overflow-hidden">
-                                <img
-                                  src={val}
-                                  alt={d.label}
-                                  className="w-full max-h-64 object-contain bg-gray-50"
-                                />
-                              </div>
-                            );
-                          }
-                          if (/\.pdf(\?|$)/i.test(val) || val.startsWith("data:") && val.includes("application/pdf")) {
-                            return (
-                              <div className="rounded-lg border border-gray-200 overflow-hidden">
-                                <iframe
-                                  src={val}
-                                  title={d.label}
-                                  className="w-full h-64"
-                                />
-                              </div>
-                            );
-                          }
+                      <div className="mb-4 space-y-3">
+                        {val.split(",").map((fileUrl, urlIndex) => {
+                          const singleUrl = fileUrl.trim();
+                          if (!singleUrl) return null;
+                          const isImage = /\.(jpe?g|png|gif|webp)(\?|$)/i.test(singleUrl) || (singleUrl.startsWith("data:") && singleUrl.includes("image/"));
+                          const isPdf = /\.pdf(\?|$)/i.test(singleUrl) || (singleUrl.startsWith("data:") && singleUrl.includes("application/pdf"));
                           return (
-                            <a
-                              href={val}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="block px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition text-center"
-                            >
-                              View File
-                            </a>
+                            <div key={urlIndex} className="space-y-2">
+                              {isImage ? (
+                                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                                  <img
+                                    src={singleUrl}
+                                    alt={`${d.label} ${urlIndex + 1}`}
+                                    className="w-full max-h-64 object-contain bg-gray-50"
+                                  />
+                                </div>
+                              ) : isPdf ? (
+                                <div className="rounded-lg border border-gray-200 overflow-hidden">
+                                  <iframe
+                                    src={singleUrl}
+                                    title={`${d.label} ${urlIndex + 1}`}
+                                    className="w-full h-64"
+                                  />
+                                </div>
+                              ) : (
+                                <a
+                                  href={singleUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="block px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-100 transition text-center"
+                                >
+                                  View File {val.includes(",") ? `#${urlIndex + 1}` : ""}
+                                </a>
+                              )}
+                              <div className="flex justify-end">
+                                <a
+                                  href={singleUrl}
+                                  download
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-xs font-medium"
+                                >
+                                  <Download className="w-3.5 h-3.5" /> Download {val.includes(",") ? `File ${urlIndex + 1}` : ""}
+                                </a>
+                              </div>
+                            </div>
                           );
-                        })()}
-                        <div className="mt-2 flex justify-end">
-                          <a
-                            href={val}
-                            download
-                            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm"
-                          >
-                            <Download className="w-4 h-4" /> Download
-                          </a>
-                        </div>
+                        })}
                       </div>
                     ) : (
                       <div className="mb-4 p-3 bg-gray-100 rounded-lg text-center text-sm text-gray-600">

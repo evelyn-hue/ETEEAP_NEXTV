@@ -1,12 +1,25 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { verifySession, isAdminUser } from "@/lib/auth";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const { data, error } = await supabaseServer
+    const caller = await verifySession(req);
+    const isCallerAdmin = isAdminUser(caller);
+
+    let query = supabaseServer
       .from("alumni_profiles")
       .select("*")
       .order("created_at", { ascending: false });
+
+    // Non-admins only get verified, public alumni
+    if (!isCallerAdmin) {
+      query = query
+        .eq("verification_status", "verified")
+        .eq("visibility", "public");
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Supabase select error:", error);

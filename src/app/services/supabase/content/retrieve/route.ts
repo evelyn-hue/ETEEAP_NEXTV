@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { verifySession, isAdminUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { type, status } = await req.json();
+    const caller = await verifySession(req);
+    const isCallerAdmin = isAdminUser(caller);
+
+    const body = await req.json().catch(() => ({}));
+    const { type, status } = body;
 
     let query = supabaseServer
       .from("posts")
@@ -14,7 +19,9 @@ export async function POST(req: NextRequest) {
       query = query.eq("type", String(type));
     }
 
-    if (status && ["draft", "published"].includes(String(status))) {
+    if (!isCallerAdmin) {
+      query = query.eq("status", "published");
+    } else if (status && ["draft", "published"].includes(String(status))) {
       query = query.eq("status", String(status));
     }
 

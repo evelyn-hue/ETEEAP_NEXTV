@@ -18,7 +18,7 @@ type Jwt_props = {
 
 export default function HeaderPage({ showProfile, email }: Jwt_props) {
   const router = useRouter();
-  const { profilePicture, isLoggedIn } = useAuth();
+  const { profilePicture, isLoggedIn, logout, isAdmin } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -108,6 +108,8 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               { label: "Alumni", path: "/alumni" },
               { label: "News & Events", path: "/news" },
               { label: "FAQ's", path: "/question" },
+              ...(isLoggedIn && !isAdmin ? [{ label: "My Application", path: "/form/applicationstatus" }] : []),
+              ...(isAdmin ? [{ label: "Admin", path: "/admin" }] : []),
             ].map((item) => (
               <li key={item.path} className="relative group cursor-pointer" onClick={() => { router.push(item.path); }}>
                 <span className="text-sm font-medium text-gray-700 group-hover:text-blue-600 transition-colors">
@@ -220,6 +222,18 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 <p className="mb-3 truncate font-medium text-gray-700">
                   {email || "No email found"}
                 </p>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push("/admin");
+                      setProfileOpen(false);
+                    }}
+                    className="mb-2 w-full rounded-md bg-purple-600 px-3 py-2 text-left text-white hover:bg-purple-700 font-medium"
+                  >
+                    Admin Dashboard
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -233,6 +247,16 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 <button
                   type="button"
                   onClick={() => {
+                    router.push("/form/applicationstatus");
+                    setProfileOpen(false);
+                  }}
+                  className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-left text-gray-700 hover:bg-gray-100"
+                >
+                  My Application
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
                     router.push("/form/draft");
                     setProfileOpen(false);
                   }}
@@ -242,13 +266,14 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    router.push("/form/applicationstatus");
+                  onClick={async () => {
                     setProfileOpen(false);
+                    await logout();
+                    router.push("/");
                   }}
-                  className="mb-2 w-full rounded-md border border-gray-300 px-3 py-2 text-left text-gray-700 hover:bg-gray-100"
+                  className="w-full rounded-md border border-red-200 bg-red-50 px-3 py-2 text-left font-medium text-red-600 hover:bg-red-100 transition"
                 >
-                  Application Status
+                  Sign Out
                 </button>
               </div>
             )}
@@ -349,6 +374,68 @@ export default function HeaderPage({ showProfile, email }: Jwt_props) {
               >
                 FAQ{"'"}s
               </button>
+              {isLoggedIn && !isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push("/form/applicationstatus");
+                    setIsMobileNavOpen(false);
+                  }}
+                  className="py-3 text-left font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  My Application
+                </button>
+              )}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    router.push("/admin");
+                    setIsMobileNavOpen(false);
+                  }}
+                  className="py-3 text-left font-semibold text-purple-600 hover:text-purple-700"
+                >
+                  Admin Dashboard
+                </button>
+              )}
+              <div className="mt-auto pt-6 border-t border-gray-200">
+                {isLoggedIn ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsMobileNavOpen(false);
+                      await logout();
+                      router.push("/");
+                    }}
+                    className="w-full rounded-md border border-red-200 bg-red-50 py-2.5 text-center font-medium text-red-600 hover:bg-red-100 transition"
+                  >
+                    Sign Out
+                  </button>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        router.push("/auth/signin");
+                        setIsMobileNavOpen(false);
+                      }}
+                      className="w-full rounded-md border border-gray-300 py-2 text-center font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      Sign In
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        router.push("/auth/signup");
+                        setIsMobileNavOpen(false);
+                      }}
+                      className="w-full rounded-md bg-blue-600 py-2 text-center font-medium text-white hover:bg-blue-700"
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </aside>
         </>

@@ -1,48 +1,48 @@
-import jwt from "jsonwebtoken";
 import { NextResponse, NextRequest } from "next/server";
-import { cookies } from "next/headers";
+import { verifySession, createToken, setAuthCookie } from "@/lib/auth";
 import { supabaseServer } from "@/lib/supabase-server";
 
+/**
+ * DEPRECATED / SECURED:
+ * Tokens must only be minted upon verified sign-in (password or OAuth).
+ * This endpoint now requires an active valid session to refresh a token,
+ * completely blocking unauthenticated token minting.
+ */
 export async function POST(req: NextRequest) {
-    const { email } = await req.json();
+  const user = await verifySession(req);
 
-    const apikey = process.env.API_KEY;
-
-    if (!apikey) return NextResponse.json({ success: false, error: "API is not Valid" }, { status: 401 });
-
-    if (!email) return NextResponse.json({ success: false, error: "Email Not Found" }, { status: 404 });
-
-    const { data, error } = await supabaseServer
-    .from("auth")
-    .select("id, email, phone, civil_status, fullName, profilePicture")
-    .eq("email", email)
-    .limit(1);
-
-    if (error) {
-        console.error("Supabase Query Error: ", error);
-        return NextResponse.json({ success: false, error: "Something went wrong" }, { status: 500 });
-    }
-
-    const final_data = {data};
-
-    const token = jwt.sign(
-        { final_data },
-        process.env.JWT_SECRET || "",
-        { expiresIn: "30d" }
+  if (!user) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Unauthorized: Token generation requires verified authentication",
+      },
+      { status: 401 }
     );
+  }
 
-    const cookieStore = await cookies();
-    cookieStore.set({
-        name: "token",
-        value: token,
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 30,
-    });
+  const { data: dbUser } = await supabaseServer
+    .from("auth")
+    .select("id, email, phone, civil_status, fullName, profilePicture, applicant_status")
+    .eq("email", user.email)
+    .maybeSingle();
 
-    console.log(" ==> User is Successfully Log In");
+  if (!dbUser) {
+    return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+  }
 
-    return NextResponse.json({ success: true, token }, { status: 200 });
+  const token = createToken({
+    id: dbUser.id,
+    email: dbUser.email,
+    fullName: dbUser.fullName,
+    phone: dbUser.phone,
+    civil_status: dbUser.civil_status,
+    profilePicture: dbUser.profilePicture,
+    applicant_status: dbUser.applicant_status,
+    role: user.role,
+  });
+
+  await setAuthCookie(token);
+
+  return NextResponse.json({ success: true, token }, { status: 200 });
 }

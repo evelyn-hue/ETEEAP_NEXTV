@@ -16,6 +16,7 @@ import Reveal from "@/components/shared/Reveal";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Fetch_to } from "@/utilities";
 import Skeleton from "@/components/shared/Skeleton";
+import { ALL_DOCUMENTS } from "@/lib/documents";
 
 type DocumentStatus = "Pending" | "Verified" | "Rejected";
 type FormStatus = "Under Review" | "Approve" | "Reject" | "On Hold" | "Defer" | "Draft" | "Delete";
@@ -96,22 +97,12 @@ type Toast = {
   type: "success" | "error" | "info";
 };
 
-const baseDocuments: DocumentDefinition[] = [
-  { id: "letterOfIntent", label: "A. Letter of Intent", required: true },
-  { id: "resume", label: "B. Resume / CV", required: true },
-  { id: "picture", label: "C. Formal Picture", required: true },
-  { id: "applicationForm", label: "D. ETEEAP Application Form", required: true, note: "Screenshot of completed Google Form" },
-  { id: "recommendationLetter", label: "E. Recommendation Letter", required: true },
-  { id: "schoolCredentials", label: "F. School Credentials", required: true },
-  { id: "highSchoolDiploma", label: "G. High School Diploma / PEPT", required: true },
-  { id: "transcript", label: "H. Transcript", required: true },
-  { id: "birthCertificate", label: "I. Birth Certificate", required: true },
-  { id: "marriageCertificate", label: "J. Marriage Certificate" },
-  { id: "employmentCertificate", label: "K. Certificate of Employment (4 max)", required: true, note: "Up to 4 files" },
-  { id: "nbiClearance", label: "L. NBI Clearance", required: true },
-  { id: "businessRegistration", label: "M. Business Registration" },
-  { id: "certificates", label: "N. Certificates (10 max)", note: "Up to 10 files" },
-];
+const baseDocuments: DocumentDefinition[] = ALL_DOCUMENTS.map((doc, idx) => ({
+  id: doc.key,
+  label: `${String.fromCharCode(65 + idx)}. ${doc.label}${doc.maxFiles > 1 ? ` (${doc.maxFiles} max)` : ""}`,
+  required: doc.required,
+  note: doc.note || doc.conditionalNote,
+}));
 
 function normalizeFormStatus(status?: string): FormStatus {
   const normalized = String(status ?? "").toLowerCase().trim();
@@ -312,15 +303,25 @@ function DocumentCard({
 
       <div className="mt-3">
         {document.fileUrl ? (
-          <a
-            href={document.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline"
-          >
-            <ExternalLink size={14} />
-            View uploaded file
-          </a>
+          <div className="flex flex-col gap-1.5">
+            {document.fileUrl.split(",").map((url, i) => {
+              const cleanUrl = url.trim();
+              if (!cleanUrl) return null;
+              const isMulti = document.fileUrl!.includes(",");
+              return (
+                <a
+                  key={i}
+                  href={cleanUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 underline hover:text-blue-900"
+                >
+                  <ExternalLink size={14} />
+                  {isMulti ? `View file ${i + 1}` : "View uploaded file"}
+                </a>
+              );
+            })}
+          </div>
         ) : (
           <p className="text-xs text-slate-500">No uploaded file for this document yet.</p>
         )}
@@ -416,12 +417,11 @@ export default function Application() {
     window.setTimeout(() => setToast(null), 3000);
   };
 
-  const fetchApplications = async (userEmail: string) => {
+  const fetchApplications = async () => {
     setLoading(true);
     setError("");
 
     const response = await Fetch_to(apiLinks.retrieve_data, {
-      email: userEmail,
       page: 1,
       limit: 200,
     });
@@ -447,7 +447,7 @@ export default function Application() {
       );
 
       setAdminEmail(resolvedEmail);
-      await fetchApplications(resolvedEmail);
+      await fetchApplications();
     };
 
     void verifyAndLoad();

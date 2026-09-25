@@ -1,51 +1,42 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { supabaseServer } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    // Extract user ID from JWT cookie
-    const auth = req.headers.get("authorization") || "";
-    const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    const cookieToken = (await cookies()).get("token")?.value;
-    const token = bearer || cookieToken;
-    
-    if (!token) {
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return auth.response;
+    }
+
+    let userId = auth.user.id;
+    if (!userId) {
+      const { data: userData } = await supabaseServer
+        .from("auth")
+        .select("id")
+        .eq("email", auth.user.email)
+        .maybeSingle();
+      userId = userData?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Not authenticated" },
-        { status: 401 }
+        { success: false, error: "User ID not found" },
+        { status: 400 }
       );
     }
 
-    let userId: string;
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as { final_data: { data: Array<{ id: string }> } };
-      userId = decoded.final_data?.data?.[0]?.id;
-      
-      if (!userId) {
-        return NextResponse.json(
-          { success: false, error: "User ID not found in token" },
-          { status: 401 }
-        );
-      }
-    } catch {
-      return NextResponse.json(
-        { success: false, error: "Invalid token" },
-        { status: 401 }
-      );
-    }
-
-    const { full_name, avatar_url } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { full_name, avatar_url } = body;
 
     const { data, error } = await supabaseServer
       .from("admin_settings")
-      .update({
-        ...(full_name && { full_name }),
-        ...(avatar_url && { avatar_url }),
+      .upsert({
+        id: userId,
+        ...(full_name !== undefined && { full_name }),
+        ...(avatar_url !== undefined && { avatar_url }),
         updated_at: new Date().toISOString(),
       })
-      .eq("id", userId)
       .select()
       .single();
 
@@ -62,7 +53,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error:", message);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }

@@ -1,38 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { supabaseServer } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
-
-async function requireAdmin(req: NextRequest): Promise<{ ok: boolean; response?: NextResponse }> {
-  const auth = req.headers.get("authorization") || "";
-  const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  const cookieToken = (await cookies()).get("token")?.value;
-  const token = bearer || cookieToken;
-
-  if (!token) {
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: "Not authenticated" }, { status: 401 }),
-    };
-  }
-
-  try {
-    jwt.verify(token, process.env.JWT_SECRET || "");
-    return { ok: true };
-  } catch {
-    return {
-      ok: false,
-      response: NextResponse.json({ success: false, error: "Invalid token" }, { status: 401 }),
-    };
-  }
-}
+import { requireAdmin } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
     const guard = await requireAdmin(req);
     if (!guard.ok) return guard.response;
 
-    const { id } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const { id } = body;
     if (!id) {
       return NextResponse.json({ success: false, error: "ID is required" }, { status: 400 });
     }
@@ -46,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, message: "Content deleted" }, { status: 200 });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error:", message);
+    console.error("Error deleting content:", message);
     return NextResponse.json({ success: false, error: message }, { status: 500 });
   }
 }

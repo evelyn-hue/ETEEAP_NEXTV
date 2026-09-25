@@ -31,7 +31,7 @@ export default async function Fetch_toFile(
   } = options;
 
   if (!dir || dir === "") {
-    if (typeof window !== "undefined") alert("Invalid API Directory not found");
+    console.error("Fetch_toFile: Invalid API Directory");
     return { success: false, message: "Invalid API Directory" };
   }
 
@@ -73,12 +73,19 @@ export default async function Fetch_toFile(
     try {
       onProgress?.(25, "Uploading files...");
 
+      const effectiveHeaders: Record<string, string> = { ...headers };
+      if (!effectiveHeaders["authorization"] && typeof window !== "undefined") {
+        const storedToken = localStorage.getItem("authToken") || sessionStorage.getItem("authToken");
+        if (storedToken) {
+          effectiveHeaders["authorization"] = `Bearer ${storedToken}`;
+        }
+      }
+
       const response = await fetch(dir, {
         method: "POST",
-        headers: {
-          ...headers,
-        },
+        headers: effectiveHeaders,
         body: formData,
+        credentials: "include",
       });
 
       onProgress?.(75, "Reading response...");
@@ -92,7 +99,7 @@ export default async function Fetch_toFile(
 
       return {
         success: false,
-        message: data?.error || `Request failed: ${response.status}`,
+        message: data?.error || data?.message || `Request failed: ${response.status}`,
       };
     } catch (err: unknown) {
       let message = "Unknown fetch error";
@@ -103,5 +110,5 @@ export default async function Fetch_toFile(
     if (attempt < retries) await new Promise((res) => setTimeout(res, delay));
   }
 
-  return { success: false, message: `All ${retries} attempts failed for ${dir}` };
+  return { success: false, message: `All ${retries} attempts failed for ${dir}. Please check your connection.` };
 }

@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { sendStatusEmail } from "@/lib/resend";
+import { requireAuth, requireAdmin, isAdminUser } from "@/lib/auth";
+import {
+  ALL_DOCUMENTS,
+  DOCUMENT_KEY_TO_LABEL,
+  getRequiredDocumentKeys,
+  isDocumentRequired,
+} from "@/lib/documents";
 
-type FormStatus = "Under Review" | "Reject" | "Approve" | "On Hold" | "Defer" | "Draft" | "Delete";
+type FormStatus =
+  | "Under Review"
+  | "Reject"
+  | "Approve"
+  | "On Hold"
+  | "Defer"
+  | "Draft"
+  | "Delete";
+
 type DocumentApprovalStatus = "Pending" | "Verified" | "Rejected";
 
 type ApprovalEntry = {
@@ -16,61 +31,21 @@ type ApprovalEntry = {
 async function insertActivityLog(userEmail: string, actions: string, details: string) {
   if (!userEmail) return;
 
-  const { error } = await supabaseServer
-    .from("act_logs")
-    .insert([
-      {
-        user: userEmail,
-        actions,
-        details,
-      },
-    ]);
+  const { error } = await supabaseServer.from("act_logs").insert([
+    {
+      user: userEmail,
+      actions,
+      details,
+    },
+  ]);
 
   if (error) {
     console.error("Activity log insert failed:", error.message);
   }
 }
 
-const REQUIRED_DOCUMENT_KEYS = [
-  "letterOfIntent",
-  "resume",
-  "picture",
-  "applicationForm",
-  "recommendationLetter",
-  "schoolCredentials",
-  "highSchoolDiploma",
-  "transcript",
-  "birthCertificate",
-  "employmentCertificate",
-  "nbiClearance",
-] as const;
-
-const ALL_DOCUMENT_KEYS = [
-  ...REQUIRED_DOCUMENT_KEYS,
-  "marriageCertificate",
-  "businessRegistration",
-  "certificates",
-] as const;
-
-const DOCUMENT_LABELS: Record<string, string> = {
-  letterOfIntent: "Letter of Intent",
-  resume: "Resume",
-  picture: "Formal Picture",
-  applicationForm: "Application Form",
-  recommendationLetter: "Recommendation Letter",
-  schoolCredentials: "School Credentials",
-  highSchoolDiploma: "High School Diploma",
-  transcript: "Transcript",
-  birthCertificate: "Birth Certificate",
-  marriageCertificate: "Marriage Certificate",
-  employmentCertificate: "Employment Certificate",
-  nbiClearance: "NBI Clearance",
-  businessRegistration: "Business Registration",
-  certificates: "Certificates",
-};
-
 function documentKeyToLabel(key: string) {
-  return DOCUMENT_LABELS[key] ?? key;
+  return DOCUMENT_KEY_TO_LABEL[key] ?? key;
 }
 
 function parseApprovals(value: unknown): ApprovalEntry[] {
@@ -135,115 +110,141 @@ async function getApplicantCivilStatus(email?: string | null) {
 }
 
 export async function POST(params: NextRequest) {
-    try {
+  try {
+    const authResult = await requireAuth(params);
+    if (!authResult.ok) return authResult.response;
 
-        const { email, page = 1, limit = 10 } = await params.json();
+    const caller = authResult.user;
+    const isCallerAdmin = isAdminUser(caller);
 
-        if (!email) return NextResponse.json({ success: false, error: "Email not Exist" }, { status: 404 });
+    const body = await params.json().catch(() => ({}));
+    const { email, page = 1, limit = 10 } = body;
 
-        const normalizedEmail = String(email).toLowerCase().trim();
-        const isAdmin = normalizedEmail.includes("admin@admin.com");
+    const currentPage = Math.max(Number(page) || 1, 1);
+    const pageLimit = Math.max(Number(limit) || 10, 1);
+    const from = (currentPage - 1) * pageLimit;
+    const to = from + pageLimit - 1;
 
-        const currentPage = Math.max(Number(page) || 1, 1);
-        const pageLimit = Math.max(Number(limit) || 10, 1);
-        const from = (currentPage - 1) * pageLimit;
-        const to = from + pageLimit - 1;
+    let query = supabaseServer
+      .from("form")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false });
 
-        let query = supabaseServer
-          .from("form")
-          .select("*", { count: "exact" })
-          .order("created_at", { ascending: false });
-
-        if (!isAdmin) {
-          query = query.eq("email", email);
-        }
-
-        query = query.range(from, to);
-
-        const { data, error, count } = await query;
-
-        if (error) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-        }
-
-        const statusOrder: Record<string, number> = {
-          "Under Review": 0,
-          "under review": 0,
-          "On Hold": 1,
-          "on hold": 1,
-          "Defer": 2,
-          "defer": 2,
-          "Reject": 3,
-          "reject": 3,
-          "Approve": 4,
-          "approve": 4,
-          "Draft": 5,
-          "draft": 5,
-          "Delete": 6,
-          "delete": 6,
-        };
-
-        const enrichedData = (await Promise.all(
-          (data ?? []).map(async (row) => ({
-            ...row,
-            civil_status: await getApplicantCivilStatus(row.email),
-          })),
-        )).sort((a, b) => {
-          const orderA = statusOrder[String(a.form_status ?? "")] ?? 99;
-          const orderB = statusOrder[String(b.form_status ?? "")] ?? 99;
-          return orderA - orderB;
-        });
-
-        return NextResponse.json(
-          {
-            success: true,
-            message: enrichedData,
-            pagination: {
-              page: currentPage,
-              limit: pageLimit,
-              total: count ?? 0,
-              totalPages: Math.max(Math.ceil((count ?? 0) / pageLimit), 1),
-            },
-          },
-          { status: 200 },
-        );
-
-    } catch (error) {
-        console.error("Internal Server Error: " + error);
-        return NextResponse.json({ success: false, error: error || "Something Went Wrong" }, { status: 500 });
+    if (!isCallerAdmin) {
+      // Non-admins can strictly only view their own form
+      query = query.eq("email", caller.email);
+    } else if (email && email.trim() !== "" && email.trim().toLowerCase() !== caller.email.toLowerCase()) {
+      // Admin filtered by a specific applicant
+      query = query.eq("email", email.trim().toLowerCase());
     }
+
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+      return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    const statusOrder: Record<string, number> = {
+      "Under Review": 0,
+      "under review": 0,
+      "On Hold": 1,
+      "on hold": 1,
+      Defer: 2,
+      defer: 2,
+      Reject: 3,
+      reject: 3,
+      Approve: 4,
+      approve: 4,
+      Draft: 5,
+      draft: 5,
+      Delete: 6,
+      delete: 6,
+    };
+
+    const enrichedData = (
+      await Promise.all(
+        (data ?? []).map(async (row) => ({
+          ...row,
+          civil_status: await getApplicantCivilStatus(row.email),
+        }))
+      )
+    ).sort((a, b) => {
+      const orderA = statusOrder[String(a.form_status ?? "")] ?? 99;
+      const orderB = statusOrder[String(b.form_status ?? "")] ?? 99;
+      return orderA - orderB;
+    });
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: enrichedData,
+        pagination: {
+          page: currentPage,
+          limit: pageLimit,
+          total: count ?? 0,
+          totalPages: Math.max(Math.ceil((count ?? 0) / pageLimit), 1),
+        },
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Internal Server Error in retrieve_data POST:", error);
+    return NextResponse.json(
+      { success: false, error: "Something went wrong retrieving applications" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PATCH(params: NextRequest) {
   try {
-    const {
-      id,
-      form_status,
-      documentId,
-      documentStatus,
-      remark,
-      reviewedBy,
-    } = await params.json();
+    const authResult = await requireAuth(params);
+    if (!authResult.ok) return authResult.response;
+
+    const caller = authResult.user;
+    const isCallerAdmin = isAdminUser(caller);
+    const reviewingAdmin = caller.email;
+
+    const body = await params.json().catch(() => ({}));
+    const { id, form_status, documentId, documentStatus, remark } = body;
 
     const rowId = Number(id);
     if (!rowId) {
-      return NextResponse.json(
-        { success: false, error: "Invalid form id" },
-        { status: 400 },
-      );
+      return NextResponse.json({ success: false, error: "Invalid form id" }, { status: 400 });
     }
 
-    const { data: currentRow, error: readError } = await supabaseServer
+    const { data: rawRow, error: readError } = await supabaseServer
       .from("form")
-      .select("id, email, applicantName, form_status, forms_approvals, letterOfIntent, resume, picture, applicationForm, recommendationLetter, schoolCredentials, highSchoolDiploma, transcript, birthCertificate, employmentCertificate, nbiClearance, marriageCertificate, businessRegistration, certificates")
+      .select("*")
       .eq("id", rowId)
       .single();
 
-    if (readError || !currentRow) {
+    if (readError || !rawRow) {
       return NextResponse.json(
         { success: false, error: readError?.message || "Form not found" },
-        { status: 404 },
+        { status: 404 }
       );
+    }
+
+    const currentRow = rawRow as Record<string, any>;
+
+    // Security check: non-admins can only revert their own application to Draft
+    if (!isCallerAdmin) {
+      if (String(currentRow.email).toLowerCase() !== caller.email.toLowerCase()) {
+        return NextResponse.json(
+          { success: false, error: "Access denied" },
+          { status: 403 }
+        );
+      }
+      const requested = String(form_status ?? "").toLowerCase().trim();
+      if (requested !== "draft" || documentId || documentStatus || remark) {
+        return NextResponse.json(
+          { success: false, error: "Applicants can only revert their application to Draft" },
+          { status: 403 }
+        );
+      }
     }
 
     const approvals = parseApprovals(currentRow.forms_approvals);
@@ -257,16 +258,14 @@ export async function PATCH(params: NextRequest) {
           String(documentStatus ?? "Pending") === "Verified"
             ? "Verified"
             : String(documentStatus ?? "Pending") === "Rejected"
-              ? "Rejected"
-              : "Pending",
+            ? "Rejected"
+            : "Pending",
         remark: String(remark ?? ""),
-        reviewedBy: String(reviewedBy ?? ""),
+        reviewedBy: reviewingAdmin,
         reviewedAt: new Date().toISOString(),
       };
 
-      const existingIndex = approvals.findIndex(
-        (entry) => entry.documentId === nextEntry.documentId,
-      );
+      const existingIndex = approvals.findIndex((entry) => entry.documentId === nextEntry.documentId);
       if (existingIndex >= 0) {
         approvals[existingIndex] = nextEntry;
       } else {
@@ -274,16 +273,24 @@ export async function PATCH(params: NextRequest) {
       }
 
       await insertActivityLog(
-        String(reviewedBy ?? ""),
-        nextEntry.status === "Verified" ? "Verify Document" : nextEntry.status === "Rejected" ? "Reject Document" : "Update Document",
-        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) ${documentKeyToLabel(nextEntry.documentId)} marked as ${nextEntry.status}${nextEntry.remark ? `. Remark: ${nextEntry.remark}` : ""}`,
+        reviewingAdmin,
+        nextEntry.status === "Verified"
+          ? "Verify Document"
+          : nextEntry.status === "Rejected"
+          ? "Reject Document"
+          : "Update Document",
+        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) ${documentKeyToLabel(nextEntry.documentId)} marked as ${nextEntry.status}${nextEntry.remark ? `. Remark: ${nextEntry.remark}` : ""}`
       );
 
       if (currentRow.email) {
         await insertActivityLog(
           String(currentRow.email),
-          nextEntry.status === "Verified" ? "Verify Document" : nextEntry.status === "Rejected" ? "Reject Document" : "Update Document",
-          `Your ${documentKeyToLabel(nextEntry.documentId)} was ${nextEntry.status.toLowerCase()}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy).split('@')[0]}` : ""}${nextEntry.remark ? ` Remark: ${nextEntry.remark}` : ""}`,
+          nextEntry.status === "Verified"
+            ? "Verify Document"
+            : nextEntry.status === "Rejected"
+            ? "Reject Document"
+            : "Update Document",
+          `Your ${documentKeyToLabel(nextEntry.documentId)} was ${nextEntry.status.toLowerCase()} by ${reviewingAdmin.split("@")[0]}${nextEntry.remark ? `. Remark: ${nextEntry.remark}` : ""}`
         );
       }
 
@@ -293,7 +300,7 @@ export async function PATCH(params: NextRequest) {
             currentRow.email,
             currentRow.applicantName,
             nextEntry.status === "Rejected" ? "On Hold" : nextEntry.status,
-            nextEntry.remark,
+            `Document: ${documentKeyToLabel(nextEntry.documentId)}. Remark: ${nextEntry.remark}`
           );
         } catch {
           console.error("Failed to send document remark email to", currentRow.email);
@@ -305,24 +312,23 @@ export async function PATCH(params: NextRequest) {
       normalizedRequestedStatus === "reject" ||
       normalizedRequestedStatus === "rejected"
     ) {
-      const bulkStatus = normalizedRequestedStatus === "approve" || normalizedRequestedStatus === "approved"
-        ? "Verified"
-        : "Rejected";
+      const bulkStatus =
+        normalizedRequestedStatus === "approve" || normalizedRequestedStatus === "approved"
+          ? "Verified"
+          : "Rejected";
 
-      for (const key of ALL_DOCUMENT_KEYS) {
-        if (!currentRow[key]) continue;
+      for (const doc of ALL_DOCUMENTS) {
+        if (!currentRow[doc.key]) continue;
 
         const nextEntry: ApprovalEntry = {
-          documentId: key,
+          documentId: doc.key,
           status: bulkStatus,
           remark: String(remark ?? ""),
-          reviewedBy: String(reviewedBy ?? ""),
+          reviewedBy: reviewingAdmin,
           reviewedAt: new Date().toISOString(),
         };
 
-        const existingIndex = approvals.findIndex(
-          (entry) => entry.documentId === nextEntry.documentId,
-        );
+        const existingIndex = approvals.findIndex((entry) => entry.documentId === nextEntry.documentId);
         if (existingIndex >= 0) {
           approvals[existingIndex] = nextEntry;
         } else {
@@ -331,25 +337,28 @@ export async function PATCH(params: NextRequest) {
       }
 
       await insertActivityLog(
-        String(reviewedBy ?? ""),
+        reviewingAdmin,
         bulkStatus === "Verified" ? "Verify Document" : "Reject Document",
-        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) all uploaded documents marked as ${bulkStatus}`,
+        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) all uploaded documents marked as ${bulkStatus}`
       );
 
       if (currentRow.email) {
         await insertActivityLog(
           String(currentRow.email),
           bulkStatus === "Verified" ? "Verify Document" : "Reject Document",
-          `All uploaded documents for your application were marked as ${bulkStatus}${String(reviewedBy ?? "") ? ` by ${String(reviewedBy).split('@')[0]}` : ""}.`,
+          `All uploaded documents for your application were marked as ${bulkStatus} by ${reviewingAdmin.split("@")[0]}.`
         );
       }
     }
 
-    const approvalMap = new Map(
-      approvals.map((entry) => [entry.documentId, entry.status]),
-    );
+    const approvalMap = new Map(approvals.map((entry) => [entry.documentId, entry.status]));
+    const civilStatus = await getApplicantCivilStatus(currentRow.email);
+    const isMarried = civilStatus.toLowerCase() === "married";
+    const isBusinessOwner = String(currentRow.isBusinessOwner ?? "").toLowerCase() === "yes";
 
-    const allRequiredVerified = REQUIRED_DOCUMENT_KEYS.every((key) => {
+    const requiredKeys = getRequiredDocumentKeys({ isMarried, isBusinessOwner });
+
+    const allRequiredVerified = requiredKeys.every((key) => {
       const hasFile = Boolean(currentRow[key]);
       const status = approvalMap.get(key);
       return hasFile && status === "Verified";
@@ -358,17 +367,15 @@ export async function PATCH(params: NextRequest) {
     const fallbackStatus = String(currentRow.form_status ?? "Draft");
     const explicitStatus = String(form_status ?? "").trim();
     let nextStatus = resolveNextStatus(form_status, fallbackStatus);
-    // Only auto-approve when the admin did not explicitly choose a status
-    // (e.g. per-document verification). Respect explicit On Hold / Draft / Reject.
+
     if (!explicitStatus && allRequiredVerified && nextStatus !== "Delete") {
       nextStatus = "Approve";
     }
 
-    // B-mode: Approve is only allowed when no doc remains Rejected (must comply first)
     if (nextStatus === "Approve" && approvals.some((entry) => entry.status === "Rejected")) {
       return NextResponse.json(
         { success: false, error: "Applicant must fix remarked files before approval" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -378,35 +385,31 @@ export async function PATCH(params: NextRequest) {
         nextStatus === "Delete"
           ? "Deleted Applicant"
           : previousStatus === "Delete"
-            ? "Restored Applicant"
-            : nextStatus === "Approve"
+          ? "Restored Applicant"
+          : nextStatus === "Approve"
           ? "Accepted Applicant"
           : nextStatus === "Reject"
-            ? "Rejected Applicant"
-            : nextStatus === "On Hold"
-              ? "On Hold Applicant"
-              : nextStatus === "Defer"
-                ? "Defer Applicant"
-                : nextStatus === "Under Review"
-              ? "Under Review Applicant"
-              : "Draft Applicant";
+          ? "Rejected Applicant"
+          : nextStatus === "On Hold"
+          ? "On Hold Applicant"
+          : nextStatus === "Defer"
+          ? "Defer Applicant"
+          : nextStatus === "Under Review"
+          ? "Under Review Applicant"
+          : "Draft Applicant";
 
       await insertActivityLog(
-        String(reviewedBy ?? ""),
+        reviewingAdmin,
         statusAction,
-        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) status updated to ${nextStatus}`,
+        `Form #${rowId} (${String(currentRow.applicantName ?? currentRow.email ?? "Unknown")}) status updated to ${nextStatus}`
       );
 
       if (currentRow.email) {
         const applicantDetail =
           nextStatus === "On Hold"
             ? "Application On Hold — Your application is currently being reviewed by the administrator. Verification may take 3–7 business days. Please wait while your application is being processed."
-            : `Your application status is now ${nextStatus}${String(reviewedBy ?? "") ? ` as processed by ${String(reviewedBy).split('@')[0]}` : ""}.`;
-        await insertActivityLog(
-          String(currentRow.email),
-          statusAction,
-          applicantDetail,
-        );
+            : `Your application status is now ${nextStatus} as processed by ${reviewingAdmin.split("@")[0]}.`;
+        await insertActivityLog(String(currentRow.email), statusAction, applicantDetail);
       }
 
       if (currentRow.email && currentRow.applicantName) {
@@ -414,13 +417,8 @@ export async function PATCH(params: NextRequest) {
           const emailDetails =
             nextStatus === "On Hold"
               ? "Your application is currently being reviewed by the administrator. Verification may take 3–7 business days. Please wait while your application is being processed."
-              : `Your application status has been updated to ${nextStatus} by the admin.`;
-          await sendStatusEmail(
-            currentRow.email,
-            currentRow.applicantName,
-            nextStatus,
-            emailDetails,
-          );
+              : `Your application status has been updated to ${nextStatus} by the administrator.`;
+          await sendStatusEmail(currentRow.email, currentRow.applicantName, nextStatus, emailDetails);
         } catch {
           console.error("Failed to send status email to", currentRow.email);
         }
@@ -438,10 +436,7 @@ export async function PATCH(params: NextRequest) {
       .single();
 
     if (updateError) {
-      return NextResponse.json(
-        { success: false, error: updateError.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ success: false, error: updateError.message }, { status: 500 });
     }
 
     if (currentRow.email) {
@@ -449,14 +444,14 @@ export async function PATCH(params: NextRequest) {
         nextStatus === "Reject"
           ? "rejected"
           : nextStatus === "Approve"
-            ? "accepted"
-            : nextStatus === "Under Review"
-              ? "submitted"
-              : nextStatus === "On Hold"
-                ? "submitted"
-                : nextStatus === "Defer"
-                  ? "submitted"
-                  : "draft";
+          ? "accepted"
+          : nextStatus === "Under Review"
+          ? "submitted"
+          : nextStatus === "On Hold"
+          ? "submitted"
+          : nextStatus === "Defer"
+          ? "submitted"
+          : "draft";
 
       await supabaseServer
         .from("auth")
@@ -464,14 +459,12 @@ export async function PATCH(params: NextRequest) {
         .eq("email", currentRow.email);
     }
 
-    const civilStatus = await getApplicantCivilStatus(currentRow.email);
-
     return NextResponse.json(
       {
         success: true,
         message: { ...updatedRow, civil_status: civilStatus },
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Something Went Wrong";

@@ -9,6 +9,14 @@ import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
 import { getObjectWithFallback, setObjectWithFallback } from "@/utilities/idb";
+import {
+  ALL_DOCUMENTS,
+  DOCUMENT_KEY_TO_LABEL,
+  DOCUMENT_MAX_FILES,
+  MAX_FILE_SIZE,
+  ALLOWED_MIME_TYPES,
+  isDocumentRequired,
+} from "@/lib/documents";
 
 const eteeapFormId = [
   "1FAIpQLScTWK7hH2",
@@ -37,25 +45,6 @@ type DraftApplication = {
   programName: string;
   files: Record<string, StoredFile[]>;
 };
-
-const fileLabels: Record<string, string> = {
-  letterOfIntent: "Letter of Intent",
-  resume: "Resume / CV",
-  picture: "Formal Picture",
-  applicationForm: "ETEEAP Application Form",
-  recommendationLetter: "Recommendation Letter",
-  schoolCredentials: "School Credentials",
-  highSchoolDiploma: "High School Diploma / PEPT",
-  transcript: "Transcript",
-  birthCertificate: "Birth Certificate",
-  marriageCertificate: "Marriage Certificate",
-  employmentCertificate: "Certificate of Employment",
-  nbiClearance: "NBI Clearance",
-  businessRegistration: "Business Registration",
-  certificates: "Certificates",
-};
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
 
 function formatBytes(bytes: number) {
   if (!bytes) return "0 B";
@@ -121,13 +110,8 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
   });
   const router = useRouter();
 
-  const maxFileCount: Record<string, number> = {
-    employmentCertificate: 4,
-    certificates: 10,
-  };
-
   const updateFileCount = (fieldId: string, savedLength: number, selectedLength: number) => {
-    if (!(fieldId in maxFileCount)) return;
+    if ((DOCUMENT_MAX_FILES[fieldId] ?? 1) <= 1) return;
     setFileCounts((prev) => ({ ...prev, [fieldId]: savedLength + selectedLength }));
   };
 
@@ -165,33 +149,32 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
     const { name, files } = event.target;
     if (!name || !files) return;
 
-    const allowedTypes = ["application/pdf", "image/jpeg", "image/jpg", "image/png"];
     const fileArray = Array.from(files);
     for (const file of fileArray) {
-      if (!allowedTypes.includes(file.type)) {
+      if (!ALLOWED_MIME_TYPES.includes(file.type)) {
         setError(`"${file.name}" is not an accepted file type. Please upload PDF, JPG, or PNG files only.`);
         (event.target as HTMLInputElement).value = "";
         return;
       }
-if (file.size > MAX_FILE_SIZE) {
-    setError(`"${file.name}" exceeds the 5MB file size limit.`);
+      if (file.size > MAX_FILE_SIZE) {
+        setError(`"${file.name}" exceeds the 5MB file size limit.`);
         (event.target as HTMLInputElement).value = "";
         return;
       }
     }
 
-    const limit = maxFileCount[name as keyof typeof maxFileCount];
+    const limit = DOCUMENT_MAX_FILES[name] ?? 1;
     const currentFiles = selectedFiles[name] ?? [];
     const existingSavedFiles = savedFiles[name] ?? [];
     const combinedCount = existingSavedFiles.length + currentFiles.length + fileArray.length;
     const combinedFiles = [...currentFiles, ...fileArray];
 
-    if (limit) {
+    if (limit > 1) {
       if (combinedCount > limit) {
         const allowedNewFiles = combinedFiles.slice(0, Math.max(0, limit - existingSavedFiles.length));
         setSelectedFiles((prev) => ({ ...prev, [name]: allowedNewFiles }));
         setFileCounts((prev) => ({ ...prev, [name]: existingSavedFiles.length + allowedNewFiles.length }));
-        setError(`${fileLabels[name as keyof typeof fileLabels] ?? name} supports up to ${limit} files.`);
+        setError(`${DOCUMENT_KEY_TO_LABEL[name] ?? name} supports up to ${limit} files.`);
         const target = event.target as HTMLInputElement;
         target.value = "";
         return;
@@ -210,9 +193,6 @@ if (file.size > MAX_FILE_SIZE) {
       delete next[name];
       return next;
     });
-    if (name in maxFileCount) {
-      setFileCounts((prev) => ({ ...prev, [name]: fileArray.length }));
-    }
     setError("");
     const target = event.target as HTMLInputElement;
     target.value = "";
@@ -259,16 +239,16 @@ if (file.size > MAX_FILE_SIZE) {
     setIsSaving(true);
 
     try {
-      const fileEntries = Object.keys(fileLabels);
+      const fileEntries = ALL_DOCUMENTS.map((doc) => doc.key);
       const invalidSelection = fileEntries.find((key) => {
-        const limit = maxFileCount[key as keyof typeof maxFileCount];
+        const limit = DOCUMENT_MAX_FILES[key] ?? 1;
         const selected = selectedFiles[key] ?? [];
         const saved = savedFiles[key]?.length ?? 0;
-        return limit !== undefined && selected.length + saved > limit;
+        return limit > 1 && selected.length + saved > limit;
       });
 
       if (invalidSelection) {
-        setError(`${fileLabels[invalidSelection as keyof typeof fileLabels] ?? invalidSelection} can only have up to ${maxFileCount[invalidSelection]} files.`);
+        setError(`${DOCUMENT_KEY_TO_LABEL[invalidSelection] ?? invalidSelection} can only have up to ${DOCUMENT_MAX_FILES[invalidSelection]} files.`);
         setIsSaving(false);
         return;
       }
@@ -280,9 +260,9 @@ if (file.size > MAX_FILE_SIZE) {
           const domFiles = fileList ? Array.from(fileList) : [];
           const existingStored = savedFiles[key] ?? [];
           const selected = selectedFiles[key] ?? domFiles;
-          const limit = maxFileCount[key as keyof typeof maxFileCount];
+          const limit = DOCUMENT_MAX_FILES[key] ?? 1;
           const selectedStoredFiles = await filesToStoredFiles(selected);
-          const combinedStoredFiles = limit
+          const combinedStoredFiles = limit > 1
             ? [...existingStored, ...selectedStoredFiles].slice(0, limit)
             : selectedStoredFiles.length > 0
               ? selectedStoredFiles
@@ -331,6 +311,26 @@ if (file.size > MAX_FILE_SIZE) {
       setIsSaving(false);
     }
   };
+
+  const documentFields = ALL_DOCUMENTS.map((doc) => {
+    const isDocMarried = doc.key === "marriageCertificate";
+    const isDocBusiness = doc.key === "businessRegistration";
+    const show = isDocMarried ? statusMarital : isDocBusiness ? isBusStatus : true;
+    const isRequired = isDocumentRequired(doc.key, {
+      isMarried: statusMarital,
+      isBusinessOwner: isBusStatus,
+    });
+    return {
+      id: doc.key,
+      label: doc.label,
+      required: isRequired,
+      multiple: doc.maxFiles > 1,
+      maxFiles: doc.maxFiles,
+      accept: doc.key === "picture" ? "image/*" : ".pdf, .jpg, .jpeg, .png",
+      note: doc.note || "Click to select file",
+      show,
+    };
+  });
 
   return (
     <main className="max-w-5xl mx-auto px-6 py-20 mt-10">
@@ -398,24 +398,10 @@ if (file.size > MAX_FILE_SIZE) {
             </div>
           </Reveal>
         </div>
+
         <Reveal delay={0.1}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            { id: "letterOfIntent", multiple: false, note: "Click to select file", show: true },
-            { id: "resume", multiple: false, note: "Click to select file", show: true },
-            { id: "picture", multiple: false, note: "Click to select file", accept: "image/*", show: true },
-            { id: "applicationForm", multiple: false, note: "Submit a screenshot of your completed Google Form.", showForm: false, show: true },
-            { id: "recommendationLetter", multiple: false, note: "Click to select file", show: true },
-            { id: "schoolCredentials", multiple: false, note: "Click to select file", show: true },
-            { id: "highSchoolDiploma", multiple: false, note: "Click to select file", show: true },
-            { id: "transcript", multiple: false, note: "Click to select file", show: true },
-            { id: "birthCertificate", multiple: false, note: "Click to select file", show: true },
-            { id: "marriageCertificate", multiple: false, note: "Click to select file", show: statusMarital },
-            { id: "employmentCertificate", multiple: true, note: "4 files maximum", show: true },
-            { id: "nbiClearance", multiple: false, note: "Click to select file", show: true },
-            { id: "businessRegistration", multiple: false, note: "Click to select file", show: isBusStatus },
-            { id: "certificates", multiple: true, note: "10 files maximum", show: true },
-          ].map((field) => (
+          {documentFields.map((field) => (
             <motion.div
               key={field.id}
               style={{ display: field.show ? "block" : "none" }}
@@ -423,15 +409,14 @@ if (file.size > MAX_FILE_SIZE) {
               className="border-dashed border-2 rounded-md p-4 text-left flex flex-col border-gray-300 bg-white"
             >
               <label className="font-medium block mb-2" htmlFor={field.id}>
-                {fileLabels[field.id]}
-                {["letterOfIntent", "resume", "picture", "applicationForm", "recommendationLetter", "schoolCredentials", "highSchoolDiploma", "transcript", "birthCertificate", "nbiClearance"].includes(field.id) ? (
+                {field.label}
+                {field.required ? (
                   <span className="text-red-500"> *</span>
                 ) : null}
-                {field.id === "employmentCertificate" ? " (4 max)" : null}
-                {field.id === "certificates" ? " (10 max)" : null}
+                {field.maxFiles > 1 ? ` (${field.maxFiles} max)` : null}
                 {savedFiles[field.id]?.length ? <span className="ml-2 text-xs text-green-600 font-semibold">(✓ Saved)</span> : null}
               </label>
-              {field.id in maxFileCount ? (
+              {field.maxFiles > 1 ? (
                 <>
                   <input
                     id={field.id}
@@ -449,7 +434,7 @@ if (file.size > MAX_FILE_SIZE) {
                   >
                     Add file(s)
                   </button>
-                  <p className="text-xs text-slate-500 mt-2">{(savedFiles[field.id]?.length ?? 0) + (selectedFiles[field.id]?.length ?? 0)}/{maxFileCount[field.id]} selected</p>
+                  <p className="text-xs text-slate-500 mt-2">{(savedFiles[field.id]?.length ?? 0) + (selectedFiles[field.id]?.length ?? 0)}/{field.maxFiles} selected</p>
                 </>
               ) : (
                 <>
@@ -459,7 +444,7 @@ if (file.size > MAX_FILE_SIZE) {
                         id={field.id}
                         name={field.id}
                         type="file"
-                        multiple={field.multiple}
+                        multiple={false}
                         accept={field.accept ?? ".pdf, .jpg, .jpeg, .png"}
                         onChange={handleFileChange}
                         className="mx-auto text-sm cursor-pointer"
@@ -504,16 +489,6 @@ if (file.size > MAX_FILE_SIZE) {
                     </div>
                   ))}
                 </div>
-              ) : null}
-              {field.showForm ? (
-                <Link
-                  href={eteeapFormUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm font-medium"
-                >
-                  Fill ETEEAP Form Online <FaExternalLinkAlt size={12} />
-                </Link>
               ) : null}
             </motion.div>
           ))}

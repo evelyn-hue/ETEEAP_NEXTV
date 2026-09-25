@@ -1,38 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
 import { supabaseServer } from "@/lib/supabase-server";
-import { cookies } from "next/headers";
+import { requireAdmin } from "@/lib/auth";
+import { MAX_FILE_SIZE } from "@/lib/documents";
 
 export async function POST(req: NextRequest) {
   try {
-    // Extract user ID from JWT cookie
-    const auth = req.headers.get("authorization") || "";
-    const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-    const cookieToken = (await cookies()).get("token")?.value;
-    const token = bearer || cookieToken;
-    
-    if (!token) {
-      return NextResponse.json(
-        { success: false, error: "Not authenticated" },
-        { status: 401 }
-      );
+    const auth = await requireAdmin(req);
+    if (!auth.ok) {
+      return auth.response;
     }
 
-    let userId: string;
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || "") as { final_data: { data: Array<{ id: string }> } };
-      userId = decoded.final_data?.data?.[0]?.id;
-      
-      if (!userId) {
-        return NextResponse.json(
-          { success: false, error: "User ID not found in token" },
-          { status: 401 }
-        );
-      }
-    } catch {
+    let userId = auth.user.id;
+    if (!userId) {
+      const { data: userData } = await supabaseServer
+        .from("auth")
+        .select("id")
+        .eq("email", auth.user.email)
+        .maybeSingle();
+      userId = userData?.id;
+    }
+
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Invalid token" },
-        { status: 401 }
+        { success: false, error: "User ID not found" },
+        { status: 400 }
       );
     }
 
@@ -46,8 +37,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { success: false, error: "File size exceeds 5MB limit" },
+        { status: 400 }
+      );
+    }
+
+    const imageTypes = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+    if (!imageTypes.includes(file.type)) {
+      return NextResponse.json(
+        { success: false, error: "Only image files (JPG, PNG, WebP) are allowed" },
+        { status: 400 }
+      );
+    }
+
     // Upload file to Supabase storage
-    const fileName = `admin-${userId}-${Date.now()}`;
+    const ext = file.name.split(".").pop() || "jpg";
+    const fileName = `admin-${userId}-${Date.now()}.${ext}`;
     const buffer = await file.arrayBuffer();
 
     const { error: uploadError } = await supabaseServer.storage
@@ -72,11 +79,11 @@ export async function POST(req: NextRequest) {
     // Update admin_settings with new avatar URL
     const { data: updateData, error: updateError } = await supabaseServer
       .from("admin_settings")
-      .update({
+      .upsert({
+        id: userId,
         avatar_url: publicUrl.publicUrl,
         updated_at: new Date().toISOString(),
       })
-      .eq("id", userId)
       .select()
       .single();
 
@@ -97,7 +104,6 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
-    console.error("Error:", message);
     return NextResponse.json(
       { success: false, error: message },
       { status: 500 }

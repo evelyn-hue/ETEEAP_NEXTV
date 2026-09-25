@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Fetch_to } from "@/utilities";
 import api_link from "@/config/api_link.json";
@@ -10,14 +10,36 @@ type Props = { children: ReactNode };
 
 export default function AdminPage({ children }: Props) {
   const router = useRouter();
+  const [authorized, setAuthorized] = useState(false);
 
   useEffect(() => {
     const verify = async () => {
       const response = await Fetch_to(api_link.jwt.verify);
-      if (!response.success) router.push("/");
+      if (!response.success) {
+        router.push("/auth/signin?next=/admin");
+        return;
+      }
+      const user = response.data?.message?.final_data?.data?.[0];
+      const isAdmin =
+        user?.role === "admin" ||
+        String(user?.email ?? "").toLowerCase() === "admin@admin.com";
+
+      if (!isAdmin) {
+        router.push("/");
+        return;
+      }
+      setAuthorized(true);
     };
-    verify();
+    void verify();
   }, [router]);
+
+  if (!authorized) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-surface-warm">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <PageTransition className="flex min-h-screen bg-surface-warm" style={{ backgroundImage: "var(--bg-interior)" }}>

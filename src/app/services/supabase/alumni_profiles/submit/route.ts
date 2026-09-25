@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAuth, isAdminUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
+    const authResult = await requireAuth(req);
+    if (!authResult.ok) return authResult.response;
+
+    const caller = authResult.user;
+    const isCallerAdmin = isAdminUser(caller);
+
     const body = await req.json();
 
     const {
@@ -29,6 +36,13 @@ export async function POST(req: NextRequest) {
     }
 
     const normalizedEmail = String(email).trim().toLowerCase();
+
+    if (!isCallerAdmin && caller.email.toLowerCase() !== normalizedEmail) {
+      return NextResponse.json(
+        { success: false, error: "You can only submit an alumni profile for your own account" },
+        { status: 403 }
+      );
+    }
 
     if (
       !String(full_name).trim() ||
@@ -110,7 +124,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabaseServer
       .from("alumni_profiles")
-      .insert([{ ...profilePayload, verification_status: "verified", is_graduate: true }])
+      .insert([{ ...profilePayload, verification_status: "pending", is_graduate: false }])
       .select();
 
     if (error) {

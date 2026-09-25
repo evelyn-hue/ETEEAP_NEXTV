@@ -39,9 +39,6 @@ export async function POST(req: NextRequest) {
       if (daysSince < 3) {
         return NextResponse.json({ success: false, error: "You can send a reminder after 3 business days." }, { status: 400 });
       }
-      if (daysSince >= 7) {
-        return NextResponse.json({ success: false, error: "Application has exceeded 7 days and should be reverted to draft." }, { status: 400 });
-      }
       const statusLower = String(formRow.form_status ?? "").toLowerCase();
       if (statusLower !== "under review" && statusLower !== "on hold") {
         return NextResponse.json({ success: false, error: "Reminders are only allowed while under review or on hold." }, { status: 400 });

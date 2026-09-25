@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { requireAuth, isAdminUser } from "@/lib/auth";
 
 export async function POST(req: NextRequest) {
   try {
-    const { formId, email } = await req.json();
+    const authResult = await requireAuth(req);
+    if (!authResult.ok) return authResult.response;
+
+    const caller = authResult.user;
+    const isCallerAdmin = isAdminUser(caller);
+
+    const body = await req.json().catch(() => ({}));
+    const { formId, email } = body;
 
     if (!formId && !email) {
       return NextResponse.json(
@@ -17,7 +25,12 @@ export async function POST(req: NextRequest) {
     if (formId) {
       query = query.eq("id", formId);
     } else if (email) {
-      query = query.eq("email", email);
+      query = query.eq("email", String(email).trim().toLowerCase());
+    }
+
+    // IDOR protection: non-admins can only retrieve their own application
+    if (!isCallerAdmin) {
+      query = query.eq("email", caller.email);
     }
 
     const { data, error } = await query;

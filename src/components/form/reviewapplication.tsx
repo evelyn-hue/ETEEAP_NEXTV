@@ -9,6 +9,11 @@ import { CheckCircle, FileText, AlertCircle, Loader2, X } from "lucide-react";
 import SectionHeading from "@/components/shared/SectionHeading";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
 import Reveal from "@/components/shared/Reveal";
+import {
+  ALL_DOCUMENTS,
+  DOCUMENT_KEY_TO_LABEL,
+  getRequiredDocumentKeys,
+} from "@/lib/documents";
 
 const DRAFTS_KEY = "eteeap-application-drafts";
 
@@ -60,23 +65,6 @@ type JWTProps = {
   phone: string;
   status: string;
   isBusinessOwner?: string;
-};
-
-const fileLabels: Record<string, string> = {
-  letterOfIntent: "Letter of Intent",
-  resume: "Resume / CV",
-  picture: "Formal Picture",
-  applicationForm: "ETEEAP Application Form",
-  recommendationLetter: "Recommendation Letter",
-  schoolCredentials: "School Credentials",
-  highSchoolDiploma: "High School Diploma / PEPT",
-  transcript: "Transcript",
-  birthCertificate: "Birth Certificate",
-  marriageCertificate: "Marriage Certificate",
-  employmentCertificate: "Certificate of Employment",
-  nbiClearance: "NBI Clearance",
-  businessRegistration: "Business Registration",
-  certificates: "Certificates",
 };
 
 function shortenLinkLabel(value: string) {
@@ -155,23 +143,12 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
   const isReject = currentStatus === "reject";
   const isMarried = status?.toLowerCase() === "married";
 
-  // Required documents based on conditions
+  // Required documents based on unified rules
   const getRequiredDocuments = () => {
-    const required = [
-      "letterOfIntent",
-      "resume",
-      "picture",
-      "applicationForm",
-      "recommendationLetter",
-      "schoolCredentials",
-      "highSchoolDiploma",
-      "transcript",
-      "birthCertificate",
-      "nbiClearance",
-    ];
-    if (isMarried) required.push("marriageCertificate");
-    if (isBusinessOwner === "Yes") required.push("businessRegistration");
-    return required;
+    return getRequiredDocumentKeys({
+      isMarried,
+      isBusinessOwner: isBusinessOwner === "Yes",
+    });
   };
 
   const validateRequiredDocuments = async (): Promise<boolean> => {
@@ -185,7 +162,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       const files = currentDraft.files?.[docKey] ?? [];
       const submittedValue = selectedApplication?.[docKey as keyof SelectedApplication];
       if (files.length === 0 && !submittedValue) {
-        missingDocs.push(fileLabels[docKey] || docKey);
+        missingDocs.push(DOCUMENT_KEY_TO_LABEL[docKey] || docKey);
       }
     }
 
@@ -331,7 +308,7 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
       );
 
       setTimeout(() => {
-        router.push("/");
+        router.push("/form/applicationstatus");
       }, 1800);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Submission failed.";
@@ -410,10 +387,12 @@ export default function ReviewApplication({ fullname, email, phone, status, isBu
           <h2 className="text-2xl font-bold text-blue-900 mb-4">Uploaded Documents</h2>
           <div className="bg-white rounded-2xl shadow-sm ring-1 ring-slate-200/30 p-6 md:p-8">
             <div className="grid gap-6 md:gap-8">
-              {Object.entries(fileLabels).map(([key, label]) => {
+              {ALL_DOCUMENTS.map((doc) => {
+                const key = doc.key;
+                const label = doc.label;
                 const files = draft?.files?.[key] ?? [];
                 const submittedValue = selectedApplication?.[key as keyof SelectedApplication];
-                const isMultiFile = ["employmentCertificate", "certificates"].includes(key);
+                const isMultiFile = doc.maxFiles > 1;
 
                 if (files.length === 0 && !submittedValue) {
                   return null;
