@@ -9,9 +9,26 @@ import fs from "fs";
 import path from "path";
 import bcrypt from "bcryptjs";
 
-const BASE_URL = "http://localhost:3000";
-const SUPABASE_URL = "https://vtrwzdvgrffoazqgblox.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ0cnd6ZHZncmZmb2F6cWdibG94Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NzU1NTIwMiwiZXhwIjoyMDkzMTMxMjAyfQ.LVNbI5qjIl7OI1MMm5Zw79X8VYH7Z_1TZgEYhhowWBU";
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+// Load from .env if present
+if (fs.existsSync(".env")) {
+  const envContent = fs.readFileSync(".env", "utf8");
+  for (const line of envContent.split("\n")) {
+    const match = line.match(/^\s*([\w.-]+)\s*=\s*(.*)?\s*$/);
+    if (match) {
+      const key = match[1];
+      let value = (match[2] || "").trim();
+      if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+        value = value.slice(1, -1);
+      }
+      if (!process.env[key]) process.env[key] = value;
+    }
+  }
+}
+
+const SUPABASE_URL = process.env.SUPABASE_URL || "";
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY || "";
 
 const SCREENSHOT_DIR = path.resolve("./browser_test_artifacts/screenshots");
 const TEMP_FILES_DIR = path.resolve("./browser_test_artifacts/temp_docs");
