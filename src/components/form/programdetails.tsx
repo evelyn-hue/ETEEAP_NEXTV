@@ -4,7 +4,6 @@ import Link from "next/link";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { FaExternalLinkAlt } from "react-icons/fa";
 import Reveal from "@/components/shared/Reveal";
 import SectionHeading from "@/components/shared/SectionHeading";
 import SectionEyebrow from "@/components/shared/SectionEyebrow";
@@ -18,15 +17,6 @@ import {
   isDocumentRequired,
 } from "@/lib/documents";
 
-const eteeapFormId = [
-  "1FAIpQLScTWK7hH2",
-  "lg8nYs6eVl7_",
-  "Usj0R7opwjJs",
-  "OMAPb3HF7qs",
-  "-ZcBg",
-].join("");
-
-const eteeapFormUrl = `https://docs.google.com/forms/d/e/${eteeapFormId}/viewform?usp=pp_url`;
 const DRAFTS_KEY = "eteeap-application-drafts";
 const REVIEW_ROUTE = "/form/reviewapplication";
 
@@ -494,17 +484,6 @@ function ProgramDetails({ programName, applicantName, email, statusMarital, isBu
           ))}
         </div>
         </Reveal>
-
-        <div className="mt-6 text-center">
-          <Link
-            href={eteeapFormUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            Fill ETEEAP Form Online <FaExternalLinkAlt size={12} />
-          </Link>
-        </div>
 
         <div className="mt-6 text-center">
           <button

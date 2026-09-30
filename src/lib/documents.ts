@@ -45,14 +45,6 @@ export const ALL_DOCUMENTS: DocumentDefinition[] = [
     note: "Recent 2x2 photo in white background",
   },
   {
-    key: "applicationForm",
-    label: "ETEEAP Application Form",
-    shortLabel: "Application Form",
-    required: true,
-    maxFiles: 1,
-    note: "Completed official ETEEAP Google Form",
-  },
-  {
     key: "recommendationLetter",
     label: "Recommendation Letter",
     shortLabel: "Recommendation Letter",

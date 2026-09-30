@@ -62,7 +62,6 @@ function createDummyFiles() {
   const pdfNames = [
     "letterOfIntent.pdf",
     "resume.pdf",
-    "applicationForm.pdf",
     "recommendationLetter.pdf",
     "schoolCredentials.pdf",
     "highSchoolDiploma.pdf",
@@ -197,7 +196,6 @@ async function runBrowserE2E() {
       { name: "letterOfIntent", file: "letterOfIntent.pdf" },
       { name: "resume", file: "resume.pdf" },
       { name: "picture", file: "picture.png" },
-      { name: "applicationForm", file: "applicationForm.pdf" },
       { name: "recommendationLetter", file: "recommendationLetter.pdf" },
       { name: "schoolCredentials", file: "schoolCredentials.pdf" },
       { name: "highSchoolDiploma", file: "highSchoolDiploma.pdf" },

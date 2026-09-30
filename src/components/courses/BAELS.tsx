@@ -112,7 +112,7 @@ export default function DetailedPrograms() {
 
         <Reveal>
           <div className="bg-linear-to-r from-blue-600 to-blue-800 rounded-xl shadow-xl p-12 text-center text-white">
-            <SectionHeading>Ready to Apply?</SectionHeading>
+            <SectionHeading className="text-white text-center">Ready to Apply?</SectionHeading>
             <p className="text-xl mb-8 text-blue-100">
               Take the first step towards your future in {programName}
             </p>

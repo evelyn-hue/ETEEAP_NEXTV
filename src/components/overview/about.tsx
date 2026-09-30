@@ -93,9 +93,9 @@ export default function About() {
 
         {/* CTA */}
         <Reveal>
-          <section className="bg-section-navy rounded-xl p-12 text-center">
-            <SectionHeading className="text-white">Ready to Begin?</SectionHeading>
-            <p className="text-white/70 mb-8">Take the first step toward earning your degree.</p>
+          <section className="bg-section-navy rounded-xl p-12 text-center text-white">
+            <SectionHeading className="text-white text-center">Ready to Begin?</SectionHeading>
+            <p className="text-white/80 mb-8 max-w-xl mx-auto">Take the first step toward earning your degree.</p>
             <Link
               href="/courses"
               className="inline-flex items-center justify-center rounded-lg bg-white text-primary px-6 py-3 font-semibold shadow-md transition-colors hover:bg-gray-100"

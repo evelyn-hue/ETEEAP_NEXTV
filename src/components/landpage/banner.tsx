@@ -128,11 +128,11 @@ export default function Banner() {
 
       {/* CTA */}
       <Reveal>
-        <section className="py-20 bg-section-navy text-center">
-          <h2 className="text-3xl font-bold font-display mb-4">
+        <section className="py-20 bg-section-navy text-center text-white">
+          <h2 className="text-3xl font-bold font-display text-white mb-4">
             Ready to Start Your ETEEAP Journey at LCCB?
           </h2>
-          <p className="text-white/70 mb-8 max-w-lg mx-auto">
+          <p className="text-white/80 mb-8 max-w-lg mx-auto">
             Apply today and take the next step in your career while earning your degree.
           </p>
           <div className="flex justify-center gap-4">
